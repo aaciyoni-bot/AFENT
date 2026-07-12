@@ -159,7 +159,12 @@
         const initialSettings = {
             freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ לבין נותן השירותים.\n\n1. פועל כקבלן עצמאי.\n2. התחייבות לעבודה עם ציוד אישי (מחשב) ורישיון AI פעיל (כגון ChatGPT).\n3. כל הלקוחות והסוכנים שייכים למערכת ולחברה בלבד.\n4. החברה תספק עבודה. בונוס יזמות 5% יוענק לפרילנסר שהביא לקוח.\n5. קנס על הפרת סודיות: 50,000 ש"ח.`,
             clientAgreementText: `הסכם פיתוח ושירותי אינטרנט - אוריזיס\n\n1. החברה תספק את השירותים כפי שהוגדרו באפיון.\n2. פיתוח יתחיל לאחר תשלום מלא.\n3. זכויות היוצרים עוברות ללקוח בגמר חשבון.`,
-            announcement: `ברוכים הבאים למערכת החדשה של אוריזיס!`
+            announcement: `ברוכים הבאים למערכת החדשה של אוריזיס!`,
+            prices: {
+                hostingVIP: 150,
+                seoPackage: 800,
+                maintenance: 250
+            }
         };
 
         const AppProvider = ({ children }) => {
@@ -191,7 +196,10 @@
                 }, err => console.error("Projects sync error:", err));
 
                 const unsubSettings = db.collection('system').doc('settings').onSnapshot(doc => {
-                    if (doc.exists) { setSystemSettings(doc.data()); } 
+                    if (doc.exists) { 
+                        // Merge with initialSettings to ensure new fields like 'prices' exist even for old documents
+                        setSystemSettings({ ...initialSettings, ...doc.data(), prices: { ...initialSettings.prices, ...(doc.data().prices || {}) } }); 
+                    } 
                     else { db.collection('system').doc('settings').set(initialSettings); }
                     setIsLoading(false);
                 }, err => { console.error("Settings error:", err); setIsLoading(false); });
@@ -211,7 +219,7 @@
 
                 const user = usersList.find(u => String(u.email).toLowerCase().trim() === inputEmail && String(u.password).trim() === inputPassword);
                 if (user) { setCurrentUser(user); localStorage.setItem('orizis_user', JSON.stringify(user)); } 
-                else { showAlert('שם משתמש או סיסמה שגויים. בדוק את האותיות והמספרים.'); }
+                else { showAlert('שם משתמש או סיסמה שגויים. המשתמש לא קיים במסד הנתונים (Firestore).'); }
             };
 
             const logout = () => { setCurrentUser(null); localStorage.removeItem('orizis_user'); };
@@ -221,7 +229,7 @@
             
             const addProject = (project) => {
                 const id = `P-${Date.now().toString().slice(-4)}`;
-                db.collection('projects').doc(id).set({ id, status: 'paid_waiting_for_brief', isSelfSourced: false, ...project });
+                db.collection('projects').doc(id).set({ id, status: 'paid_waiting_for_brief', isSelfSourced: false, upsellAmount: 0, ...project });
                 return id;
             };
             
@@ -279,7 +287,7 @@
         const AdminDashboard = () => {
             const { projects, usersList, updateProject, deleteProject, addUser, updateUser, deleteUser, systemSettings, updateSettings, showAlert, addProject } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects'); 
-            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60 });
+            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40 });
             const [newProjectData, setNewProjectData] = useState({ customerName: '', customerEmail: '', paymentAmount: '' });
             const [localSettings, setLocalSettings] = useState(systemSettings);
             
@@ -287,19 +295,20 @@
             const [viewProject, setViewProject] = useState(null);
             const [viewUser, setViewUser] = useState(null);
 
-            const revenue = projects.reduce((sum, p) => sum + (Number(p.paymentAmount) || 0), 0);
+            const revenue = projects.reduce((sum, p) => sum + (Number(p.paymentAmount) || 0) + (Number(p.upsellAmount) || 0), 0);
             const activeProjects = projects.filter(p => p.status !== 'completed' && p.status !== undefined);
 
             const handleAddUser = (e) => {
                 e.preventDefault();
-                addUser({ ...newUser, basePercentage: newUser.role === 'freelancer' ? Number(newUser.basePercentage || 60) : 0 });
-                setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60 });
+                addUser({ ...newUser, basePercentage: newUser.role === 'freelancer' ? Number(newUser.basePercentage || 60) : 0, upsellPercentage: newUser.role === 'freelancer' ? Number(newUser.upsellPercentage || 40) : 0 });
+                setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40 });
                 showAlert("המשתמש נוצר בהצלחה ונשמר בענן!");
             };
 
             const handleAddProject = (e) => {
                 e.preventDefault();
                 const newProjectId = addProject({ customerName: newProjectData.customerName, customerEmail: newProjectData.customerEmail, paymentAmount: Number(newProjectData.paymentAmount), freelancerId: null, createdAt: Date.now(), addons: [], hasSignedAgreement: false });
+                // We create a client user implicitly linked to this project
                 addUser({ name: newProjectData.customerName, email: newProjectData.customerEmail, password: '123', role: 'client', projectId: newProjectId });
                 setNewProjectData({ customerName: '', customerEmail: '', paymentAmount: '' });
                 showAlert("לקוח ופרויקט נוצרו בהצלחה! הלקוח יכול להתחבר עם המייל שלו וסיסמה 123 כדי למלא אפיון.");
@@ -311,8 +320,8 @@
                     case 'in_progress': return <Badge color="purple">בעבודה ע"י סוכן</Badge>;
                     case 'qa_review': return <Badge color="blue">ממתין לבדיקת מנהל (QA)</Badge>;
                     case 'brief_submitted': return <Badge color="blue">אופיין ומוכן לפיתוח</Badge>;
-                    case 'paid_waiting_for_brief': return <Badge color="yellow">ממתין למילוי אפיון (לקוח)</Badge>;
-                    default: return <Badge color="gray">לא הוגדר / לקוח חדש</Badge>;
+                    case 'paid_waiting_for_brief': return <Badge color="yellow">ממתין למילוי אפיון</Badge>;
+                    default: return <Badge color="gray">לא הוגדר / ממתין</Badge>;
                 }
             };
 
@@ -324,8 +333,9 @@
                         {viewProject && (
                             <div className="space-y-8">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Card className="p-4 bg-slate-50"><div className="text-sm font-bold text-slate-500">שווי פרויקט</div><div className="text-xl font-black text-brand-600">₪{viewProject.paymentAmount || 0}</div></Card>
-                                    <Card className="p-4 bg-slate-50"><div className="text-sm font-bold text-slate-500">סטטוס התקדמות</div><div className="mt-1">{getStatusBadge(viewProject.status)}</div></Card>
+                                    <Card className="p-4 bg-slate-50"><div className="text-sm font-bold text-slate-500">שווי בסיס</div><div className="text-xl font-black text-brand-600">₪{viewProject.paymentAmount || 0}</div></Card>
+                                    <Card className="p-4 bg-slate-50"><div className="text-sm font-bold text-slate-500">שווי אפסייל (MRR/מוצרים)</div><div className="text-xl font-black text-emerald-600">₪{viewProject.upsellAmount || 0}</div></Card>
+                                    <Card className="p-4 bg-slate-50 col-span-2"><div className="text-sm font-bold text-slate-500 mb-1">סטטוס התקדמות</div><div>{getStatusBadge(viewProject.status)}</div></Card>
                                 </div>
                                 
                                 <div>
@@ -369,10 +379,14 @@
                                 </div>
 
                                 {viewUser.role === 'freelancer' && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-3 gap-4">
                                         <Card className="p-4 bg-emerald-50 border-emerald-100">
                                             <div className="text-sm font-bold text-emerald-800 mb-1">אחוז עמלה (Base)</div>
                                             <div className="text-2xl font-black text-emerald-600">{viewUser.basePercentage || 60}%</div>
+                                        </Card>
+                                        <Card className="p-4 bg-purple-50 border-purple-100">
+                                            <div className="text-sm font-bold text-purple-800 mb-1">אחוז מכירות (Upsell)</div>
+                                            <div className="text-2xl font-black text-purple-600">{viewUser.upsellPercentage || 40}%</div>
                                         </Card>
                                         <Card className="p-4 bg-indigo-50 border-indigo-100">
                                             <div className="text-sm font-bold text-indigo-800 mb-1">פרויקטים פעילים</div>
@@ -407,7 +421,7 @@
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="p-6 bg-gradient-to-br from-brand-500 to-brand-700 text-white">
-                            <div className="text-brand-100 font-medium mb-1.5 text-sm">הכנסות כוללות מערכת</div>
+                            <div className="text-brand-100 font-medium mb-1.5 text-sm">הכנסות כוללות מערכת (בסיס+אפסיילים)</div>
                             <div className="text-3xl font-black">₪{revenue.toLocaleString()}</div>
                         </Card>
                         <Card className="p-6">
@@ -423,11 +437,12 @@
                     <div className="flex justify-center overflow-x-auto border-b border-slate-200 custom-scrollbar mb-6 bg-white rounded-t-2xl shadow-sm">
                         {['projects', 'users', 'settings'].map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} className={`px-8 py-4 font-black text-sm whitespace-nowrap transition-all border-b-4 ${activeTab === tab ? 'text-brand-600 border-brand-600 bg-brand-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}>
-                                {tab === 'projects' ? '🚀 ניהול פרויקטים' : tab === 'users' ? '👥 צוות ולקוחות' : '⚙️ הגדרות, חוזים והודעות'}
+                                {tab === 'projects' ? '🚀 ניהול פרויקטים' : tab === 'users' ? '👥 צוות סוכנים' : '⚙️ הגדרות, מחירון וחוזים'}
                             </button>
                         ))}
                     </div>
 
+                    {}
                     {activeTab === 'projects' && (
                         <Card className="overflow-hidden shadow-sm">
                             <div className="p-6 bg-slate-50 border-b border-slate-100">
@@ -435,8 +450,8 @@
                                 <form onSubmit={handleAddProject} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                                     <div><label className="block text-xs font-bold mb-1.5 text-slate-700">שם לקוח / פרויקט</label><input type="text" required className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
                                     <div><label className="block text-xs font-bold mb-1.5 text-slate-700">אימייל לקוח (להתחברות)</label><input type="email" required className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} dir="ltr" /></div>
-                                    <div><label className="block text-xs font-bold mb-1.5 text-slate-700">סכום ששולם (₪)</label><input type="number" required className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
-                                    <div><Button type="submit" className="w-full py-3">➕ פתח פרויקט בפורטל</Button></div>
+                                    <div><label className="block text-xs font-bold mb-1.5 text-slate-700">סכום בסיס ששולם (₪)</label><input type="number" required className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
+                                    <div><Button type="submit" className="w-full py-3">➕ פתח פרויקט ולקוח</Button></div>
                                 </form>
                             </div>
                             
@@ -456,7 +471,7 @@
                                             <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
                                                 <td className="p-5 font-black text-slate-900 text-base">{p.customerName}<div className="text-xs text-slate-500 font-normal mt-1 bg-slate-100 inline-block px-2 py-0.5 rounded-md">{p.customerEmail}</div></td>
                                                 <td className="p-5">{getStatusBadge(p.status)}</td>
-                                                <td className="p-5 font-black text-slate-800 text-lg">₪{p.paymentAmount || 0}</td>
+                                                <td className="p-5 font-black text-slate-800 text-lg">₪{p.paymentAmount || 0}<br/><span className="text-xs text-emerald-600">+₪{p.upsellAmount||0} מכירות</span></td>
                                                 <td className="p-5 bg-brand-50/30">
                                                     <div className="flex flex-col gap-2">
                                                         <select 
@@ -467,40 +482,40 @@
                                                                 showAlert("שיוך הסוכן עודכן ושמר בענן!");
                                                             }}
                                                         >
-                                                            <option value="">-- ללא שיוך / הסר שיוך --</option>
+                                                            <option value="">-- בחר סוכן לשיוך --</option>
                                                             {usersList.filter(u => u.role === 'freelancer').map(u => <option key={u.uid} value={u.uid}>{u.name}</option>)}
                                                         </select>
                                                         {p.freelancerId && (
                                                             <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 cursor-pointer bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                                                                 <input type="checkbox" checked={p.isSelfSourced || false} onChange={(e) => updateProject(p.id, { isSelfSourced: e.target.checked })} className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" />
-                                                                בונוס יזמות פעיל (+5%)
+                                                                בונוס הבאת לקוח (+5%)
                                                             </label>
                                                         )}
                                                     </div>
                                                 </td>
                                                 <td className="p-5 text-center space-y-2">
-                                                    <Button onClick={() => setViewProject(p)} variant="primary" className="text-xs px-3 py-2 w-full justify-center bg-brand-600 hover:bg-brand-700">👁️ צפה באפיון ופרטים</Button>
+                                                    <Button onClick={() => setViewProject(p)} variant="primary" className="text-xs px-3 py-2 w-full justify-center bg-brand-600 hover:bg-brand-700">👁️ צפה בפרופיל</Button>
                                                     <Button onClick={() => { if(window.confirm('למחוק פרויקט זה לחלוטין מהענן? פעולה זו אינה הפיכה ויאפס את הסכום.')) deleteProject(p.id); }} variant="outline" className="text-xs px-3 py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 mx-auto w-full justify-center">🗑️ מחק פרויקט</Button>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {projects.length === 0 && <tr><td colSpan="5" className="p-10 text-center text-slate-500 font-medium bg-slate-50">אין פרויקטים במערכת. צור את הלקוח הראשון שלך!</td></tr>}
+                                        {projects.length === 0 && <tr><td colSpan="5" className="p-10 text-center text-slate-500 font-medium bg-slate-50">אין פרויקטים במערכת. צור את הראשון שלך!</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
                         </Card>
                     )}
 
+                    {}
                     {activeTab === 'users' && (
                         <div className="space-y-8">
                             <Card className="p-8 shadow-sm border-t-4 border-brand-500 bg-white">
                                 <h3 className="font-black text-slate-900 text-xl mb-6 text-center">יצירת איש צוות / סוכן חדש</h3>
-                                <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end max-w-5xl mx-auto">
+                                <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end max-w-5xl mx-auto">
                                     <div className="md:col-span-1"><label className="block text-xs font-bold mb-1.5 text-slate-700">שם מלא</label><input type="text" required className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none" value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} /></div>
                                     <div className="md:col-span-1"><label className="block text-xs font-bold mb-1.5 text-slate-700">אימייל התחברות</label><input type="email" required className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} dir="ltr" /></div>
                                     <div className="md:col-span-1"><label className="block text-xs font-bold mb-1.5 text-slate-700">סיסמה התחלתית</label><input type="text" required className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} dir="ltr" /></div>
-                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1.5 text-slate-700">תפקיד / הרשאה</label><select className="w-full p-2.5 border border-slate-200 rounded-xl font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}><option value="freelancer">סוכן / פרילנסר</option><option value="client">לקוח (צופה בלבד)</option></select></div>
-                                    <div className="md:col-span-1"><Button type="submit" className="w-full py-2.5">➕ צור משתמש</Button></div>
+                                    <div className="md:col-span-1"><Button type="submit" className="w-full py-2.5">➕ צור משתמש כסוכן</Button></div>
                                 </form>
                             </Card>
                             
@@ -508,7 +523,7 @@
                                 <div className="p-6 bg-slate-50 border-b border-slate-100"><h3 className="font-black text-slate-800 text-xl">משתמשים קיימים במסד הנתונים</h3></div>
                                 <div className="w-full overflow-x-auto custom-scrollbar">
                                     <table className="w-full text-right text-sm min-w-[800px]">
-                                        <thead className="bg-slate-50 font-black border-b text-slate-600"><tr><th className="p-5">שם משתמש ומייל</th><th className="p-5">הרשאה</th><th className="p-5">עמלת בסיס (לסוכן)</th><th className="p-5 text-center">פעולות ופרופיל</th></tr></thead>
+                                        <thead className="bg-slate-50 font-black border-b text-slate-600"><tr><th className="p-5">שם משתמש ומייל</th><th className="p-5">הרשאה</th><th className="p-5">עמלות (בסיס ואפסייל)</th><th className="p-5 text-center">פעולות ופרופיל</th></tr></thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {usersList.map(u => (
                                                 <tr key={u.uid} className="hover:bg-slate-50 transition-colors">
@@ -516,10 +531,17 @@
                                                     <td className="p-5"><Badge color={u.role==='freelancer'?'blue': u.role==='client'?'yellow':'purple'}>{u.role}</Badge></td>
                                                     <td className="p-5">
                                                         {u.role === 'freelancer' ? (
-                                                            <div className="flex items-center gap-2 text-sm font-bold bg-white border border-slate-200 p-2 rounded-lg inline-flex shadow-sm">
-                                                                <span>עמלה:</span>
-                                                                <input type="number" className="border-b-2 border-brand-300 w-12 text-center bg-transparent outline-none focus:border-brand-600 text-brand-700 font-black" value={u.basePercentage||60} onChange={e=>updateUser(u.uid, {basePercentage: Number(e.target.value)})} />
-                                                                <span>%</span>
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex items-center gap-2 text-sm font-bold bg-white border border-slate-200 p-1.5 rounded-lg inline-flex shadow-sm w-max">
+                                                                    <span className="text-slate-500 text-xs w-12 text-right">בסיס:</span>
+                                                                    <input type="number" className="border-b-2 border-brand-300 w-12 text-center bg-transparent outline-none focus:border-brand-600 text-brand-700 font-black" value={u.basePercentage||60} onChange={e=>updateUser(u.uid, {basePercentage: Number(e.target.value)})} />
+                                                                    <span className="text-slate-500 text-xs">%</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-sm font-bold bg-white border border-slate-200 p-1.5 rounded-lg inline-flex shadow-sm w-max">
+                                                                    <span className="text-slate-500 text-xs w-12 text-right">מכירות:</span>
+                                                                    <input type="number" className="border-b-2 border-purple-300 w-12 text-center bg-transparent outline-none focus:border-purple-600 text-purple-700 font-black" value={u.upsellPercentage||40} onChange={e=>updateUser(u.uid, {upsellPercentage: Number(e.target.value)})} />
+                                                                    <span className="text-slate-500 text-xs">%</span>
+                                                                </div>
                                                             </div>
                                                         ) : <span className="text-slate-400">-</span>}
                                                     </td>
@@ -537,6 +559,7 @@
                         </div>
                     )}
 
+                    {}
                     {activeTab === 'settings' && (
                         <div className="space-y-6">
                             <Card className="p-8">
@@ -549,7 +572,27 @@
                                     placeholder="כתוב עדכון חם לפרילנסרים (מבצעים, יעדים, הודעות הנהלה)..."
                                 />
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+                                <div className="mt-8 border-t border-slate-200 pt-8">
+                                    <h3 className="font-black text-xl text-slate-900 mb-2">💰 מחירון מוצרים לשדרוג (MRR ומוצרי קצה)</h3>
+                                    <p className="text-sm text-slate-500 mb-6">כאן תגדיר את המחירים שיוצגו ללקוחות באזור האישי לאחר סיום האתר. על מכירות אלו הסוכן יקבל את עמלת המכירה שלו (אפסייל).</p>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">אחסון פרימיום VIP (₪)</label>
+                                            <input type="number" className="w-full p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none font-black" value={localSettings.prices?.hostingVIP || ''} onChange={e => setLocalSettings({...localSettings, prices: {...localSettings.prices, hostingVIP: Number(e.target.value)}})} />
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">חבילת קידום אתרים SEO (₪)</label>
+                                            <input type="number" className="w-full p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none font-black" value={localSettings.prices?.seoPackage || ''} onChange={e => setLocalSettings({...localSettings, prices: {...localSettings.prices, seoPackage: Number(e.target.value)}})} />
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">תחזוקה חודשית שוטפת (₪)</label>
+                                            <input type="number" className="w-full p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none font-black" value={localSettings.prices?.maintenance || ''} onChange={e => setLocalSettings({...localSettings, prices: {...localSettings.prices, maintenance: Number(e.target.value)}})} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 pt-8 border-t border-slate-200">
                                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                                         <h3 className="font-black text-lg text-slate-900 mb-2">📝 נוסח הסכם התקשרות - פרילנסר</h3>
                                         <p className="text-xs text-slate-500 mb-4">הסכם זה יוצג לכל סוכן חדש, וחובה עליו לחתום עם האצבע כדי להיכנס למערכת.</p>
@@ -570,7 +613,7 @@
                                     </div>
                                 </div>
                                 <div className="mt-8 flex justify-end">
-                                    <Button onClick={() => { updateSettings(localSettings); showAlert("הגדרות המערכת, החוזים וההודעות עודכנו בהצלחה ונשמרו בענן!"); }} variant="success" className="px-10 py-4 text-lg font-black shadow-lg shadow-emerald-500/40 hover:scale-105 transition-transform">💾 שמור כל ההגדרות והחוזים למערכת</Button>
+                                    <Button onClick={() => { updateSettings(localSettings); showAlert("ההגדרות, המחירון והחוזים נשמרו בענן בהצלחה!"); }} variant="success" className="px-10 py-4 text-lg font-black shadow-lg shadow-emerald-500/40 hover:scale-105 transition-transform">💾 שמור כל ההגדרות והחוזים למערכת</Button>
                                 </div>
                             </Card>
                         </div>
@@ -588,7 +631,7 @@
                     <div className="max-w-3xl mx-auto space-y-6 fade-in pb-10">
                         <Card className="p-10 border-t-8 border-brand-500 shadow-2xl">
                             <h2 className="text-3xl font-black mb-4 text-brand-900">ברוך הבא לצוות אוריזיס! 🚀</h2>
-                            <p className="text-slate-600 mb-8 font-medium text-lg">לפני שמתחילים לקבל משימות, חובה לקרוא ולאשר את הסכם ההתקשרות (כולל סעיף סודיות ודרישת ציוד AI).</p>
+                            <p className="text-slate-600 mb-8 font-medium text-lg">לפני שמתחילים לקבל משימות, חובה לקרוא ולאשר את הסכם ההתקשרות.</p>
                             <div className="bg-slate-50 p-6 rounded-2xl text-sm whitespace-pre-wrap font-medium border border-slate-200 mb-8 h-80 overflow-y-auto custom-scrollbar leading-relaxed">
                                 {systemSettings.freelancerAgreementText}
                             </div>
@@ -607,9 +650,17 @@
             const calcEarnings = () => {
                 return myProjects.reduce((sum, p) => {
                     if (p.status !== 'completed') return sum;
-                    let percentage = (currentUser.basePercentage || 60) / 100;
-                    if (p.isSelfSourced) percentage += 0.05; 
-                    return sum + ((Number(p.paymentAmount) || 0) * percentage);
+                    
+                    // Base calculation with or without 5% bonus
+                    let basePct = (currentUser.basePercentage || 60);
+                    if (p.isSelfSourced) basePct += 5; 
+                    const baseEarned = (Number(p.paymentAmount) || 0) * (basePct / 100);
+                    
+                    // Upsell Calculation
+                    const upsellPct = (currentUser.upsellPercentage || 40);
+                    const upsellEarned = (Number(p.upsellAmount) || 0) * (upsellPct / 100);
+
+                    return sum + baseEarned + upsellEarned;
                 }, 0);
             };
 
@@ -642,9 +693,9 @@
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {myProjects.map(project => (
                             <Card key={project.id} className="p-8 relative overflow-hidden border-t-8 border-t-brand-500 shadow-lg hover:shadow-xl transition-all">
-                                {project.isSelfSourced && <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[11px] font-black px-4 py-1.5 rounded-bl-2xl shadow-md">⭐ בונוס +5% פעיל</div>}
+                                {project.isSelfSourced && <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[11px] font-black px-4 py-1.5 rounded-bl-2xl shadow-md">⭐ בונוס הבאת לקוח (+5%)</div>}
                                 <div className="flex justify-between items-start mb-6 mt-2">
-                                    <div><h4 className="font-black text-2xl text-slate-900 mb-1">{project.customerName}</h4><span className="text-sm text-slate-400 font-medium bg-slate-100 px-2 py-1 rounded-md">מזהה פרויקט: {project.id}</span></div>
+                                    <div><h4 className="font-black text-2xl text-slate-900 mb-1">{project.customerName}</h4><span className="text-sm text-slate-400 font-medium bg-slate-100 px-2 py-1 rounded-md">מזהה: {project.id}</span></div>
                                     <Badge color={project.status==='in_progress'?'purple':project.status==='qa_review'?'blue':project.status==='completed'?'green':'yellow'}>{project.status === 'in_progress' ? 'בעבודה כעת' : project.status === 'qa_review' ? 'בבדיקת מנהל' : project.status === 'completed' ? 'הושלם' : 'ממתין להתחלה'}</Badge>
                                 </div>
                                 
@@ -768,6 +819,7 @@
                         </Card>
                     )}
 
+                    {}
                     {project.status === 'completed' && (
                         <Card className="p-12 border-t-8 border-emerald-500 bg-white shadow-2xl rounded-3xl">
                             <div className="text-center mb-12">
@@ -781,7 +833,18 @@
                                 <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-purple-600 rounded-full blur-[100px] opacity-30"></div>
                                 <h4 className="font-black text-4xl mb-6 relative z-10">תחזוקה ואחסון פרימיום VIP</h4>
                                 <p className="text-slate-300 mb-10 font-medium text-xl relative z-10 max-w-2xl mx-auto leading-relaxed">מעוניין בראש שקט לגמרי? תן לצוות שלנו לדאוג לאחסון האתר על שרתים מהירים, עדכוני אבטחה שוטפים, וגיבויים יומיים.</p>
-                                <Button variant="primary" className="mx-auto px-12 py-5 text-xl font-black relative z-10 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 shadow-xl shadow-brand-500/50">שדרג עכשיו לאחסון פרימיום (150₪ / חודש)</Button>
+                                <Button 
+                                    onClick={() => {
+                                        const currentUpsell = Number(project.upsellAmount) || 0;
+                                        const price = Number(systemSettings.prices?.hostingVIP) || 150;
+                                        updateProject(project.id, { upsellAmount: currentUpsell + price });
+                                        showAlert("מדהים! שדרגת לאחסון VIP. צוות הסוכנות שלנו יצור איתך קשר להסדרת התשלום.");
+                                    }}
+                                    variant="primary" 
+                                    className="mx-auto px-12 py-5 text-xl font-black relative z-10 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 shadow-xl shadow-brand-500/50"
+                                >
+                                    שדרג עכשיו ל-VIP (₪{systemSettings.prices?.hostingVIP || 150} / חודש)
+                                </Button>
                             </div>
                         </Card>
                     )}
