@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -332,7 +333,7 @@
             };
 
             const purchaseUpsell = (upsell) => {
-                if (!window.confirm(`האם לאשר הוספת "${upsell.title}" בעלות של ₪${upsell.price}? الفריט יתווסף לחשבונית הגמר.`)) return;
+                if (!window.confirm(`האם לאשר הוספת "${upsell.title}" בעלות של ₪${upsell.price}? הפריט יתווסף לחשבונית הגמר.`)) return;
                 const currentAddons = project.addons || [];
                 if (currentAddons.find(a => a.id === upsell.id)) return;
                 updateProject(project.id, {
@@ -414,7 +415,7 @@
                                     <label className="flex items-start gap-3 cursor-pointer">
                                         <input type="checkbox" required onChange={e => setOnboardingData({...onboardingData, termsAccepted: e.target.checked})} className="mt-1 w-5 h-5 rounded text-brand-600 focus:ring-brand-500" />
                                         <span className="text-sm text-gray-700 leading-relaxed">
-                                            אני מאשר/ת שהפרטים שמסרתי נכונים. כמו כן, אני מאשר/ת כי קראתי ואני מסכים לכל תנאי העסקה המפורטים ב<a href="#" onClick={(e)=>{e.preventDefault(); alert('כאן יפתח חלון עם ההסכם המלא');}} className="font-bold text-brand-600 underline hover:text-brand-800">הסכם פיתוח והקמת אתר אינטרנט</a> של אוריזיס טכנולוגיות בע"מ. סימון תיבה זו מהווה חתימה אלקטרונית המחייבת אותי לכל סעיפי ההסכם.
+                                            אני מאשר/ת שהפרטים שמסרתי נכונים. כמו כן, אני מאשר/ת כי קראתי ואני מסכים לכל תנאי העסקה המפורטים בהסכם פיתוח והקמת אתר אינטרנט של אוריזיס טכנולוגיות בע"מ ח.פ 516977758. סימון תיבה זו מהווה חתימה אלקטרונית המחייבת אותי לכל סעיפי ההסכם.
                                         </span>
                                     </label>
                                 </div>
@@ -600,6 +601,11 @@
             const { projects, currentUser, updateProject } = useContext(AppContext);
             const [now, setNow] = useState(Date.now());
             const [linksInput, setLinksInput] = useState({});
+            const [salesBriefModal, setSalesBriefModal] = useState(null);
+            const [briefData, setBriefData] = useState({ 
+                businessName: '', phone: '', businessType: '', colors: '', 
+                audience: '', services: '', uniqueSellingPoint: '', callToAction: ''
+            });
 
             useEffect(() => {
                 const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -612,7 +618,7 @@
                 let total = 0;
                 let projectsDone = 0;
                 const basePay = currentUser.basePay || 1000;
-                const upsellCutPct = (currentUser.upsellPercentage || 30) / 100;
+                const upsellCutPct = (currentUser.upsellPercentage || 0) / 100;
 
                 myProjects.filter(p => ['completed', 'qa_review'].includes(p.status)).forEach(p => {
                     total += basePay; 
@@ -658,7 +664,7 @@
                             <h2 className="text-brand-300 font-bold mb-2 text-sm tracking-widest uppercase">הארנק הדיגיטלי שלי</h2>
                             <div className="text-6xl font-black text-white font-sans">₪{stats.total.toLocaleString()}</div>
                             <div className="text-sm text-brand-200 mt-3 font-medium bg-brand-800/50 inline-block px-4 py-1.5 rounded-full border border-brand-700">
-                                תעריף בסיס: ₪{currentUser.basePay||1000} | עמלת אפסייל: {currentUser.upsellPercentage||30}%
+                                תעריף בסיס: ₪{currentUser.basePay||1000} | עמלת אפסייל: {currentUser.upsellPercentage||0}%
                             </div>
                         </div>
                         <div className="flex gap-4 relative z-10">
@@ -672,10 +678,12 @@
                     <h3 className="text-2xl font-black text-gray-900 mb-4 px-2">תור המשימות והבריפים לביצוע</h3>
                     
                     <div className="grid grid-cols-1 gap-6">
-                        {myProjects.filter(p => p.status === 'in_progress' || p.status === 'brief_submitted').map(project => {
+                        {myProjects.filter(p => !['completed', 'qa_review'].includes(p.status)).map(project => {
                             let currentTotal = project.timeSpent || 0;
                             if (project.isTimerRunning && project.timerStartedAt) currentTotal += Math.floor((now - project.timerStartedAt) / 1000);
                             const isOvertime = currentTotal > 12600; 
+                            
+                            const isEarlyStage = ['onboarding', 'paid_waiting_for_brief'].includes(project.status);
 
                             return (
                                 <Card key={project.id} className={`border-r-4 transition-shadow duration-300 ${project.isTimerRunning ? 'border-r-brand-500 shadow-xl shadow-brand-100' : 'border-r-gray-300'}`}>
@@ -683,7 +691,7 @@
                                         <div className="w-full">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h3 className="text-2xl font-black text-gray-900">
-                                                    {project.briefInfo?.businessName || project.customerName}
+                                                    {project.clientOfficialDetails?.officialName || project.briefInfo?.businessName || project.customerName}
                                                 </h3>
                                                 <Badge color={project.status === 'in_progress' ? 'blue' : 'yellow'}>{project.status.replace(/_/g, ' ')}</Badge>
                                             </div>
@@ -735,36 +743,107 @@
                                         </div>
                                     </div>
                                     
-                                    <div className="mt-8 border-t border-gray-100 pt-6">
-                                        <h4 className="font-black text-gray-900 mb-4 flex items-center gap-2">🔗 הגשת תוצרים ל-QA</h4>
-                                        <div className="space-y-4">
-                                            <input type="url" placeholder="לינק לאתר חי (למשל Vercel)" 
-                                                onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], liveUrl: e.target.value}})}
-                                                className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500 text-left text-sm font-sans outline-none transition-all" dir="ltr" />
-                                            <input type="url" placeholder="לינק לקוד מקור (GitHub)" 
-                                                onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], repoUrl: e.target.value}})}
-                                                className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500 text-left text-sm font-sans outline-none transition-all" dir="ltr" />
-                                            <textarea placeholder="הדבק כאן את כל קוד המקור (HTML/JS/CSS) לטובת גיבוי ענן למערכת..." 
-                                                onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], codeBackup: e.target.value}})}
-                                                className="w-full p-4 border border-gray-200 rounded-xl text-left text-xs font-sans h-32 bg-[#0d1117] text-emerald-400 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-inner" dir="ltr"></textarea>
+                                    {isEarlyStage ? (
+                                        <div className="mt-8 border-t border-gray-100 pt-6">
+                                            <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl shadow-sm">
+                                                <h4 className="font-black text-blue-900 mb-2 flex items-center gap-2 text-lg">📞 שלב מכירה ואפיון טלפוני</h4>
+                                                <p className="text-sm text-blue-800 mb-5 font-medium">הלקוח שויך אליך אך טרם מילא את האפיון בעצמו. בתור מנהל התיק/איש המכירות שלו, צור עמו קשר ומלא את שאלון האפיון יחד איתו כדי שתוכל להתחיל לעבוד.</p>
+                                                <Button onClick={() => setSalesBriefModal(project)} variant="primary" className="w-full py-4 text-base shadow-blue-500/30">📝 פתח טופס אפיון (נציג מכירות)</Button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <>
+                                            <div className="mt-8 border-t border-gray-100 pt-6">
+                                                <h4 className="font-black text-gray-900 mb-4 flex items-center gap-2">🔗 הגשת תוצרים ל-QA</h4>
+                                                <div className="space-y-4">
+                                                    <input type="url" placeholder="לינק לאתר חי (למשל Vercel)" 
+                                                        onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], liveUrl: e.target.value}})}
+                                                        className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500 text-left text-sm font-sans outline-none transition-all" dir="ltr" />
+                                                    <input type="url" placeholder="לינק לקוד מקור (GitHub)" 
+                                                        onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], repoUrl: e.target.value}})}
+                                                        className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500 text-left text-sm font-sans outline-none transition-all" dir="ltr" />
+                                                    <textarea placeholder="הדבק כאן את כל קוד המקור (HTML/JS/CSS) לטובת גיבוי ענן למערכת..." 
+                                                        onChange={(e) => setLinksInput({...linksInput, [project.id]: {...linksInput[project.id], codeBackup: e.target.value}})}
+                                                        className="w-full p-4 border border-gray-200 rounded-xl text-left text-xs font-sans h-32 bg-[#0d1117] text-emerald-400 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-inner" dir="ltr"></textarea>
+                                                </div>
+                                            </div>
 
-                                    <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                                        <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? 'outline' : 'primary'} className="flex-1 py-4 text-base">
-                                            {project.isTimerRunning ? '⏸ השהה טיימר עבודה' : '▶️ התחל לפתח'}
-                                        </Button>
-                                        <Button onClick={() => submitForQA(project)} variant="success" className="flex-1 py-4 text-base shadow-emerald-500/30" disabled={project.isTimerRunning}>
-                                            🚀 הגש למנהל לבקרת איכות
-                                        </Button>
-                                    </div>
+                                            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                                                <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? 'outline' : 'primary'} className="flex-1 py-4 text-base">
+                                                    {project.isTimerRunning ? '⏸ השהה טיימר עבודה' : '▶️ התחל לפתח'}
+                                                </Button>
+                                                <Button onClick={() => submitForQA(project)} variant="success" className="flex-1 py-4 text-base shadow-emerald-500/30" disabled={project.isTimerRunning}>
+                                                    🚀 הגש למנהל לבקרת איכות
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
                                 </Card>
                             )
                         })}
-                        {myProjects.filter(p => p.status === 'in_progress' || p.status === 'brief_submitted').length === 0 && (
+                        {myProjects.filter(p => !['completed', 'qa_review'].includes(p.status)).length === 0 && (
                             <div className="text-center p-10 text-gray-400 font-bold bg-white rounded-2xl border border-gray-200 shadow-sm">אין משימות פעילות בתור כרגע. תוכל לנוח! ☕</div>
                         )}
                     </div>
+
+                    {salesBriefModal && (
+                        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 fade-in overflow-y-auto">
+                            <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-gray-200 my-8">
+                                <div className="flex justify-between items-center p-6 bg-blue-600 border-b border-blue-700">
+                                    <h3 className="font-black text-xl text-white">📝 אפיון טלפוני ללקוח: {salesBriefModal.clientOfficialDetails?.officialName || salesBriefModal.customerName}</h3>
+                                    <button onClick={() => setSalesBriefModal(null)} className="text-blue-200 hover:text-white font-bold text-xl transition-colors">✕</button>
+                                </div>
+                                <div className="p-6 md:p-8 max-h-[75vh] overflow-y-auto bg-gray-50">
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        updateProject(salesBriefModal.id, { status: 'in_progress', briefInfo: briefData });
+                                        setSalesBriefModal(null);
+                                    }} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">שם העסק (לאתר)</label>
+                                                <input type="text" required onChange={e=>setBriefData({...briefData, businessName: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">טלפון לקוחות</label>
+                                                <input type="tel" required onChange={e=>setBriefData({...briefData, phone: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" dir="ltr"/>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">תחום עיסוק מדויק</label>
+                                                <input type="text" required onChange={e=>setBriefData({...briefData, businessType: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">הנעה לפעולה באתר</label>
+                                                <select required onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                    <option value="" disabled selected>בחר אפשרות...</option>
+                                                    <option value="להתקשר מיד (כפתור חיוג)">התקשרות (חיוג ישיר)</option>
+                                                    <option value="לשלוח וואטסאפ">שליחת וואטסאפ</option>
+                                                    <option value="להשאיר פרטים (טופס לידים)">טופס השארת פרטים</option>
+                                                </select>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">צבעי מותג</label>
+                                                <input type="text" required onChange={e=>setBriefData({...briefData, colors: e.target.value})} placeholder="למשל: כחול וזהב" className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">קהל יעד (מי הלקוחות שלו)</label>
+                                                <textarea required rows="2" onChange={e=>setBriefData({...briefData, audience: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">שירותים מרכזיים להבליט (3 עיקריים)</label>
+                                                <textarea required rows="2" onChange={e=>setBriefData({...briefData, services: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">מה מייחד אותו? (נקודות חוזק)</label>
+                                                <textarea required rows="2" onChange={e=>setBriefData({...briefData, uniqueSellingPoint: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                                            </div>
+                                        </div>
+                                        <Button type="submit" variant="primary" className="w-full py-4 text-lg mt-4 shadow-xl shadow-blue-500/20 bg-blue-600 hover:bg-blue-700">שמור אפיון - העבר לסטטוס פיתוח ➔</Button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -786,7 +865,7 @@
                 if(!p.freelancerId) return sum;
                 const fl = freelancers.find(f => f.uid === p.freelancerId) || {};
                 const basePay = fl.basePay || 1000;
-                const upsellCutPct = (fl.upsellPercentage || 30) / 100;
+                const upsellCutPct = (fl.upsellPercentage || 0) / 100;
                 let cost = basePay;
                 if(p.addons) p.addons.forEach(a => cost += (a.price * upsellCutPct));
                 if(p.timeSpent > 0 && p.timeSpent < 12600) cost += 50; 
@@ -798,7 +877,7 @@
                 if(freelancers.length === 0) { alert("אין פרילנסרים במערכת"); return; }
                 const workload = freelancers.map(fl => ({ ...fl, activeCount: projects.filter(p => p.freelancerId === fl.uid && ['in_progress', 'brief_submitted'].includes(p.status)).length }));
                 workload.sort((a, b) => a.activeCount - b.activeCount);
-                updateProject(projectId, { freelancerId: workload[0].uid, freelancerName: workload[0].name, status: 'in_progress' });
+                updateProject(projectId, { freelancerId: workload[0].uid, freelancerName: workload[0].name });
             };
 
             const handleCreateUser = async (e) => {
@@ -807,7 +886,7 @@
                 try {
                     const cred = await secondaryApp.auth().createUserWithEmailAndPassword(newUser.email, newUser.password);
                     const userData = { role: newUser.role, name: newUser.name, email: newUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-                    if (newUser.role === 'freelancer') { userData.basePay = 1000; userData.upsellPercentage = 30; }
+                    if (newUser.role === 'freelancer') { userData.basePay = 1000; userData.upsellPercentage = 0; }
                     await db.collection('users').doc(cred.user.uid).set(userData);
                     
                     if (newUser.role === 'client') {
@@ -921,7 +1000,7 @@
                                                             <input type="number" id={`base-${fl.uid}`} defaultValue={fl.basePay || 1000} className="w-24 p-2.5 border border-gray-300 rounded-xl bg-white text-center font-sans font-bold focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-sm" />
                                                         </td>
                                                         <td className="px-6 py-5">
-                                                            <input type="number" id={`pct-${fl.uid}`} defaultValue={fl.upsellPercentage || 30} className="w-20 p-2.5 border border-gray-300 rounded-xl bg-white text-center font-sans font-bold focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-sm" />
+                                                            <input type="number" id={`pct-${fl.uid}`} defaultValue={fl.upsellPercentage || 0} className="w-20 p-2.5 border border-gray-300 rounded-xl bg-white text-center font-sans font-bold focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-sm" />
                                                         </td>
                                                         <td className="px-6 py-5">
                                                             <Button onClick={() => updateUser(fl.uid, { basePay: Number(document.getElementById(`base-${fl.uid}`).value), upsellPercentage: Number(document.getElementById(`pct-${fl.uid}`).value) })} variant="secondary" className="py-2.5 text-xs shadow-sm">שמור</Button>
@@ -1009,18 +1088,13 @@
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
                                                     <div className="flex flex-col gap-3">
-                                                        {p.status === 'brief_submitted' ? (
+                                                        {p.status !== 'qa_review' && (
                                                             <div className="flex flex-col gap-2">
-                                                                <select className="border border-gray-300 rounded-xl p-2.5 text-xs font-bold bg-white focus:ring-2 focus:ring-brand-500 outline-none" onChange={(e) => updateProject(p.id, { freelancerId: e.target.value, status: 'in_progress'})} defaultValue="">
-                                                                    <option value="" disabled>בחר פרילנסר...</option>
+                                                                <select className="border border-gray-300 rounded-xl p-2.5 text-xs font-bold bg-white focus:ring-2 focus:ring-brand-500 outline-none" onChange={(e) => updateProject(p.id, { freelancerId: e.target.value })} value={p.freelancerId || ""}>
+                                                                    <option value="" disabled>שייך אל: ממתין להקצאה</option>
                                                                     {freelancers.map(fl => <option key={fl.uid} value={fl.uid}>{fl.name}</option>)}
                                                                 </select>
-                                                                <Button onClick={() => autoAssign(p.id)} className="py-2 text-[11px] bg-indigo-600 hover:bg-indigo-700">🤖 שיוך אוטומטי</Button>
                                                             </div>
-                                                        ) : (
-                                                            <span className="font-bold text-gray-800 text-xs bg-gray-100 border border-gray-200 px-3 py-2 rounded-xl inline-block text-center">
-                                                                שויך אל: {p.freelancerId ? (freelancers.find(f=>f.uid===p.freelancerId)?.name || 'צוות') : 'ממתין להקצאה'}
-                                                            </span>
                                                         )}
                                                         {isManager && (
                                                             <button onClick={() => deleteProject(p.id)} className="text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold text-center mt-2 px-3 py-2 border border-red-200 hover:border-red-500 rounded-xl transition-all">🗑️ מחק פרויקט</button>
