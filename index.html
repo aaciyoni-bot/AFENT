@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -118,7 +119,7 @@
             return formatted;
         };
 
-        const defaultAgreementText = `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ ח.פ 516977758 הפועלת באמצעות מותג ORIZISWEB שתיקרא להלן החברה לבין הלקוח המזמין את השירותים דרך פורטל הלקוחות הדיגיטלי שייקרא להלן הלקוח.\n\n1. מהות ההתקשרות ותכולת העבודה\nהחברה תספק ללקוח שירותי פיתוח ועיצוב בהתאם למידע שסופק.\n\n2. לוחות זמנים ומסירת הפרויקט\nזמן האספקה המשוער הוא עד 14 ימי עסקים אלא אם נרכש שירות אקספרס (מוחרג שבתות וחגים).\n\n3. סבבי תיקונים\nהלקוח זכאי ל-5 סבבי תיקונים במסגרת האפיון המקורי.\n\n4. תשלומים ותוספות\nהתשלום בגין הפיתוח מתבצע מראש. שדרוגים מתוך החנות יחויבו בנפרד.\n\n5. אחריות\nניתנת תקופת אחריות של 30 ימים לתיקון באגים לאחר המסירה.`;
+        const defaultAgreementText = `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ ח.פ 516977758 הפועלת באמצעות מותג ORIZISWEB שתיקרא להלן החברה לבין הלקוח המזמין את השירותים דרך פורטל הלקוחות הדיגיטלי שייקרא להלן הלקוח.\n\n1. מהות ההתקשרות ותכולת העבודה\nהחברה תספק ללקוח שירותי פיתוח ועיצוב בהתאם למידע שסופק.\n\n2. לוחות זמנים ומסירת הפרויקט\nזמן האספקה המשוער הוא עד 14 ימי עסקים אלא אם נרכש שירות אקספרס (מוחרג שבתות וחגים).\n\n3. סבבי תיקונים\nהלקוח זכאי ל-5 סבבי תיקונים במסגרת האפיון המקורי. חריגה מעבר לכך תתומחר בנפרד.\n\n4. תשלומים ותוספות\nהתשלום בגין הפיתוח מתבצע מראש. שדרוגים מתוך החנות יחויבו בנפרד.\n\n5. אחריות\nניתנת תקופת אחריות של 30 ימים לתיקון באגים לאחר המסירה.`;
 
         const AppContext = createContext();
 
@@ -129,6 +130,13 @@
             const [freelancers, setFreelancers] = useState([]);
             const [systemSettings, setSystemSettings] = useState({ upsells: [], expenses: { marketing: 0, office: 0, software: 0 }, agreementText: '' });
             const [isLoadingDb, setIsLoadingDb] = useState(true);
+
+            // Dialog state variables to avoid native alerts
+            const [globalAlert, setGlobalAlert] = useState(null);
+            const [globalConfirm, setGlobalConfirm] = useState(null);
+
+            const showAlert = (message) => setGlobalAlert(message);
+            const askConfirm = (message, onConfirm) => setGlobalConfirm({ message, onConfirm });
 
             useEffect(() => {
                 const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
@@ -155,23 +163,15 @@
                                 { id: '2', title: 'הטמעת מפת הגעה', price: 100, icon: '🗺️', isPremium: false, isRecurring: false, desc: 'הטמעת מפת גוגל באתר.', timeMinutes: 10 },
                                 { id: '3', title: 'תוסף נגישות לאתר', price: 150, icon: '♿', isPremium: false, isRecurring: false, desc: 'הנגשת האתר כחוק לפי התקן.', timeMinutes: 5 },
                                 { id: '4', title: 'חיבור גוגל אנליטיקס', price: 150, icon: '📊', isPremium: false, isRecurring: false, desc: 'סטטיסטיקות ונתוני גלישה.', timeMinutes: 15 },
-                                { id: '5', title: 'חיבור פיקסל שיווקי', price: 150, icon: '🎯', isPremium: false, isRecurring: false, desc: 'קריטי לקמפיינים בפייסבוק ואינסטגרם.', timeMinutes: 10 },
-                                { id: '6', title: 'תקנון ותנאי שימוש', price: 150, icon: '⚖️', isPremium: false, isRecurring: false, desc: 'הטמעת עמוד משפטי בסיסי (תבנית).', timeMinutes: 15 },
-                                { id: '7', title: 'חיבור דומיין אישי', price: 0, icon: '🌐', isPremium: false, isRecurring: false, desc: 'חיבור לכתובת שרכשת.', timeMinutes: 15 },
-                                { id: '8', title: '5 תמונות אווירה', price: 0, icon: '📸', isPremium: false, isRecurring: false, desc: 'בחירת תמונות ממאגרים מקצועיים.', timeMinutes: 10 },
-                                { id: '9', title: 'עיצוב לוגו AI בסיסי', price: 0, icon: '🎨', isPremium: false, isRecurring: false, desc: 'יצירת לוגו מהיר בטכנולוגיית בינה מלאכותית.', timeMinutes: 15 },
-                                { id: '10', title: 'פופ-אפ כרטיס גירוד', price: 1000, icon: '🎟️', isPremium: true, isRecurring: false, desc: 'משחק אינטראקטיבי להשארת לידים וחלוקת קופונים ללקוחות.', timeMinutes: 45 },
-                                { id: '11', title: 'גלגל המזל (רולטה)', price: 1200, icon: '🎡', isPremium: true, isRecurring: false, desc: 'פופ-אפ שקופץ לגולש ומעודד אותו להשאיר פרטים כדי לזכות בהנחה.', timeMinutes: 60 },
-                                { id: '12', title: 'מערכת CRM בסיסית', price: 3000, icon: '💼', isPremium: true, isRecurring: false, desc: 'פאנל פנימי לניהול הלידים והלקוחות של העסק שלך.', timeMinutes: 180 },
-                                { id: '13', title: 'מערכת קביעת תורים', price: 1500, icon: '📅', isPremium: true, isRecurring: false, desc: 'סנכרון יומן גוגל וקביעת פגישות אוטומטית.', timeMinutes: 90 },
-                                { id: '14', title: 'צ\'אטבוט AI חכם', price: 2000, icon: '🤖', isPremium: true, isRecurring: false, desc: 'נציג וירטואלי שעונה לשאלות גולשים 24/7.', timeMinutes: 120 },
-                                { id: '15', title: 'מסירת אקספרס', price: 500, icon: '⚡', isPremium: true, isRecurring: false, desc: 'הקפצה לראש התור (לא כולל שבתות/חגים).', timeMinutes: 0 },
+                                { id: '5', title: 'תקנון ותנאי שימוש', price: 150, icon: '⚖️', isPremium: false, isRecurring: false, desc: 'הטמעת עמוד משפטי בסיסי.', timeMinutes: 15 },
+                                { id: '6', title: 'חיבור דומיין אישי', price: 0, icon: '🌐', isPremium: false, isRecurring: false, desc: 'חיבור לכתובת שרכשת.', timeMinutes: 15 },
+                                { id: '10', title: 'פופ-אפ כרטיס גירוד', price: 1000, icon: '🎟️', isPremium: true, isRecurring: false, desc: 'משחק אינטראקטיבי להשארת לידים.', timeMinutes: 45 },
+                                { id: '11', title: 'גלגל המזל (רולטה)', price: 1200, icon: '🎡', isPremium: true, isRecurring: false, desc: 'פופ-אפ שקופץ לגולש ומעודד אותו להשאיר פרטים.', timeMinutes: 60 },
                                 { id: '16', title: 'תחזוקה ואחסון חודשי', price: 150, icon: '🛡️', isPremium: true, isRecurring: true, desc: 'אחסון מהיר, אבטחה וגיבויים יומיים.', timeMinutes: 0 }
                             ];
                             db.collection('settings').doc('general').update({ upsells: initialUpsells });
                             data.upsells = initialUpsells;
                         }
-
                         setSystemSettings(data);
                     } else {
                         db.collection('settings').doc('general').set({
@@ -212,8 +212,34 @@
             const logout = () => auth.signOut();
 
             return (
-                <AppContext.Provider value={{ currentUser, logout, projects, freelancers, usersList, systemSettings, updateProject, deleteProject, updateSettings, updateUser, deleteUser, isLoadingDb }}>
+                <AppContext.Provider value={{ currentUser, logout, projects, freelancers, usersList, systemSettings, updateProject, deleteProject, updateSettings, updateUser, deleteUser, isLoadingDb, showAlert, askConfirm }}>
                     {children}
+                    
+                    {/* Global Alert Modal */}
+                    {globalAlert && (
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+                                <div className="text-4xl mb-4">🔔</div>
+                                <h3 className="text-xl font-black text-gray-900 mb-2">הודעת מערכת</h3>
+                                <p className="text-gray-600 mb-6">{globalAlert}</p>
+                                <Button className="w-full" onClick={() => setGlobalAlert(null)}>הבנתי, תודה</Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Global Confirm Modal */}
+                    {globalConfirm && (
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-t-4 border-t-brand-500">
+                                <h3 className="text-xl font-black text-gray-900 mb-2">אישור פעולה</h3>
+                                <p className="text-gray-600 mb-6 font-medium">{globalConfirm.message}</p>
+                                <div className="flex gap-3 justify-center">
+                                    <Button variant="outline" onClick={() => setGlobalConfirm(null)}>ביטול</Button>
+                                    <Button variant="primary" onClick={() => { globalConfirm.onConfirm(); setGlobalConfirm(null); }}>אישור</Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </AppContext.Provider>
             );
         };
@@ -227,7 +253,11 @@
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setError(''); setLoading(true);
-                try { await auth.signInWithEmailAndPassword(email, password); } 
+                try { 
+                    // Persistent login (Remember me)
+                    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                    await auth.signInWithEmailAndPassword(email, password); 
+                } 
                 catch (err) { setError("פרטי ההתחברות שגויים. פנה למנהל."); } 
                 finally { setLoading(false); }
             };
@@ -241,8 +271,8 @@
                         </div>
                         {error && <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-xl font-bold text-center">{error}</div>}
                         <form onSubmit={handleAuth} className="space-y-5">
-                            <div><label className="block text-sm font-bold mb-1">אימייל</label><input type="email" onChange={e => setEmail(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50" dir="ltr" required /></div>
-                            <div><label className="block text-sm font-bold mb-1">סיסמה</label><input type="password" onChange={e => setPassword(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50" dir="ltr" required /></div>
+                            <div><label className="block text-sm font-bold mb-1">אימייל</label><input type="email" onChange={e => setEmail(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500" dir="ltr" required /></div>
+                            <div><label className="block text-sm font-bold mb-1">סיסמה</label><input type="password" onChange={e => setPassword(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500" dir="ltr" required /></div>
                             <Button type="submit" disabled={loading} className="w-full py-4 text-base mt-4 shadow-xl shadow-brand-500/20">{loading ? 'מאמת נתונים...' : 'כניסה למערכת'}</Button>
                         </form>
                     </Card>
@@ -291,7 +321,7 @@
         };
 
         const ClientPortal = () => {
-            const { currentUser, projects, systemSettings, updateProject } = useContext(AppContext);
+            const { currentUser, projects, systemSettings, updateProject, showAlert } = useContext(AppContext);
             
             const [onboardingData, setOnboardingData] = useState({ officialName: '', idNumber: '', address: '', termsAccepted: false, signatureData: null });
             const [showContractModal, setShowContractModal] = useState(false);
@@ -300,27 +330,28 @@
             
             const project = projects.find(p => p.clientId === currentUser.uid);
 
-            if (!project) return <div className="text-center p-12 bg-white rounded-3xl mt-10"><h2 className="text-2xl font-black mb-2">אין פרויקט פעיל</h2></div>;
+            if (!project) return <div className="text-center p-12 bg-white rounded-3xl mt-10"><h2 className="text-2xl font-black mb-2">אין פרויקט פעיל במערכת</h2></div>;
 
             const handleOnboardingSubmit = (e) => {
                 e.preventDefault();
-                if(!onboardingData.termsAccepted) return alert("חובה לאשר את החוזה.");
-                if(!onboardingData.signatureData) return alert("חובה לחתום בלוח הציור.");
+                if(!onboardingData.termsAccepted) return showAlert("חובה לאשר את החוזה תחילה.");
+                if(!onboardingData.signatureData) return showAlert("חובה לחתום בלוח הציור בטרם ההתקדמות.");
                 updateProject(project.id, { status: 'paid_waiting_for_brief', clientOfficialDetails: { ...onboardingData, signedAt: new Date().toLocaleString('he-IL') } });
             };
 
             const handleBriefSubmit = (e) => {
                 e.preventDefault();
                 updateProject(project.id, { status: 'brief_submitted', briefInfo: briefData });
+                showAlert("האפיון נשלח בהצלחה! צוות הפיתוח יכול להתחיל לעבוד.");
             };
 
             const purchaseUpsell = (upsell) => {
                 const currentAddons = project.addons || [];
                 if (currentAddons.find(a => a.id === upsell.id)) return;
                 updateProject(project.id, { addons: [...currentAddons, upsell], paymentAmount: (project.paymentAmount || 0) + upsell.price });
+                showAlert(`"${upsell.title}" התווסף בהצלחה לסל שלך.`);
             };
 
-            // Post-Launch Dashboard View
             if (project.status === 'completed') {
                 return (
                     <div className="space-y-8 fade-in">
@@ -342,7 +373,7 @@
                             </Card>
                             <Card className="flex flex-col justify-center items-center text-center">
                                 <h3 className="font-bold mb-2">צריך עזרה או שינוי באתר?</h3>
-                                <Button className="w-full" variant="outline">פתח קריאת שירות</Button>
+                                <Button className="w-full" variant="outline" onClick={() => showAlert("קריאת השירות נשלחה למנהל המערכת.")}>פתח קריאת שירות</Button>
                             </Card>
                         </div>
 
@@ -357,7 +388,7 @@
                                         </div>
                                         <div className="text-left">
                                             <div className="font-black text-xl text-purple-700">₪{u.price}<span className="text-sm font-normal">/חודש</span></div>
-                                            <button onClick={()=>setCheckoutModal(true)} className="mt-2 text-xs bg-purple-600 text-white px-3 py-1 rounded font-bold">הפעל מנוי</button>
+                                            <button onClick={()=>setCheckoutModal(true)} className="mt-2 text-xs bg-purple-600 text-white px-3 py-1 rounded font-bold hover:bg-purple-700">הפעל מנוי</button>
                                         </div>
                                     </div>
                                 ))}
@@ -367,21 +398,20 @@
                         <Card className="bg-amber-50 border-amber-200 text-center">
                             <h3 className="text-xl font-black text-amber-900 mb-2">🎁 הבא חבר, קבלו חודש חינם!</h3>
                             <p className="text-amber-800 mb-4">שלח את הלינק הזה לקולגות. אם הם סוגרים אתר - שניכם מקבלים חודש תחזוקה בחינם.</p>
-                            <code className="bg-white px-4 py-2 rounded-lg font-bold text-amber-700 border border-amber-200 select-all">https://orizisweb.com/ref?u={currentUser.uid}</code>
+                            <code className="bg-white px-4 py-2 rounded-lg font-bold text-amber-700 border border-amber-200 select-all block cursor-pointer" onClick={() => {navigator.clipboard.writeText(`https://orizisweb.com/ref?u=${currentUser.uid}`); showAlert("הקישור הועתק!");}}>https://orizisweb.com/ref?u={currentUser.uid}</code>
                         </Card>
 
-                        {/* Mock Checkout Modal */}
                         {checkoutModal && (
-                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 fade-in">
-                                <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                                <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
                                     <h3 className="text-2xl font-black mb-6">בחירת אמצעי תשלום</h3>
                                     <div className="space-y-3">
-                                        <Button className="w-full py-4 bg-black hover:bg-gray-800 text-white"> Apple Pay</Button>
-                                        <Button className="w-full py-4" variant="primary">💳 תשלום בכרטיס אשראי</Button>
-                                        <Button className="w-full py-4 bg-[#00a7e1] text-white hover:bg-[#008fbf]">📱 תשלום ב-Bit</Button>
-                                        <Button onClick={() => {alert('העבר לחשבון לאומי 10 סניף 900 חשבון 123456'); setCheckoutModal(false);}} className="w-full py-4" variant="outline">🏦 העברה בנקאית (קבלת פרטים)</Button>
+                                        <Button onClick={() => {showAlert("מועבר לתשלום..."); setCheckoutModal(false);}} className="w-full py-4 bg-black hover:bg-gray-800 text-white"> Apple Pay / Google Pay</Button>
+                                        <Button onClick={() => {showAlert("מועבר לסליקה..."); setCheckoutModal(false);}} className="w-full py-4" variant="primary">💳 תשלום בכרטיס אשראי</Button>
+                                        <Button onClick={() => {showAlert("מועבר לתשלום באפליקציה..."); setCheckoutModal(false);}} className="w-full py-4 bg-[#00a7e1] text-white hover:bg-[#008fbf]">📱 תשלום ב-Bit</Button>
+                                        <Button onClick={() => {showAlert('העבר לחשבון לאומי 10 סניף 900 חשבון 123456'); setCheckoutModal(false);}} className="w-full py-4" variant="outline">🏦 העברה בנקאית (קבלת פרטים)</Button>
                                     </div>
-                                    <button onClick={()=>setCheckoutModal(false)} className="mt-6 text-sm text-gray-500 underline font-bold">ביטול וסגירה</button>
+                                    <button onClick={()=>setCheckoutModal(false)} className="mt-6 text-sm text-gray-500 hover:text-gray-900 underline font-bold">ביטול וסגירה</button>
                                 </div>
                             </div>
                         )}
@@ -389,7 +419,6 @@
                 )
             }
 
-            // Normal Pre-Launch Flow
             return (
                 <div className="max-w-4xl mx-auto space-y-8 fade-in">
                     <div className="bg-brand-900 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
@@ -399,11 +428,11 @@
                             
                             <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex justify-between items-center text-sm">
                                 <div className={`font-bold flex items-center gap-2 ${project.status === 'onboarding' ? 'text-white' : 'text-emerald-400'}`}><span className="w-7 h-7 flex items-center justify-center rounded-full text-xs bg-white/20">1</span> חוזה</div>
-                                <div className="h-px bg-white/20 flex-1 mx-4"></div>
+                                <div className="h-px bg-white/20 flex-1 mx-4 hidden sm:block"></div>
                                 <div className={`font-bold flex items-center gap-2 ${project.status === 'paid_waiting_for_brief' ? 'text-white' : project.status === 'onboarding' ? 'text-white/30' : 'text-emerald-400'}`}><span className="w-7 h-7 flex items-center justify-center rounded-full text-xs bg-white/20">2</span> אפיון</div>
-                                <div className="h-px bg-white/20 flex-1 mx-4"></div>
+                                <div className="h-px bg-white/20 flex-1 mx-4 hidden sm:block"></div>
                                 <div className={`font-bold flex items-center gap-2 ${['brief_submitted', 'in_progress'].includes(project.status) ? 'text-white' : ['qa_review'].includes(project.status) ? 'text-emerald-400' : 'text-white/30'}`}><span className="w-7 h-7 flex items-center justify-center rounded-full text-xs bg-white/20">3</span> פיתוח</div>
-                                <div className="h-px bg-white/20 flex-1 mx-4"></div>
+                                <div className="h-px bg-white/20 flex-1 mx-4 hidden sm:block"></div>
                                 <div className={`font-bold flex items-center gap-2 ${project.status === 'qa_review' ? 'text-white' : 'text-white/30'}`}><span className="w-7 h-7 flex items-center justify-center rounded-full text-xs bg-white/20">4</span> מסירה</div>
                             </div>
                         </div>
@@ -414,18 +443,20 @@
                             <h3 className="text-2xl font-black mb-2">קליטת פרטים וחתימה</h3>
                             <form onSubmit={handleOnboardingSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold mb-2">שם מלא לחשבונית</label><input type="text" required onChange={e=>setOnboardingData({...onboardingData, officialName: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50" /></div>
-                                    <div><label className="block text-sm font-bold mb-2">ח.פ / ת.ז</label><input type="text" required onChange={e=>setOnboardingData({...onboardingData, idNumber: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50" dir="ltr" /></div>
+                                    <div><label className="block text-sm font-bold mb-2">שם מלא לחשבונית</label><input type="text" required onChange={e=>setOnboardingData({...onboardingData, officialName: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" /></div>
+                                    <div><label className="block text-sm font-bold mb-2">ח.פ / ת.ז</label><input type="text" required onChange={e=>setOnboardingData({...onboardingData, idNumber: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" dir="ltr" /></div>
                                 </div>
                                 <div className="mt-8 bg-brand-50 p-6 text-center rounded-2xl border border-brand-100">
-                                    <Button type="button" onClick={() => setShowContractModal(true)} variant="outline" className="mx-auto">📄 צפה בחוזה ההתקשרות המלא</Button>
+                                    <Button type="button" onClick={() => setShowContractModal(true)} variant="outline" className="mx-auto w-full md:w-auto shadow-sm">📄 צפה בחוזה ההתקשרות המלא</Button>
                                 </div>
+                                
                                 <SignaturePad onSave={(data) => setOnboardingData({...onboardingData, signatureData: data})} />
-                                <label className="flex items-start gap-3 p-4 bg-gray-50 border rounded-xl cursor-pointer">
-                                    <input type="checkbox" required onChange={e => setOnboardingData({...onboardingData, termsAccepted: e.target.checked})} className="mt-1 w-5 h-5 text-brand-600" />
+                                
+                                <label className="flex items-start gap-3 p-4 bg-gray-50 border rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                                    <input type="checkbox" required onChange={e => setOnboardingData({...onboardingData, termsAccepted: e.target.checked})} className="mt-1 w-5 h-5 text-brand-600 rounded border-gray-300 focus:ring-brand-500" />
                                     <span className="text-sm font-medium">קראתי את החוזה המלא ואני מסכים לכל תנאיו. חתימתי מהווה אישור.</span>
                                 </label>
-                                <Button type="submit" className="w-full py-5 text-lg">שמור והמשך לאפיון</Button>
+                                <Button type="submit" className="w-full py-5 text-lg shadow-lg shadow-brand-500/30">שמור והמשך לאפיון</Button>
                             </form>
                         </Card>
                     )}
@@ -433,45 +464,46 @@
                     {project.status === 'paid_waiting_for_brief' && (
                         <Card className="border-t-4 border-t-purple-500">
                             <h3 className="text-2xl font-black mb-2">אפיון האתר</h3>
+                            <p className="text-gray-500 mb-6 text-sm">ספר לנו על העסק שלך כדי שנתחיל לעצב את האתר המושלם עבורך.</p>
                             <form onSubmit={handleBriefSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold mb-2">שם העסק (יופיע באתר)</label><input type="text" required onChange={e=>setBriefData({...briefData, businessName: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50" /></div>
-                                    <div><label className="block text-sm font-bold mb-2">טלפון באתר</label><input type="tel" required onChange={e=>setBriefData({...briefData, phone: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50" dir="ltr"/></div>
+                                    <div><label className="block text-sm font-bold mb-2">שם העסק (יופיע באתר)</label><input type="text" required onChange={e=>setBriefData({...briefData, businessName: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:ring-purple-500 focus:border-purple-500" /></div>
+                                    <div><label className="block text-sm font-bold mb-2">טלפון באתר</label><input type="tel" required onChange={e=>setBriefData({...briefData, phone: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:ring-purple-500 focus:border-purple-500" dir="ltr"/></div>
                                 </div>
-                                <div><label className="block text-sm font-bold mb-2">מי קהל היעד?</label><textarea required rows="2" onChange={e=>setBriefData({...briefData, audience: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50"></textarea></div>
-                                <div><label className="block text-sm font-bold mb-2">פעולה מרכזית (CTA)</label>
-                                    <select required onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50">
+                                <div><label className="block text-sm font-bold mb-2">מי קהל היעד שלך?</label><textarea required rows="2" placeholder="למשל: נשים אחרי לידה, בעלי עסקים במרכז..." onChange={e=>setBriefData({...briefData, audience: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:ring-purple-500 focus:border-purple-500"></textarea></div>
+                                <div><label className="block text-sm font-bold mb-2">מה תרצה שהגולש יעשה באתר? (CTA)</label>
+                                    <select required onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} className="w-full p-4 border rounded-xl bg-gray-50 focus:ring-purple-500 focus:border-purple-500">
                                         <option value="" disabled selected>בחר אפשרות...</option>
-                                        <option value="טלפון">חיוג טלפוני</option><option value="וואטסאפ">וואטסאפ</option><option value="טופס">טופס לידים</option>
+                                        <option value="טלפון">חיוג טלפוני מהיר</option><option value="וואטסאפ">שליחת הודעת וואטסאפ</option><option value="טופס">השארת פרטים בטופס</option>
                                     </select>
                                 </div>
-                                <Button type="submit" className="w-full py-5 text-lg">שגר אפיון לצוות הפיתוח 🚀</Button>
+                                <Button type="submit" className="w-full py-5 text-lg bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/30">שגר אפיון לצוות הפיתוח 🚀</Button>
                             </form>
                         </Card>
                     )}
 
                     {(project.status === 'brief_submitted' || project.status === 'in_progress') && (
                         <div className="space-y-8">
-                            <Card className="bg-brand-50 border-brand-200 flex items-center gap-6">
-                                <div className="text-5xl">⚙️</div>
-                                <div><h4 className="font-black text-brand-900 text-xl">האתר בתהליך בנייה!</h4><p className="font-medium text-brand-800">תוכל להוסיף שדרוגים מתוך החנות במקביל.</p></div>
+                            <Card className="bg-brand-50 border-brand-200 flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
+                                <div className="text-6xl animate-pulse">⚙️</div>
+                                <div><h4 className="font-black text-brand-900 text-2xl mb-1">האתר שלך בתהליך בנייה!</h4><p className="font-medium text-brand-800">הצוות שלנו עובד כרגע על הקוד והעיצוב. תוכל להוסיף שדרוגים מתוך החנות במקביל.</p></div>
                             </Card>
 
                             <div>
-                                <h3 className="text-2xl font-black mb-6">🛒 חנות השדרוגים (חד פעמי)</h3>
+                                <h3 className="text-2xl font-black mb-6">🛒 חנות השדרוגים לפרויקט</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     {systemSettings.upsells.filter(u=>!u.isRecurring).map(upsell => {
                                         const isBought = (project.addons || []).find(a => a.id === upsell.id);
                                         return (
-                                            <Card key={upsell.id} noPadding className={`p-6 border-2 relative ${isBought?'bg-gray-50 border-emerald-200':upsell.isPremium?'bg-gradient-to-br from-white to-amber-50 border-amber-300':'bg-white'}`}>
-                                                {upsell.isPremium && !isBought && <div className="absolute top-3 left-3 bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md">פרימיום</div>}
+                                            <Card key={upsell.id} noPadding className={`p-6 border-2 relative overflow-hidden transition-all ${isBought?'bg-emerald-50 border-emerald-300 opacity-80':upsell.isPremium?'bg-gradient-to-br from-white to-amber-50 border-amber-300 hover:border-amber-400':'bg-white hover:border-brand-300'}`}>
+                                                {upsell.isPremium && !isBought && <div className="absolute top-3 left-3 bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md shadow-sm">מוצר פרימיום</div>}
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <div className="text-lg font-black"><span className="ml-2 text-2xl">{upsell.icon}</span>{upsell.title}</div>
+                                                    <div className="text-lg font-black flex items-center gap-2"><span className="text-2xl">{upsell.icon}</span>{upsell.title}</div>
                                                 </div>
-                                                <div className="mb-4 text-xl font-black text-brand-600">{upsell.price===0?'חינם':`₪${upsell.price}`}</div>
-                                                <p className="text-xs text-gray-500 mb-4">{upsell.desc}</p>
-                                                <Button onClick={() => purchaseUpsell(upsell)} disabled={isBought} variant={isBought?'success':upsell.price===0?'success':'primary'} className="w-full py-3">
-                                                    {isBought?'✓ פעיל':upsell.price===0?'+ הוסף בחינם':'+ הוסף להזמנה'}
+                                                <div className="mb-4 text-xl font-black text-brand-600">{upsell.price===0?'חינם!':`₪${upsell.price}`}</div>
+                                                <p className="text-sm text-gray-600 mb-6 font-medium leading-relaxed">{upsell.desc}</p>
+                                                <Button onClick={() => purchaseUpsell(upsell)} disabled={isBought} variant={isBought?'success':upsell.price===0?'outline':'primary'} className="w-full py-3">
+                                                    {isBought?'✓ התווסף בהצלחה':upsell.price===0?'+ הוסף בחינם':'+ הוסף להזמנה'}
                                                 </Button>
                                             </Card>
                                         )
@@ -483,22 +515,26 @@
 
                     {project.status === 'qa_review' && (
                         <Card className="border-t-4 border-t-emerald-500 bg-emerald-50 text-center p-12">
-                            <div className="text-6xl mb-6">🎉</div>
+                            <div className="text-6xl mb-6 animate-bounce">🎉</div>
                             <h3 className="text-3xl font-black text-emerald-900 mb-3">האתר מוכן לאוויר!</h3>
-                            <div className="flex gap-4 justify-center mt-8">
-                                <Button onClick={() => { if(window.confirm('לאשר סופית?')) updateProject(project.id, { status: 'completed' }) }} variant="success" className="py-4 px-8 text-lg">✓ מאושר!</Button>
-                                <Button onClick={() => { updateProject(project.id, { status: 'in_progress', revisionCount: (project.revisionCount||0)+1 }) }} variant="outline" className="py-4 px-8 bg-white">✎ יש לי בקשת תיקון</Button>
+                            <p className="text-emerald-700 font-medium max-w-md mx-auto">בדיקות האיכות (QA) שלנו הסתיימו. המנהל כרגע סוקר את האתר וישלח לך לינק לאישור סופי בימים הקרובים.</p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                                <Button onClick={() => askConfirm('האם אתה בטוח שברצונך לאשר את האתר סופית?', () => updateProject(project.id, { status: 'completed' })) } variant="success" className="py-4 px-8 text-lg shadow-xl shadow-emerald-500/30">✓ מאושר, עלו לאוויר!</Button>
+                                <Button onClick={() => { updateProject(project.id, { status: 'in_progress', revisionCount: (project.revisionCount||0)+1 }); showAlert("הפרויקט חזר לתיקונים בצוות הפיתוח."); }} variant="outline" className="py-4 px-8 bg-white text-gray-700">✎ יש לי בקשת תיקון</Button>
                             </div>
                         </Card>
                     )}
 
-                    {/* Contract Modal Popup */}
                     {showContractModal && (
-                        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
                             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
-                                <div className="p-5 bg-brand-600 text-white font-black text-lg">📄 חוזה התקשרות רשמי</div>
-                                <div className="p-6 overflow-y-auto flex-1 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">{systemSettings.agreementText}</div>
-                                <div className="p-4 border-t bg-gray-50 text-left"><Button onClick={()=>setShowContractModal(false)}>סגור והמשך לחתימה</Button></div>
+                                <div className="p-5 bg-brand-600 text-white font-black text-lg flex items-center gap-2">📄 חוזה התקשרות רשמי</div>
+                                <div className="p-6 overflow-y-auto flex-1 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed font-medium bg-gray-50/50">
+                                    {systemSettings.agreementText}
+                                </div>
+                                <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                                    <Button onClick={()=>setShowContractModal(false)} className="px-8 shadow-sm">סגור והמשך לחתימה</Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -507,12 +543,11 @@
         };
 
         const FreelancerDashboard = () => {
-            const { projects, currentUser, updateProject } = useContext(AppContext);
+            const { projects, currentUser, updateProject, showAlert } = useContext(AppContext);
             const [now, setNow] = useState(Date.now());
             const [salesBriefModal, setSalesBriefModal] = useState(null);
             const [briefData, setBriefData] = useState({ businessName: '', audience: '', callToAction: '' });
             
-            // QA Checklist State
             const [qaState, setQaState] = useState({ mobile: false, form: false, a11y: false, speed: false });
             const [blockerInput, setBlockerInput] = useState({ show: false, project: null, reason: '' });
 
@@ -521,7 +556,7 @@
             const myProjects = projects.filter(p => p.freelancerId === currentUser.uid && !['completed', 'qa_review'].includes(p.status));
             
             const toggleTimer = (project) => {
-                if(project.isBlocked) return alert("הפרויקט חסום! פנה למנהל לשחרור.");
+                if(project.isBlocked) return showAlert("הפרויקט חסום! פנה למנהל לשחרור חסימה.");
                 if (project.isTimerRunning) {
                     const elapsed = Math.floor((now - project.timerStartedAt) / 1000);
                     updateProject(project.id, { isTimerRunning: false, timeSpent: (project.timeSpent || 0) + elapsed, timerStartedAt: null });
@@ -537,14 +572,15 @@
                     isBlocked: true, blockReason: blockerInput.reason, isTimerRunning: false, timeSpent: finalTime, timerStartedAt: null 
                 });
                 setBlockerInput({show: false, project: null, reason: ''});
+                showAlert("התקלה דווחה למנהל והטיימר נעצר.");
             };
 
             return (
                 <div className="space-y-8 fade-in">
-                    <h3 className="text-2xl font-black mb-4">תור המשימות שלך</h3>
+                    <h3 className="text-2xl font-black mb-4 flex items-center gap-2"><span className="text-brand-500">⚡</span> תור המשימות שלך</h3>
                     <div className="grid grid-cols-1 gap-6">
                         {myProjects.map(project => {
-                            const baseBudget = 12600; // 3.5 hrs
+                            const baseBudget = 12600; // 3.5 hrs in seconds
                             const addonsTime = (project.addons || []).reduce((sum, addon) => sum + ((addon.timeMinutes || 0) * 60), 0);
                             const totalBudget = baseBudget + addonsTime;
                             let currentTotal = project.timeSpent || 0;
@@ -555,72 +591,83 @@
                             const allQaChecked = qaState.mobile && qaState.form && qaState.a11y && qaState.speed;
 
                             return (
-                                <Card key={project.id} className={`border-r-4 transition-shadow ${project.isBlocked ? 'border-r-red-500 bg-red-50/30' : project.isTimerRunning ? 'border-r-brand-500 shadow-xl' : 'border-r-gray-300'}`}>
-                                    <div className="flex justify-between items-start mb-4">
+                                <Card key={project.id} className={`border-r-8 transition-shadow ${project.isBlocked ? 'border-r-red-500 bg-red-50/20' : project.isTimerRunning ? 'border-r-brand-500 shadow-xl ring-1 ring-brand-500/20' : 'border-r-gray-300'}`}>
+                                    <div className="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
                                         <div>
                                             <h3 className="text-2xl font-black text-gray-900">{project.clientOfficialDetails?.officialName || project.briefInfo?.businessName || project.customerName}</h3>
-                                            <Badge color={project.isBlocked ? 'red' : 'blue'} className="mt-2">{project.isBlocked ? '🚨 חסום! ממתין להתערבות מנהל' : project.status}</Badge>
+                                            <div className="flex gap-2 items-center mt-2">
+                                                <Badge color={project.isBlocked ? 'red' : 'blue'}>{project.isBlocked ? '🚨 חסום/תקלה' : project.status.replace(/_/g, ' ')}</Badge>
+                                                {project.revisionCount > 0 && <Badge color="yellow">סבב תיקונים: {project.revisionCount}</Badge>}
+                                            </div>
                                         </div>
                                         {!isEarlyStage && !project.isBlocked && (
-                                            <div className="shrink-0 text-center bg-gray-50 p-2 rounded-xl border border-gray-200">
-                                                <div className="text-xs font-bold text-gray-500 mb-1">תקציב זמן נותר:</div>
-                                                <div className={`text-3xl font-sans font-black ${isOverdue ? 'text-red-600' : 'text-brand-600'}`}>{formatDuration(remaining, false)}</div>
+                                            <div className={`shrink-0 text-center p-3 rounded-xl border ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                                                <div className="text-xs font-bold text-gray-500 mb-1">{isOverdue ? 'חריגת זמן:' : 'תקציב זמן נותר:'}</div>
+                                                <div className={`text-3xl font-sans font-black tracking-wider ${isOverdue ? 'text-red-600' : 'text-brand-600'}`}>{formatDuration(remaining, false)}</div>
                                             </div>
                                         )}
                                     </div>
 
                                     {project.isBlocked && (
-                                        <div className="bg-red-100 border border-red-300 text-red-800 p-4 rounded-lg text-sm font-bold mb-4">
-                                            סיבת חסימה שדווחה: {project.blockReason}
+                                        <div className="bg-red-100 border border-red-300 text-red-800 p-4 rounded-lg text-sm font-bold mb-4 flex items-start gap-3">
+                                            <span className="text-2xl">🛑</span>
+                                            <div>
+                                                <div className="font-black text-red-900">סיבת חסימה שדווחה למנהל:</div>
+                                                <div>{project.blockReason}</div>
+                                            </div>
                                         </div>
                                     )}
 
                                     {isEarlyStage ? (
                                         <div className="mt-6 pt-6 border-t border-gray-100">
-                                            <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
-                                                <h4 className="font-black text-blue-900 mb-2">📞 לקוח עדיין לא איפיין</h4>
-                                                <Button onClick={() => setSalesBriefModal(project)} className="w-full py-4 text-base">📝 פתח טופס אפיון נציג (טלפוני)</Button>
+                                            <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-2xl text-center md:text-right">
+                                                <h4 className="font-black text-blue-900 mb-2 text-lg">📞 הלקוח טרם איפיין בעצמו</h4>
+                                                <p className="text-blue-700 text-sm mb-4">אתה מנהל התיק! התקשר ללקוח, קח ממנו פרטים ומלא את האפיון עבורו כדי להתחיל פיתוח.</p>
+                                                <Button onClick={() => setSalesBriefModal(project)} className="w-full py-4 text-base shadow-md">📝 פתח טופס אפיון (נציג טלפוני)</Button>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col gap-4">
                                             {project.briefInfo && (
-                                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 text-sm">
-                                                    <h4 className="font-black text-gray-900 mb-2 border-b pb-1">📋 נתוני אפיון וחוזה:</h4>
-                                                    <div className="grid grid-cols-2 gap-2 text-gray-700">
-                                                        <p><strong>קהל:</strong> {project.briefInfo.audience}</p>
-                                                        <p><strong>פעולה:</strong> {project.briefInfo.callToAction}</p>
+                                                <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-2 text-sm shadow-inner">
+                                                    <h4 className="font-black text-gray-900 mb-3 border-b pb-2 flex items-center gap-2">📋 נתוני אפיון וחוזה לקוח</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                                                        <div><strong className="block text-gray-400 text-xs uppercase mb-1">שם העסק באתר</strong><div className="font-bold">{project.briefInfo.businessName}</div></div>
+                                                        <div><strong className="block text-gray-400 text-xs uppercase mb-1">טלפון לידים</strong><div className="font-bold" dir="ltr">{project.briefInfo.phone}</div></div>
+                                                        <div className="md:col-span-2"><strong className="block text-gray-400 text-xs uppercase mb-1">קהל יעד / מטרה</strong><div>{project.briefInfo.audience}</div></div>
+                                                        <div className="md:col-span-2"><strong className="block text-gray-400 text-xs uppercase mb-1">פעולה מרכזית (CTA)</strong><div className="inline-block bg-white px-2 py-1 rounded border font-bold text-brand-600">{project.briefInfo.callToAction}</div></div>
                                                     </div>
                                                 </div>
                                             )}
 
                                             {!project.isBlocked && (
                                                 <>
-                                                    <div className="flex gap-4">
-                                                        <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? 'outline' : 'primary'} className="flex-1 py-4">
-                                                            {project.isTimerRunning ? '⏸ השהה טיימר' : '▶️ התחל עבודה'}
+                                                    <div className="flex flex-col sm:flex-row gap-4">
+                                                        <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? 'outline' : 'primary'} className={`flex-1 py-4 text-lg ${project.isTimerRunning ? 'border-brand-500 text-brand-700' : 'shadow-lg shadow-brand-500/30'}`}>
+                                                            {project.isTimerRunning ? '⏸ השהה טיימר' : '▶️ התחל עבודה על הקוד'}
                                                         </Button>
-                                                        <Button onClick={() => setBlockerInput({show: true, project: project, reason: ''})} variant="danger" className="py-4">
-                                                            🚨 דווח על בעיה (חסימה)
+                                                        <Button onClick={() => setBlockerInput({show: true, project: project, reason: ''})} variant="danger" className="py-4 whitespace-nowrap">
+                                                            🚨 דווח על בעיה
                                                         </Button>
                                                     </div>
 
-                                                    <div className="mt-4 p-4 border rounded-xl bg-gray-50">
-                                                        <h4 className="font-black mb-3 text-sm">✅ צ'ק ליסט הגשה (חובה לאשר):</h4>
-                                                        <div className="grid grid-cols-2 gap-2 text-sm font-medium">
-                                                            <label className="flex items-center gap-2"><input type="checkbox" onChange={e=>setQaState({...qaState, mobile: e.target.checked})} /> נבדק תקין במובייל</label>
-                                                            <label className="flex items-center gap-2"><input type="checkbox" onChange={e=>setQaState({...qaState, form: e.target.checked})} /> טפסים שולחים למייל</label>
-                                                            <label className="flex items-center gap-2"><input type="checkbox" onChange={e=>setQaState({...qaState, a11y: e.target.checked})} /> תוסף נגישות הותקן</label>
-                                                            <label className="flex items-center gap-2"><input type="checkbox" onChange={e=>setQaState({...qaState, speed: e.target.checked})} /> מהירות טעינה תקינה</label>
+                                                    <div className="mt-4 p-5 border rounded-xl bg-gray-50">
+                                                        <h4 className="font-black mb-4 text-sm flex items-center gap-2">✅ חומת איכות (Zero Bugs): חובה לאשר הכל לפני הגשה</h4>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-medium">
+                                                            <label className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer"><input type="checkbox" onChange={e=>setQaState({...qaState, mobile: e.target.checked})} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded border-gray-300" /> נבדק ונראה מושלם במובייל</label>
+                                                            <label className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer"><input type="checkbox" onChange={e=>setQaState({...qaState, form: e.target.checked})} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded border-gray-300" /> טפסי יצירת קשר שולחים מייל</label>
+                                                            <label className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer"><input type="checkbox" onChange={e=>setQaState({...qaState, a11y: e.target.checked})} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded border-gray-300" /> הותקן תוסף נגישות כחוק</label>
+                                                            <label className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer"><input type="checkbox" onChange={e=>setQaState({...qaState, speed: e.target.checked})} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded border-gray-300" /> וידאתי שאין שגיאות או תמונות שבורות</label>
                                                         </div>
                                                         <Button onClick={() => {
                                                             let finalTime = project.timeSpent || 0;
                                                             if(project.isTimerRunning) finalTime += Math.floor((Date.now() - project.timerStartedAt) / 1000);
                                                             updateProject(project.id, { status: 'qa_review', isTimerRunning: false, timeSpent: finalTime, timerStartedAt: null, checklistCompleted: true });
-                                                        }} variant="success" className="w-full mt-4" disabled={!allQaChecked || project.isTimerRunning}>
-                                                            🚀 הגש ל-QA מנהל
+                                                            showAlert("האתר הוגש לבדיקת המנהל! עבודה מעולה.");
+                                                        }} variant="success" className="w-full mt-5 py-4 text-lg shadow-lg shadow-emerald-500/30" disabled={!allQaChecked || project.isTimerRunning}>
+                                                            🚀 סיימתי פיתוח - הגש ל-QA מנהל
                                                         </Button>
-                                                        {!allQaChecked && <p className="text-xs text-red-500 text-center mt-2">סמן את כל הבדיקות ואז עצור את הטיימר כדי להגיש.</p>}
+                                                        {!allQaChecked && <p className="text-xs text-red-500 text-center mt-3 font-bold bg-red-50 py-2 rounded-lg">חובה: סמן את כל הבדיקות ואז *עצור את הטיימר* כדי שתוכל להגיש.</p>}
                                                     </div>
                                                 </>
                                             )}
@@ -629,30 +676,42 @@
                                 </Card>
                             )
                         })}
+                        {myProjects.length === 0 && (
+                            <div className="bg-white p-12 rounded-3xl border border-gray-200 text-center text-gray-500 shadow-sm">
+                                <div className="text-6xl mb-4 opacity-50">☕</div>
+                                <h3 className="text-xl font-bold">אין לך כרגע פרויקטים בתור.</h3>
+                                <p>זמן טוב לנוח או לבקש מהמנהל להקצות לך עבודה חדשה.</p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Blocker Modal */}
                     {blockerInput.show && (
-                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-md">
-                                <h3 className="font-black text-red-600 text-xl mb-2">🚨 עצירת פרויקט - דיווח תקלה</h3>
-                                <p className="text-sm text-gray-600 mb-4">מה מעכב אותך? הטיימר ייעצר והמנהל יקבל התראה מידית לטפל בזה מול הלקוח.</p>
-                                <textarea autoFocus rows="3" className="w-full p-3 border rounded-xl mb-4" placeholder="למשל: הלקוח לא הביא סיסמאות אחסון..." onChange={e=>setBlockerInput({...blockerInput, reason: e.target.value})}></textarea>
-                                <div className="flex justify-end gap-3"><Button variant="outline" onClick={()=>setBlockerInput({show: false, project: null, reason: ''})}>ביטול</Button><Button variant="danger" onClick={submitIssueReport}>עצור טיימר ושלח התראה</Button></div>
+                        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                            <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+                                <div className="flex items-center gap-3 mb-4"><span className="text-3xl">🛑</span><h3 className="font-black text-red-600 text-xl">דיווח תקלה / עצירת פרויקט</h3></div>
+                                <p className="text-sm text-gray-600 mb-6 font-medium">מה מעכב אותך? הטיימר ייעצר מיד והמנהל יקבל התראה דחופה כדי לטפל בזה מול הלקוח.</p>
+                                <textarea autoFocus rows="4" className="w-full p-4 border border-gray-300 rounded-xl mb-6 focus:ring-red-500 focus:border-red-500" placeholder="למשל: הלקוח לא סיפק סיסמאות אחסון, חסר לוגו וקטורי..." onChange={e=>setBlockerInput({...blockerInput, reason: e.target.value})}></textarea>
+                                <div className="flex justify-end gap-3"><Button variant="outline" onClick={()=>setBlockerInput({show: false, project: null, reason: ''})}>ביטול</Button><Button variant="danger" onClick={submitIssueReport}>עצור טיימר ודווח למנהל</Button></div>
                             </div>
                         </div>
                     )}
 
-                    {/* Sales Modal (Phone Brief) */}
                     {salesBriefModal && (
-                        <div className="fixed inset-0 bg-gray-950/80 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden">
-                                <div className="p-6 bg-blue-600 flex justify-between"><h3 className="font-black text-white">📝 אפיון טלפוני (נציג)</h3><button onClick={()=>setSalesBriefModal(null)} className="text-white">✕</button></div>
+                        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                            <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border-t-8 border-brand-600">
+                                <div className="p-6 bg-gray-50 border-b flex justify-between items-center"><h3 className="font-black text-brand-900 text-xl flex items-center gap-2">📞 אפיון טלפוני (מנהל תיק)</h3><button onClick={()=>setSalesBriefModal(null)} className="text-gray-400 hover:text-gray-900 font-bold">✕ סגור</button></div>
                                 <div className="p-6">
-                                    <form onSubmit={(e)=>{e.preventDefault(); updateProject(salesBriefModal.id, {status:'in_progress', briefInfo: briefData}); setSalesBriefModal(null);}} className="space-y-4">
-                                        <input type="text" placeholder="שם העסק" required onChange={e=>setBriefData({...briefData, businessName: e.target.value})} className="w-full p-3 border rounded-xl" />
-                                        <textarea placeholder="קהל יעד / מטרת האתר..." required onChange={e=>setBriefData({...briefData, audience: e.target.value})} className="w-full p-3 border rounded-xl"></textarea>
-                                        <Button type="submit" className="w-full py-4 text-lg">שמור אפיון - התחל פיתוח</Button>
+                                    <form onSubmit={(e)=>{e.preventDefault(); updateProject(salesBriefModal.id, {status:'brief_submitted', briefInfo: briefData}); setSalesBriefModal(null); showAlert("האפיון נשמר! הפרויקט מוכן כעת לפיתוח.");}} className="space-y-5">
+                                        <div><label className="block text-sm font-bold mb-2">שם העסק (יופיע באתר)</label><input type="text" required onChange={e=>setBriefData({...briefData, businessName: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500" /></div>
+                                        <div><label className="block text-sm font-bold mb-2">טלפון נציג / שירות לקוחות</label><input type="tel" required onChange={e=>setBriefData({...briefData, phone: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500" dir="ltr" /></div>
+                                        <div><label className="block text-sm font-bold mb-2">תיאור קהל היעד (למי מוכרים?)</label><textarea required rows="3" onChange={e=>setBriefData({...briefData, audience: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500"></textarea></div>
+                                        <div><label className="block text-sm font-bold mb-2">פעולה נדרשת מהגולש (CTA)</label>
+                                            <select required onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-brand-500 focus:border-brand-500">
+                                                <option value="" disabled selected>בחר אפשרות...</option>
+                                                <option value="טלפון">חיוג טלפוני</option><option value="וואטסאפ">וואטסאפ</option><option value="טופס">טופס לידים</option>
+                                            </select>
+                                        </div>
+                                        <Button type="submit" className="w-full py-4 text-lg mt-4 shadow-lg shadow-brand-500/30">שמור אפיון לקוח - מוכן לפיתוח!</Button>
                                     </form>
                                 </div>
                             </div>
@@ -663,7 +722,7 @@
         };
 
         const AdminDashboard = () => {
-            const { projects, usersList, freelancers, systemSettings, updateProject, deleteProject, updateSettings, updateUser, deleteUser } = useContext(AppContext);
+            const { projects, usersList, freelancers, systemSettings, updateProject, deleteProject, updateSettings, updateUser, deleteUser, showAlert, askConfirm } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects');
             const [viewBriefModal, setViewBriefModal] = useState(null);
             const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'client' });
@@ -683,8 +742,10 @@
                     const userData = { role: newUser.role, name: newUser.name, email: newUser.email, basePay: newUser.role==='freelancer'?1000:0, upsellPercentage: 0 };
                     await db.collection('users').doc(cred.user.uid).set(userData);
                     if (newUser.role === 'client') await db.collection('projects').add({ customerName: newUser.name, status: 'onboarding', paymentAmount: 1500, timeSpent: 0, budgetSeconds: 12600, isTimerRunning: false, isBlocked: false, addons: [], clientId: cred.user.uid, revisionCount: 0 });
-                    await secondaryApp.auth().signOut(); alert('✅ המשתמש נוצר בהצלחה!'); setNewUser({ email: '', password: '', name: '', role: 'client' });
-                } catch (err) { alert('❌ שגיאה: ' + err.message); }
+                    await secondaryApp.auth().signOut(); 
+                    showAlert('המשתמש נוצר בהצלחה!'); 
+                    setNewUser({ email: '', password: '', name: '', role: 'client' });
+                } catch (err) { showAlert('שגיאה ביצירת המשתמש: ' + err.message); }
             };
 
             const handleSaveUpsell = (isNew) => {
@@ -692,52 +753,60 @@
                 if (isNew) updatedUpsells.push({ ...newUpsell, id: Date.now().toString(), price: Number(newUpsell.price), timeMinutes: Number(newUpsell.timeMinutes) });
                 else { const index = updatedUpsells.findIndex(u => u.id === editingUpsell.id); if(index > -1) updatedUpsells[index] = { ...editingUpsell, price: Number(editingUpsell.price), timeMinutes: Number(editingUpsell.timeMinutes) }; }
                 updateSettings({ upsells: updatedUpsells }); setEditingUpsell(null);
+                showAlert(isNew ? "המוצר הוסף לחנות בהצלחה." : "פרטי המוצר עודכנו בהצלחה.");
             };
 
             return (
                 <div className="space-y-8 fade-in">
-                    <div className="flex gap-3 overflow-x-auto pb-2 border-b border-gray-200">
-                        <button onClick={()=>setActiveTab('projects')} className={`px-6 py-3 font-bold text-sm rounded-xl ${activeTab==='projects'?'bg-brand-600 text-white':'bg-white text-gray-600 border'}`}>ניהול אופרציה</button>
-                        <button onClick={()=>setActiveTab('users')} className={`px-6 py-3 font-bold text-sm rounded-xl ${activeTab==='users'?'bg-brand-600 text-white':'bg-white text-gray-600 border'}`}>צוות ולקוחות</button>
-                        <button onClick={()=>setActiveTab('settings')} className={`px-6 py-3 font-bold text-sm rounded-xl ${activeTab==='settings'?'bg-brand-600 text-white':'bg-white text-gray-600 border'}`}>הגדרות וחנות</button>
+                    <div className="flex gap-3 overflow-x-auto pb-2 border-b border-gray-200 hide-scrollbar">
+                        <button onClick={()=>setActiveTab('projects')} className={`px-6 py-3 font-bold text-sm rounded-xl transition-colors ${activeTab==='projects'?'bg-brand-600 text-white shadow-md':'bg-white text-gray-600 border hover:bg-gray-50'}`}>ניהול אופרציה ולקוחות</button>
+                        <button onClick={()=>setActiveTab('users')} className={`px-6 py-3 font-bold text-sm rounded-xl transition-colors ${activeTab==='users'?'bg-brand-600 text-white shadow-md':'bg-white text-gray-600 border hover:bg-gray-50'}`}>ניהול צוות ומשתמשים</button>
+                        <button onClick={()=>setActiveTab('settings')} className={`px-6 py-3 font-bold text-sm rounded-xl transition-colors ${activeTab==='settings'?'bg-brand-600 text-white shadow-md':'bg-white text-gray-600 border hover:bg-gray-50'}`}>הגדרות, חוזה וחנות מוצרים</button>
                     </div>
 
                     {activeTab === 'projects' && (
-                        <Card noPadding className="flex flex-col shadow-sm">
-                            <div className="p-6 bg-white border-b flex justify-between items-center"><h2 className="text-2xl font-black">לוח בקרת ייצור</h2></div>
+                        <Card noPadding className="flex flex-col shadow-sm border-t-4 border-t-brand-500 overflow-hidden">
+                            <div className="p-6 bg-white border-b flex justify-between items-center bg-gray-50">
+                                <h2 className="text-2xl font-black text-gray-900">לוח בקרת ייצור אופרטיבי</h2>
+                            </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-right text-sm">
-                                    <thead className="bg-gray-50 text-gray-500 border-b"><tr><th className="px-6 py-4 font-bold">לקוח וסטטוס</th><th className="px-6 py-4 font-bold">בקרה ותיק</th><th className="px-6 py-4 font-bold">צוות</th></tr></thead>
+                                    <thead className="bg-gray-100 text-gray-600 border-b"><tr><th className="px-6 py-4 font-bold">לקוח וסטטוס</th><th className="px-6 py-4 font-bold">בקרה ותיק</th><th className="px-6 py-4 font-bold">הקצאת צוות</th></tr></thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">
                                         {activeProjects.map(p => (
-                                            <tr key={p.id} className={`hover:bg-brand-50/30 ${p.isBlocked ? 'bg-red-50' : ''}`}>
+                                            <tr key={p.id} className={`hover:bg-brand-50/30 transition-colors ${p.isBlocked ? 'bg-red-50/50' : ''}`}>
                                                 <td className="px-6 py-6 align-top">
-                                                    <div className="font-black text-lg mb-2">{p.clientOfficialDetails?.officialName || p.customerName}</div>
-                                                    <Badge color={p.isBlocked?'red':p.status === 'onboarding' ? 'gray' : p.status === 'qa_review' ? 'green' : 'blue'}>{p.isBlocked?'🚨 חסום!':p.status.replace(/_/g, ' ')}</Badge>
-                                                    {p.revisionCount > 0 && <div className="mt-2 text-xs font-bold text-red-500 bg-red-100 px-2 py-1 rounded inline-block">סבבי תיקונים: {p.revisionCount}</div>}
-                                                    {p.isBlocked && <div className="mt-2 text-xs text-red-700 font-bold max-w-xs">סיבה: {p.blockReason}</div>}
+                                                    <div className="font-black text-lg mb-2 text-gray-900">{p.clientOfficialDetails?.officialName || p.customerName}</div>
+                                                    <Badge color={p.isBlocked?'red':p.status === 'onboarding' ? 'gray' : p.status === 'qa_review' ? 'green' : 'blue'}>{p.isBlocked?'🚨 חסום/תקלה!':p.status.replace(/_/g, ' ')}</Badge>
+                                                    {p.revisionCount > 0 && <div className="mt-2 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block border border-amber-200">סבבי תיקונים: {p.revisionCount}</div>}
+                                                    {p.isBlocked && <div className="mt-3 text-xs text-red-700 font-bold max-w-xs bg-red-100 p-2 rounded">סיבה שדווחה: {p.blockReason}</div>}
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
-                                                    <button onClick={() => setViewBriefModal(p)} className="text-brand-700 bg-brand-50 hover:bg-brand-100 border px-4 py-2 rounded-xl font-bold text-xs shadow-sm block w-full text-center">📋 צפה בתיק אפיון וחוזה</button>
-                                                    {p.isBlocked && <button onClick={() => updateProject(p.id, {isBlocked: false, blockReason: ''})} className="mt-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl font-bold text-xs shadow-sm block w-full text-center">🔓 שחרר חסימה לפרילנסר</button>}
+                                                    <button onClick={() => setViewBriefModal(p)} className="text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm block w-full text-center transition-colors">📋 פתח תיק לקוח ומעקב סטטוס</button>
+                                                    {p.isBlocked && <button onClick={() => {updateProject(p.id, {isBlocked: false, blockReason: ''}); showAlert("החסימה שוחררה, הפרילנסר עודכן.");}} className="mt-2 text-emerald-700 bg-emerald-50 border border-emerald-300 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm block w-full text-center hover:bg-emerald-100 transition-colors">🔓 טופל - שחרר חסימה לפרילנסר</button>}
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
-                                                    <select className="border rounded-lg p-2 text-xs bg-white w-full mb-2" onChange={(e) => { 
-                                                        if (e.target.value === "none") {
-                                                            updateProject(p.id, {freelancerId: null}); 
-                                                            alert('השיוך הוסר בהצלחה!');
-                                                        } else {
-                                                            updateProject(p.id, {freelancerId: e.target.value}); 
-                                                            alert('שויך בהצלחה!');
-                                                        }
-                                                    }} value={p.freelancerId || "none"}>
-                                                        <option value="none">-- ללא שיוך / הסר --</option>
-                                                        {freelancers.map(fl => <option key={fl.uid} value={fl.uid}>{fl.name}</option>)}
-                                                    </select>
-                                                    <button onClick={() => deleteProject(p.id)} className="text-red-500 hover:bg-red-50 text-xs font-bold px-3 py-1.5 rounded border border-red-200 w-full">🗑️ מחק לאיפוס דוח</button>
+                                                    <div className="flex flex-col gap-2">
+                                                        <select className="border border-gray-300 rounded-xl p-2.5 text-xs bg-white w-full focus:ring-brand-500 font-medium" onChange={(e) => { 
+                                                            if (e.target.value === "none") {
+                                                                updateProject(p.id, {freelancerId: null}); 
+                                                                showAlert('השיוך הוסר בהצלחה! הפרויקט חזר לתור הכללי.');
+                                                            } else {
+                                                                askConfirm("לשייך את הפרויקט לפרילנסר זה?", () => {
+                                                                    updateProject(p.id, {freelancerId: e.target.value}); 
+                                                                    showAlert('שויך בהצלחה!');
+                                                                });
+                                                            }
+                                                        }} value={p.freelancerId || "none"}>
+                                                            <option value="none">-- ללא שיוך / הסר מפרילנסר --</option>
+                                                            {freelancers.map(fl => <option key={fl.uid} value={fl.uid}>{fl.name}</option>)}
+                                                        </select>
+                                                        <button onClick={() => askConfirm("מחיקת הלקוח תמחק את הפרויקט לחלוטין ותאפס דוחות פיננסיים. להמשיך?", () => deleteProject(p.id))} className="text-red-500 hover:bg-red-50 text-xs font-bold px-3 py-2 rounded-lg border border-red-200 w-full transition-colors mt-2">🗑️ מחק פרויקט לצמיתות</button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
+                                        {activeProjects.length === 0 && <tr><td colSpan="3" className="text-center p-8 text-gray-500 font-bold">אין פרויקטים פעילים במערכת.</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
@@ -746,27 +815,44 @@
 
                     {activeTab === 'users' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Card><h3 className="text-xl font-black mb-4">הקמת משתמש חדש</h3>
+                            <Card className="border-t-4 border-t-blue-500">
+                                <h3 className="text-xl font-black mb-4 text-gray-900">➕ הקמת משתמש חדש (צוות/לקוח)</h3>
                                 <form onSubmit={handleCreateUser} className="space-y-4">
-                                    <input type="text" placeholder="שם" required onChange={e=>setNewUser({...newUser, name: e.target.value})} className="w-full p-3 border rounded-xl" />
-                                    <input type="email" placeholder="אימייל" required dir="ltr" onChange={e=>setNewUser({...newUser, email: e.target.value})} className="w-full p-3 border rounded-xl" />
-                                    <input type="text" placeholder="סיסמה (6 תווים לפחות)" required dir="ltr" onChange={e=>setNewUser({...newUser, password: e.target.value})} className="w-full p-3 border rounded-xl" />
-                                    <select onChange={e=>setNewUser({...newUser, role: e.target.value})} className="w-full p-3 border rounded-xl font-bold">
-                                        <option value="client">לקוח (יפתח לו פרויקט אוטומטית)</option>
-                                        <option value="freelancer">פרילנסר צוות פיתוח</option>
-                                        <option value="manager">מנהל מערכת</option>
-                                    </select>
-                                    <Button type="submit" className="w-full">צור משתמש</Button>
+                                    <div><label className="text-xs font-bold text-gray-500">שם מלא</label><input type="text" required onChange={e=>setNewUser({...newUser, name: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-blue-500" /></div>
+                                    <div><label className="text-xs font-bold text-gray-500">אימייל</label><input type="email" required dir="ltr" onChange={e=>setNewUser({...newUser, email: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-blue-500" /></div>
+                                    <div><label className="text-xs font-bold text-gray-500">סיסמה זמנית (6 תווים לפחות)</label><input type="text" required dir="ltr" onChange={e=>setNewUser({...newUser, password: e.target.value})} className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-blue-500" /></div>
+                                    <div><label className="text-xs font-bold text-gray-500">הרשאה (תפקיד)</label>
+                                        <select onChange={e=>setNewUser({...newUser, role: e.target.value})} className="w-full p-3 border rounded-xl font-bold bg-white focus:ring-blue-500">
+                                            <option value="client">לקוח הסטודיו (יפתח לו פרויקט אוטומטית)</option>
+                                            <option value="freelancer">פרילנסר בצוות הפיתוח</option>
+                                            <option value="manager">מנהל מערכת ראשי</option>
+                                        </select>
+                                    </div>
+                                    <Button type="submit" className="w-full py-4 shadow-lg">צור משתמש חדש</Button>
                                 </form>
                             </Card>
-                            <Card noPadding><div className="p-6 border-b"><h3 className="text-xl font-black">רשימת משתמשים</h3></div>
-                                <div className="max-h-96 overflow-y-auto">
+                            <Card noPadding className="border-t-4 border-t-gray-800 flex flex-col h-full">
+                                <div className="p-6 border-b bg-gray-50"><h3 className="text-xl font-black text-gray-900">רשימת משתמשים וצוות</h3></div>
+                                <div className="max-h-[500px] overflow-y-auto">
                                     <table className="w-full text-right text-sm">
-                                        <tbody>
+                                        <tbody className="divide-y divide-gray-100">
                                             {usersList.map(u => (
-                                                <tr key={u.uid} className="border-b">
-                                                    <td className="p-4 font-bold">{u.name}</td><td className="p-4"><Badge>{u.role}</Badge></td>
-                                                    <td className="p-4">{u.role !== 'manager' && <button onClick={() => deleteUser(u.uid)} className="text-red-500 text-xs font-bold">מחק הכל</button>}</td>
+                                                <tr key={u.uid} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="p-4 align-top">
+                                                        <div className="font-bold text-gray-900">{u.name}</div>
+                                                        <div className="text-xs text-gray-500 font-sans mt-1">{u.email}</div>
+                                                    </td>
+                                                    <td className="p-4 align-top"><Badge color={u.role==='manager'?'purple':u.role==='freelancer'?'blue':'gray'}>{u.role}</Badge></td>
+                                                    <td className="p-4 flex flex-col gap-2">
+                                                        <button onClick={async () => {
+                                                            try { await auth.sendPasswordResetEmail(u.email); showAlert('נשלח מייל איפוס סיסמה למשתמש בהצלחה!'); }
+                                                            catch(e) { showAlert('שגיאה בשליחת המייל לאיפוס סיסמה.'); }
+                                                        }} className="text-blue-600 bg-blue-50 px-3 py-2 rounded-lg text-xs font-bold border border-blue-200 hover:bg-blue-100 w-full transition-colors">📧 שלח איפוס סיסמה</button>
+                                                        
+                                                        {u.role !== 'manager' && (
+                                                            <button onClick={() => askConfirm(`האם למחוק לחלוטין את ${u.name}? (פרויקטים המשויכים אליו יימחקו גם כן!)`, () => deleteUser(u.uid))} className="text-red-600 bg-red-50 px-3 py-2 rounded-lg text-xs font-bold border border-red-200 hover:bg-red-100 w-full transition-colors">🗑️ מחק משתמש ונתונים</button>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -778,38 +864,44 @@
 
                     {activeTab === 'settings' && (
                         <div className="space-y-8">
-                            <Card className="border-t-4 border-t-purple-500">
-                                <h3 className="text-xl font-black mb-2">⚖️ חוזה התקשרות (יופיע ללקוח)</h3>
-                                <textarea rows="8" value={agreementInput} onChange={(e) => setAgreementInput(e.target.value)} className="w-full p-4 border rounded-xl bg-gray-50 text-sm"></textarea>
-                                <Button onClick={() => { updateSettings({ agreementText: agreementInput }); alert('נשמר'); }} className="mt-4 bg-purple-600 hover:bg-purple-700">שמור חוזה ללקוחות הבאים</Button>
+                            <Card className="border-t-4 border-t-purple-500 shadow-md">
+                                <h3 className="text-xl font-black mb-2 text-purple-900 flex items-center gap-2"><span className="text-2xl">⚖️</span> עריכת חוזה התקשרות (יופיע ללקוח)</h3>
+                                <p className="text-sm text-gray-500 mb-4">טקסט זה יוצג ללקוח בפורטל שלו. חתימתו על מסך הציור תהווה הסכמה חוקית לכל סעיף הכתוב מטה.</p>
+                                <textarea rows="10" value={agreementInput} onChange={(e) => setAgreementInput(e.target.value)} className="w-full p-5 border border-gray-300 rounded-xl bg-gray-50 text-sm focus:ring-purple-500 focus:border-purple-500"></textarea>
+                                <Button onClick={() => { updateSettings({ agreementText: agreementInput }); showAlert('נוסח החוזה עודכן בהצלחה.'); }} className="mt-4 bg-purple-600 hover:bg-purple-700 py-3 px-8">שמור חוזה ללקוחות הבאים</Button>
                             </Card>
 
-                            <Card noPadding className="border-t-4 border-t-brand-500">
-                                <div className="p-6 bg-gray-50 border-b"><h3 className="text-xl font-black">🛒 ניהול מוצרי חנות ותקציב זמן</h3></div>
+                            <Card noPadding className="border-t-4 border-t-brand-500 shadow-md">
+                                <div className="p-6 bg-gray-50 border-b"><h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><span className="text-2xl">🛒</span> ניהול מוצרי חנות (Upsells) ותקציבי זמן</h3></div>
                                 <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                                        <h4 className="font-bold border-b pb-2">{editingUpsell ? 'עריכת מוצר' : '➕ הוספת מוצר'}</h4>
-                                        <div><label className="text-xs font-bold">שם</label><input type="text" value={editingUpsell ? editingUpsell.title : newUpsell.title} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, title: e.target.value}) : setNewUpsell({...newUpsell, title: e.target.value})} className="w-full p-2 border rounded" /></div>
-                                        <div className="flex gap-2">
-                                            <div className="flex-1"><label className="text-xs font-bold">מחיר (₪)</label><input type="number" min="0" value={editingUpsell ? editingUpsell.price : newUpsell.price} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, price: e.target.value}) : setNewUpsell({...newUpsell, price: e.target.value})} className="w-full p-2 border rounded" /></div>
-                                            <div className="flex-1"><label className="text-xs font-bold">זמן (דקות)</label><input type="number" min="0" value={editingUpsell ? editingUpsell.timeMinutes : newUpsell.timeMinutes} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, timeMinutes: e.target.value}) : setNewUpsell({...newUpsell, timeMinutes: e.target.value})} className="w-full p-2 border rounded" /></div>
-                                            <div className="w-12"><label className="text-xs font-bold">אייקון</label><input type="text" value={editingUpsell ? editingUpsell.icon : newUpsell.icon} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, icon: e.target.value}) : setNewUpsell({...newUpsell, icon: e.target.value})} className="w-full p-2 border rounded text-center" /></div>
+                                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4 h-max sticky top-6">
+                                        <h4 className="font-bold border-b pb-2 text-brand-900">{editingUpsell ? '✏️ עריכת מוצר קיים' : '➕ הוספת מוצר חדש'}</h4>
+                                        <div><label className="text-xs font-bold text-gray-600">שם המוצר</label><input type="text" value={editingUpsell ? editingUpsell.title : newUpsell.title} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, title: e.target.value}) : setNewUpsell({...newUpsell, title: e.target.value})} className="w-full p-2.5 border rounded-lg bg-gray-50" /></div>
+                                        <div className="flex gap-3">
+                                            <div className="flex-1"><label className="text-xs font-bold text-gray-600">מחיר (₪)</label><input type="number" min="0" value={editingUpsell ? editingUpsell.price : newUpsell.price} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, price: e.target.value}) : setNewUpsell({...newUpsell, price: e.target.value})} className="w-full p-2.5 border rounded-lg bg-gray-50" /></div>
+                                            <div className="flex-1"><label className="text-xs font-bold text-gray-600">זמן (דקות לטיימר)</label><input type="number" min="0" value={editingUpsell ? editingUpsell.timeMinutes : newUpsell.timeMinutes} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, timeMinutes: e.target.value}) : setNewUpsell({...newUpsell, timeMinutes: e.target.value})} className="w-full p-2.5 border rounded-lg bg-gray-50" /></div>
+                                            <div className="w-16"><label className="text-xs font-bold text-gray-600">אייקון</label><input type="text" value={editingUpsell ? editingUpsell.icon : newUpsell.icon} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, icon: e.target.value}) : setNewUpsell({...newUpsell, icon: e.target.value})} className="w-full p-2.5 border rounded-lg bg-gray-50 text-center text-xl" /></div>
                                         </div>
-                                        <div><label className="text-xs font-bold">תיאור שיווקי</label><textarea rows="2" value={editingUpsell ? editingUpsell.desc : newUpsell.desc} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, desc: e.target.value}) : setNewUpsell({...newUpsell, desc: e.target.value})} className="w-full p-2 border rounded"></textarea></div>
-                                        <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={editingUpsell ? editingUpsell.isPremium : newUpsell.isPremium} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, isPremium: e.target.checked}) : setNewUpsell({...newUpsell, isPremium: e.target.checked})} className="w-4 h-4" /> מוצר פרימיום (זהב)</label>
-                                            <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={editingUpsell ? editingUpsell.isRecurring : newUpsell.isRecurring} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, isRecurring: e.target.checked}) : setNewUpsell({...newUpsell, isRecurring: e.target.checked})} className="w-4 h-4" /> תשלום חודשי (ריטיינר)</label>
+                                        <div><label className="text-xs font-bold text-gray-600">תיאור שיווקי (יופיע ללקוח)</label><textarea rows="3" value={editingUpsell ? editingUpsell.desc : newUpsell.desc} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, desc: e.target.value}) : setNewUpsell({...newUpsell, desc: e.target.value})} className="w-full p-2.5 border rounded-lg bg-gray-50"></textarea></div>
+                                        <div className="flex flex-col gap-3 mt-2 bg-gray-50 p-3 rounded-lg border">
+                                            <label className="flex items-center gap-3 text-sm font-bold cursor-pointer"><input type="checkbox" checked={editingUpsell ? editingUpsell.isPremium : newUpsell.isPremium} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, isPremium: e.target.checked}) : setNewUpsell({...newUpsell, isPremium: e.target.checked})} className="w-5 h-5 text-brand-600 rounded" /> מוצר פרימיום (זהב)</label>
+                                            <label className="flex items-center gap-3 text-sm font-bold cursor-pointer"><input type="checkbox" checked={editingUpsell ? editingUpsell.isRecurring : newUpsell.isRecurring} onChange={e => editingUpsell ? setEditingUpsell({...editingUpsell, isRecurring: e.target.checked}) : setNewUpsell({...newUpsell, isRecurring: e.target.checked})} className="w-5 h-5 text-brand-600 rounded" /> תשלום חודשי קבוע (MRR)</label>
                                         </div>
-                                        <Button onClick={() => handleSaveUpsell(!editingUpsell)} className="w-full">{editingUpsell ? 'שמור שינויים' : 'הוסף לחנות'}</Button>
+                                        <Button onClick={() => handleSaveUpsell(!editingUpsell)} className="w-full py-3">{editingUpsell ? 'שמור שינויים' : 'הוסף לחנות'}</Button>
+                                        {editingUpsell && <Button onClick={() => setEditingUpsell(null)} variant="outline" className="w-full">ביטול עריכה</Button>}
                                     </div>
-                                    <div className="lg:col-span-2 space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                                    <div className="lg:col-span-2 space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
                                         {systemSettings.upsells.map(u => (
-                                            <div key={u.id} className={`flex justify-between p-4 rounded-xl border ${u.isRecurring?'bg-purple-50 border-purple-200':u.isPremium?'bg-amber-50 border-amber-200':'bg-white'} shadow-sm`}>
+                                            <div key={u.id} className={`flex flex-col sm:flex-row justify-between p-5 rounded-2xl border transition-colors ${u.isRecurring?'bg-purple-50 border-purple-200':u.isPremium?'bg-amber-50 border-amber-200':'bg-white hover:bg-gray-50 border-gray-200'} shadow-sm gap-4`}>
                                                 <div>
-                                                    <div className="font-black">{u.icon} {u.title} <span className="text-brand-600 bg-brand-50 px-2 rounded ml-2">₪{u.price}{u.isRecurring?'/ח':''}</span><span className="text-purple-600 bg-purple-50 px-2 rounded">+ {u.timeMinutes} דק' עבודה</span></div>
-                                                    <div className="text-xs text-gray-500 mt-1">{u.desc}</div>
+                                                    <div className="font-black text-lg flex items-center flex-wrap gap-2">
+                                                        <span className="text-2xl">{u.icon}</span> {u.title} 
+                                                        <span className={`px-2 py-1 rounded text-sm ${u.price === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-brand-100 text-brand-800'}`}>{u.price===0?'חינם':`₪${u.price}`}{u.isRecurring?' / חודש':''}</span>
+                                                        <span className="text-purple-700 bg-purple-100 px-2 py-1 rounded text-xs font-bold">+ {u.timeMinutes} דק' טיימר</span>
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 mt-2 font-medium">{u.desc}</div>
                                                 </div>
-                                                <button onClick={() => setEditingUpsell(u)} className="text-xs font-bold bg-gray-100 px-3 py-1 rounded self-center">✏ ערוך</button>
+                                                <button onClick={() => setEditingUpsell(u)} className="text-sm font-bold bg-white border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-xl self-start sm:self-center shrink-0 transition-colors">✏ ערוך מוצר</button>
                                             </div>
                                         ))}
                                     </div>
@@ -818,28 +910,45 @@
                         </div>
                     )}
 
+                    {/* Manager's View Brief / Customer Progress Modal */}
                     {viewBriefModal && (
-                        <div className="fixed inset-0 bg-gray-950/50 flex items-center justify-center z-50 p-4 fade-in">
+                        <div className="fixed inset-0 bg-gray-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
                             <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-                                <div className="flex justify-between items-center p-6 bg-gray-50 border-b"><h3 className="font-black text-2xl">📋 תיק לקוח ומעקב</h3><button onClick={() => setViewBriefModal(null)} className="px-5 py-2.5 bg-gray-200 rounded-xl font-bold">סגור</button></div>
+                                <div className="flex justify-between items-center p-6 bg-gray-50 border-b"><h3 className="font-black text-2xl text-gray-900">📋 תיק לקוח ומעקב התקדמות</h3><button onClick={() => setViewBriefModal(null)} className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl font-bold hover:bg-gray-100 transition-colors">✕ סגור תיק</button></div>
                                 <div className="p-6 overflow-y-auto space-y-6">
-                                    <div className="bg-gray-50 p-4 rounded-xl border flex flex-col sm:flex-row justify-between text-xs font-bold text-gray-400 gap-2">
-                                        <div className={viewBriefModal.status !== 'onboarding' ? 'text-emerald-600' : 'text-brand-600'}>1. חוזה ופרטים {viewBriefModal.status !== 'onboarding' && '✓'}</div>
-                                        <div className={['brief_submitted','in_progress','qa_review','completed'].includes(viewBriefModal.status) ? 'text-emerald-600' : viewBriefModal.status==='paid_waiting_for_brief'?'text-brand-600':''}>2. אפיון {['brief_submitted','in_progress','qa_review','completed'].includes(viewBriefModal.status) && '✓'}</div>
-                                        <div className={['qa_review','completed'].includes(viewBriefModal.status) ? 'text-emerald-600' : viewBriefModal.status==='in_progress'?'text-brand-600':''}>3. פיתוח {['qa_review','completed'].includes(viewBriefModal.status) && '✓'}</div>
+                                    
+                                    {/* Progress Tracker */}
+                                    <div className="bg-gray-50 p-5 rounded-2xl border flex flex-col sm:flex-row justify-between text-xs font-bold text-gray-400 gap-3 relative">
+                                        <div className={`flex items-center gap-2 z-10 bg-gray-50 pr-2 ${viewBriefModal.status !== 'onboarding' ? 'text-emerald-600' : 'text-brand-600 animate-pulse'}`}><span className={`w-6 h-6 flex items-center justify-center rounded-full text-white ${viewBriefModal.status !== 'onboarding' ? 'bg-emerald-500' : 'bg-brand-500'}`}>{viewBriefModal.status !== 'onboarding' ? '✓' : '1'}</span> חוזה פרטים</div>
+                                        <div className={`flex items-center gap-2 z-10 bg-gray-50 px-2 ${['brief_submitted','in_progress','qa_review','completed'].includes(viewBriefModal.status) ? 'text-emerald-600' : viewBriefModal.status==='paid_waiting_for_brief'?'text-brand-600 animate-pulse':''}`}><span className={`w-6 h-6 flex items-center justify-center rounded-full text-white ${['brief_submitted','in_progress','qa_review','completed'].includes(viewBriefModal.status) ? 'bg-emerald-500' : viewBriefModal.status==='paid_waiting_for_brief'?'bg-brand-500':'bg-gray-300'}`}>{['brief_submitted','in_progress','qa_review','completed'].includes(viewBriefModal.status) ? '✓' : '2'}</span> אפיון</div>
+                                        <div className={`flex items-center gap-2 z-10 bg-gray-50 pl-2 ${['qa_review','completed'].includes(viewBriefModal.status) ? 'text-emerald-600' : viewBriefModal.status==='in_progress'?'text-brand-600 animate-pulse':''}`}><span className={`w-6 h-6 flex items-center justify-center rounded-full text-white ${['qa_review','completed'].includes(viewBriefModal.status) ? 'bg-emerald-500' : viewBriefModal.status==='in_progress'?'bg-brand-500':'bg-gray-300'}`}>{['qa_review','completed'].includes(viewBriefModal.status) ? '✓' : '3'}</span> פיתוח</div>
+                                        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-gray-200 -translate-y-1/2 hidden sm:block"></div>
                                     </div>
+                                    
+                                    <div className="text-center font-bold text-sm bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100">
+                                        {viewBriefModal.status === 'onboarding' && '⏳ ממתין שהלקוח יחתום על החוזה ויאשר פרטים...'}
+                                        {viewBriefModal.status === 'paid_waiting_for_brief' && '📝 הלקוח חתם, ממתין למילוי טופס אפיון (ניתן ליזום שיחה).'}
+                                        {viewBriefModal.status === 'in_progress' && '💻 פרויקט נמצא כרגע בפיתוח אצל הצוות.'}
+                                        {viewBriefModal.status === 'qa_review' && '🚀 פיתוח הסתיים, ממתין לבדיקתך ואישורך!'}
+                                    </div>
+
                                     {viewBriefModal.clientOfficialDetails ? (
-                                        <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl">
-                                            <div className="font-black text-emerald-900">אושר חוזה: <span dir="ltr">{viewBriefModal.clientOfficialDetails.signedAt}</span></div>
-                                            <div className="text-sm mt-3 grid grid-cols-2 gap-3 text-emerald-800">
-                                                <div className="bg-white/50 p-2 rounded border"><strong>שם לחשבונית:</strong> {viewBriefModal.clientOfficialDetails.officialName}</div>
-                                                <div className="bg-white/50 p-2 rounded border"><strong>ח.פ/ת.ז:</strong> {viewBriefModal.clientOfficialDetails.idNumber}</div>
+                                        <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl shadow-inner">
+                                            <div className="font-black text-emerald-900 text-lg border-b border-emerald-200 pb-2 mb-4">מסמך חתום ומאושר <span dir="ltr" className="text-sm font-normal bg-emerald-100 px-2 py-1 rounded ml-2">{viewBriefModal.clientOfficialDetails.signedAt}</span></div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-emerald-900 text-sm">
+                                                <div className="bg-white/70 p-3 rounded-lg border border-emerald-100"><strong className="block text-emerald-700 mb-1">שם לחשבונית:</strong> {viewBriefModal.clientOfficialDetails.officialName}</div>
+                                                <div className="bg-white/70 p-3 rounded-lg border border-emerald-100"><strong className="block text-emerald-700 mb-1">ח.פ / עוסק מורשה:</strong> {viewBriefModal.clientOfficialDetails.idNumber}</div>
                                             </div>
                                             {viewBriefModal.clientOfficialDetails.signatureData && (
-                                                <div className="mt-5 border-t border-emerald-200 pt-5"><strong className="block text-emerald-900 mb-2">חתימת לקוח בחוזה:</strong><img src={viewBriefModal.clientOfficialDetails.signatureData} alt="חתימה" className="h-24 object-contain bg-white rounded border p-2" /></div>
+                                                <div className="mt-6 pt-4 border-t border-emerald-200">
+                                                    <strong className="block text-emerald-900 mb-2">חתימה גרפית (אלקטרונית):</strong>
+                                                    <div className="bg-white rounded-xl border border-gray-200 p-2 inline-block shadow-sm">
+                                                        <img src={viewBriefModal.clientOfficialDetails.signatureData} alt="חתימה" className="h-28 object-contain" />
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
-                                    ) : <div className="p-6 bg-gray-50 rounded-xl text-center font-bold text-gray-500">⏳ הלקוח טרם חתם.</div>}
+                                    ) : <div className="p-12 bg-gray-50 rounded-2xl text-center font-bold text-gray-400 border-2 border-dashed border-gray-200">הלקוח טרם חתם על מסמכי התקשרות.</div>}
                                 </div>
                             </div>
                         </div>
@@ -850,27 +959,27 @@
 
         const DashboardLayout = () => {
             const { currentUser, logout, isLoadingDb } = useContext(AppContext);
-            if (isLoadingDb) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full"></div></div>;
+            if (isLoadingDb) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin w-12 h-12 border-4 border-brand-600 border-t-transparent rounded-full shadow-lg"></div></div>;
             if (!currentUser) return <LoginScreen />;
 
             return (
-                <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
-                    <header className="md:hidden bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-30">
-                        <h1 className="text-2xl font-black text-gray-900">ORIZIS<span className="text-brand-600">WEB</span></h1>
-                        <button onClick={logout} className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">התנתק</button>
+                <div className="flex flex-col md:flex-row min-h-screen bg-gray-100/50">
+                    <header className="md:hidden bg-brand-950 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
+                        <h1 className="text-xl font-black">ORIZIS<span className="text-brand-500">WEB</span></h1>
+                        <button onClick={logout} className="text-xs font-bold text-white/70 bg-white/10 px-3 py-2 rounded-lg">התנתק</button>
                     </header>
                     <aside className="w-72 bg-brand-950 text-white hidden md:flex flex-col shadow-2xl z-20 shrink-0">
-                        <div className="p-8 border-b border-gray-800/50"><h1 className="text-3xl font-black text-white">ORIZIS<span className="text-brand-500">WEB</span></h1></div>
+                        <div className="p-8 border-b border-white/10"><h1 className="text-3xl font-black">ORIZIS<span className="text-brand-500">WEB</span></h1><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Enterprise Agency OS</p></div>
                         <div className="flex-1 p-6"></div>
-                        <div className="p-6 border-t border-gray-800/50 bg-gray-900/50">
+                        <div className="p-6 border-t border-white/10 bg-black/20">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center font-black text-xl uppercase">{currentUser.name ? currentUser.name.charAt(0) : 'U'}</div>
-                                <div><div className="text-sm font-black">{currentUser.name || currentUser.email}</div><div className="text-xs text-brand-400 font-bold mt-1 bg-brand-900/50 px-2.5 py-0.5 rounded-md inline-block">{currentUser.role === 'manager' ? 'הנהלה' : currentUser.role === 'client' ? 'לקוח הסטודיו' : 'צוות פיתוח'}</div></div>
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-black text-xl uppercase shadow-lg ring-2 ring-white/20">{currentUser.name ? currentUser.name.charAt(0) : 'U'}</div>
+                                <div><div className="text-sm font-black">{currentUser.name || currentUser.email}</div><div className="text-[11px] text-brand-300 font-bold mt-1 bg-brand-900/50 px-2 py-0.5 rounded inline-block">{currentUser.role === 'manager' ? 'הנהלת סוכנות' : currentUser.role === 'client' ? 'לקוח הסטודיו' : 'צוות פיתוח'}</div></div>
                             </div>
-                            <button onClick={logout} className="w-full bg-gray-800 text-gray-300 font-bold text-sm py-3 rounded-xl hover:bg-red-900 hover:text-red-200">יציאה מהמערכת</button>
+                            <button onClick={logout} className="w-full bg-white/5 text-gray-300 font-bold text-sm py-3 rounded-xl hover:bg-red-500/20 hover:text-red-300 transition-colors border border-white/5">יציאה מהמערכת</button>
                         </div>
                     </aside>
-                    <main className="flex-1 p-6 md:p-10 overflow-y-auto h-[calc(100vh-73px)] md:h-screen">
+                    <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto h-[calc(100vh-70px)] md:h-screen">
                         <div className="max-w-6xl mx-auto pb-20">
                             {currentUser.role === 'manager' && <AdminDashboard />}
                             {currentUser.role === 'freelancer' && <FreelancerDashboard />}
