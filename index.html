@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -41,7 +42,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             projectId: "afent-8d50d",
@@ -49,16 +50,15 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
+        window.db = db;
         window.ReactContext = React.createContext();
     </script>
 
     <script type="text/babel" data-type="module">
         const { useState, useEffect, useContext, useRef } = React;
         const AppContext = window.ReactContext;
-        import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const db = getFirestore();
-
+        import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
             const base = "px-5 py-2.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
             const variants = {
@@ -66,7 +66,8 @@
                 secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
                 success: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md shadow-emerald-500/30",
                 danger: "bg-rose-500 text-white hover:bg-rose-600 shadow-md shadow-rose-500/30",
-                outline: "border-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                outline: "border-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+                purple: "bg-purple-600 text-white hover:bg-purple-700 shadow-md shadow-purple-500/30"
             };
             return <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
         };
@@ -87,7 +88,6 @@
             <div className={`bg-white rounded-3xl p-6 shadow-sm border border-slate-100 ${className}`}>{children}</div>
         );
 
-        // Custom Modals to replace standard alert/confirm
         const AlertModal = ({ isOpen, message, onClose }) => {
             if (!isOpen) return null;
             return (
@@ -205,9 +205,10 @@
         };
 
         const initialSettings = {
-            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ לבין נותן השירותים.\n\n1. פועל כקבלן עצמאי, איש מכירות ומפתח.\n2. התחייבות לעבודה עם ציוד אישי (מחשב) ורישיון AI פעיל (כגון ChatGPT).\n3. כל הלקוחות והסוכנים שייכים למערכת ולחברה בלבד.\n4. החברה תספק עבודה. בונוס יזמות 5% יוענק לפרילנסר שהביא לקוח.\n5. קנס על הפרת סודיות: 50,000 ש"ח.`,
-            clientAgreementText: `הסכם פיתוח ושירותי אינטרנט - אוריזיס\n\n1. החברה תספק את השירותים כפי שהוגדרו באפיון.\n2. פיתוח יתחיל לאחר תשלום מלא.\n3. זכויות היוצרים עוברות ללקוח בגמר חשבון.`,
-            announcement: `ברוכים הבאים למערכת החדשה של אוריזיס!`,
+            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ לבין נותן השירותים.\n\n1. פועל כקבלן עצמאי, איש מכירות ומפתח.\n2. התחייבות לעבודה עם ציוד אישי (מחשב) ורישיון AI פעיל (כגון ChatGPT).\n3. כל הלקוחות והסוכנים שייכים למערכת ולחברה בלבד.\n4. החברה תספק עבודה. בונוס יזמות 5% יוענק לפרילנסר שהביא לקוח.\n5. התמורה בגין השירותים תשולם אך ורק בתמורה להפקדת חשבונית מס כחוק, ובניכוי מס במקור בהתאם לאישור פקיד שומה רשמי.\n6. קנס על הפרת סודיות: 50,000 ש"ח.`,
+            clientAgreementText: `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ ח.פ 516977758 לבין הלקוח.\n1. החברה תספק פיתוח ועיצוב בהתאם לאפיון. חריגות יתומחרו בנפרד.\n2. תשלום מלא נדרש מראש. עיכוב במסירת חומרים יעכב את הפרויקט.\n3. הלקוח זכאי ל-2 סבבי תיקונים על בסיס האפיון.`,
+            announcement: `ברוכים הבאים למערכת החדשה של אוריזיס! יעד החודש: 50,000 ש"ח.`,
+            mlmBonus: 150,
             products: [
                 { id: 'prod_1', name: 'הנגשת אתר (תוסף חוקי)', price: 0 },
                 { id: 'prod_2', name: 'כפתור וואטסאפ צף', price: 0 },
@@ -225,7 +226,6 @@
             const [systemSettings, setSystemSettings] = useState(initialSettings);
             const [isLoading, setIsLoading] = useState(true);
 
-            // Modal States
             const [alertState, setAlertState] = useState({ isOpen: false, message: '' });
             const showAlert = (message) => setAlertState({ isOpen: true, message });
             const closeAlert = () => setAlertState({ isOpen: false, message: '' });
@@ -235,14 +235,20 @@
             const closeConfirm = () => setConfirmState({ isOpen: false, message: '', onConfirm: null });
 
             useEffect(() => {
+                const db = window.db;
                 const unsubProjects = onSnapshot(collection(db, "projects"), (snap) => setProjects(snap.docs.map(d => ({id: d.id, ...d.data()}))));
                 const unsubUsers = onSnapshot(collection(db, "users"), (snap) => setUsersList(snap.docs.map(d => ({uid: d.id, ...d.data()}))));
                 
                 const fetchSettings = async () => {
                     const docRef = doc(db, "system", "settings");
                     const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) setSystemSettings(docSnap.data());
-                    else await setDoc(docRef, initialSettings);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if(!data.products) data.products = initialSettings.products;
+                        setSystemSettings(data);
+                    } else {
+                        await setDoc(docRef, initialSettings);
+                    }
                     setIsLoading(false);
                 };
                 fetchSettings();
@@ -262,32 +268,33 @@
 
             const logout = () => { setLoggedInUser(null); setImpersonatedUser(null); };
 
-            const updateProject = async (id, data) => await updateDoc(doc(db, "projects", id), data);
-            const deleteProject = async (id) => await deleteDoc(doc(db, "projects", id));
+            const updateProject = async (id, data) => await updateDoc(doc(window.db, "projects", id), data);
+            const deleteProject = async (id) => await deleteDoc(doc(window.db, "projects", id));
             
-            const addProjectAndClient = async (clientData, initialPayment, freelancerId) => {
+            // יצירת פרויקט + יצירת לקוח משויך!
+            const addProjectAndClient = async (clientData, freelancerId) => {
                 const newUserId = `user_${Date.now()}`;
                 const newProjectId = `proj_${Date.now()}`;
                 
-                await setDoc(doc(db, "users", newUserId), {
+                await setDoc(doc(window.db, "users", newUserId), {
                     role: 'client', name: clientData.name, email: clientData.email, password: clientData.password, projectId: newProjectId
                 });
                 
-                await setDoc(doc(db, "projects", newProjectId), {
-                    customerName: clientData.name, clientId: newUserId, status: 'paid_waiting_for_brief', paymentAmount: Number(initialPayment), freelancerId: freelancerId || '',
-                    brief: '', clientSignature: null, upgrades: [], dateCreated: new Date().toISOString()
+                await setDoc(doc(window.db, "projects", newProjectId), {
+                    customerName: clientData.name, clientId: newUserId, status: 'paid_waiting_for_brief', paymentAmount: Number(clientData.paymentAmount), freelancerId: freelancerId || '',
+                    brief: '', clientSignature: null, upgrades: [], dateCreated: new Date().toISOString(), timeSpent: 0, isAgentBroughtClient: false
                 });
             };
 
-            const updateUser = async (id, data) => await updateDoc(doc(db, "users", id), data);
-            const addUser = async (userData) => await setDoc(doc(db, "users", `user_${Date.now()}`), userData);
-            const deleteUser = async (id) => await deleteDoc(doc(db, "users", id));
+            const updateUser = async (id, data) => await updateDoc(doc(window.db, "users", id), data);
+            const addUser = async (userData) => await setDoc(doc(window.db, "users", `user_${Date.now()}`), userData);
+            const deleteUser = async (id) => await deleteDoc(doc(window.db, "users", id));
             const updateSettings = async (data) => {
-                await updateDoc(doc(db, "system", "settings"), data);
+                await updateDoc(doc(window.db, "system", "settings"), data);
                 setSystemSettings(data);
             };
 
-            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">מתחבר למסד הנתונים...</div>;
+            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">מתחבר לענן...</div>;
 
             return (
                 <AppContext.Provider value={{ currentUser, loggedInUser, setImpersonatedUser, login, logout, projects, updateProject, addProjectAndClient, deleteProject, usersList, updateUser, addUser, deleteUser, systemSettings, updateSettings, showAlert, showConfirm }}>
@@ -336,13 +343,9 @@
             const { projects, usersList, updateProject, deleteProject, addUser, updateUser, deleteUser, systemSettings, updateSettings, showAlert, showConfirm, addProjectAndClient, setImpersonatedUser } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects'); 
             
-            // New Client / Project State
             const [newClientData, setNewClientData] = useState({ name: '', email: '', password: '', paymentAmount: '', freelancerId: '' });
+            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40, teamLeaderId: '' });
             
-            // New User State
-            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40 });
-            
-            // Settings State
             const [localSettings, setLocalSettings] = useState(systemSettings);
             const [newProduct, setNewProduct] = useState({ name: '', price: 0 });
             
@@ -352,29 +355,30 @@
 
             const freelancers = usersList.filter(u => u.role === 'freelancer');
             
-            // Financial calculations
             const totalRevenue = projects.reduce((sum, p) => sum + p.paymentAmount + (p.upgrades || []).reduce((s, u) => s + u.price, 0), 0);
             const activeProjectsCount = projects.filter(p => p.status !== 'completed').length;
             const freelancersCount = freelancers.length;
 
             const handleCreateClient = () => {
-                if(!newClientData.name || !newClientData.email || !newClientData.password) return showAlert("יש למלא שם לקוח, אימייל וסיסמה");
-                addProjectAndClient(newClientData, newClientData.paymentAmount || 0, newClientData.freelancerId);
-                showAlert("לקוח ופרויקט הוקמו בהצלחה!");
+                if(!newClientData.name || !newClientData.email || !newClientData.password) return showAlert("חובה למלא שם עסק, אימייל וסיסמה.");
+                addProjectAndClient(newClientData, newClientData.freelancerId);
+                showAlert("הלקוח והפרויקט הוקמו בהצלחה!");
                 setNewClientData({ name: '', email: '', password: '', paymentAmount: '', freelancerId: '' });
             };
 
-            const statusColors = {
-                'paid_waiting_for_brief': 'amber', 'brief_submitted': 'brand', 'in_progress': 'purple', 'qa_review': 'brand', 'completed': 'emerald', 'unknown': 'slate'
-            };
-            const statusText = {
-                'paid_waiting_for_brief': 'ממתין לאפיון לקוח', 'brief_submitted': 'אופיין - ממתין לפיתוח', 'in_progress': 'בפיתוח פעיל', 'qa_review': 'בקרת איכות (QA)', 'completed': 'הושלם ונמסר', 'unknown': 'לקוח חדש (טרם הוגדר)'
+            const statusColors = { 'paid_waiting_for_brief': 'amber', 'brief_submitted': 'brand', 'in_progress': 'purple', 'qa_review': 'brand', 'completed': 'emerald', 'unknown': 'slate' };
+            const statusText = { 'paid_waiting_for_brief': 'ממתין לחתימה ואפיון לקוח', 'brief_submitted': 'אופיין - ממתין לפיתוח', 'in_progress': 'בפיתוח פעיל', 'qa_review': 'בקרת איכות (QA)', 'completed': 'הושלם ונמסר', 'unknown': 'לקוח חדש' };
+
+            const getEfficiencyColor = (timeSpent) => {
+                if (!timeSpent) return 'bg-slate-100 text-slate-400';
+                const hours = timeSpent / 3600;
+                if (hours < 2.5) return 'bg-emerald-100 text-emerald-700 font-bold'; // ירוק
+                if (hours < 3.5) return 'bg-amber-100 text-amber-700 font-bold';     // צהוב
+                return 'bg-rose-100 text-rose-700 font-bold';                        // אדום (חריגה)
             };
 
             return (
                 <div className="max-w-7xl mx-auto space-y-8 fade-in">
-                    
-                    {/* Top Metrics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="bg-gradient-to-br from-brand-500 to-brand-700 text-white border-none shadow-xl shadow-brand-500/20">
                             <h3 className="text-brand-100 font-medium mb-2">הכנסות כוללות (בסיס + מוצרים)</h3>
@@ -390,38 +394,31 @@
                         </Card>
                     </div>
 
-                    {/* Navigation Tabs */}
-                    <div className="flex justify-center bg-white rounded-2xl p-2 shadow-sm border border-slate-100 mb-8 inline-flex mx-auto">
-                        <button onClick={() => setActiveTab('projects')} className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'projects' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>🚀 הקמת לקוחות ופרויקטים</button>
-                        <button onClick={() => setActiveTab('users')} className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'users' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>👥 צוות סוכנים</button>
-                        <button onClick={() => setActiveTab('settings')} className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'settings' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>⚙️ הגדרות, מחירון וחוזים</button>
+                    <div className="flex justify-center bg-white rounded-2xl p-2 shadow-sm border border-slate-100 mb-8 inline-flex mx-auto overflow-x-auto max-w-full">
+                        <button onClick={() => setActiveTab('projects')} className={`whitespace-nowrap px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'projects' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>🚀 הקמת לקוחות ופרויקטים</button>
+                        <button onClick={() => setActiveTab('users')} className={`whitespace-nowrap px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'users' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>👥 ניהול צוות סוכנים</button>
+                        <button onClick={() => setActiveTab('settings')} className={`whitespace-nowrap px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'settings' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>⚙️ הגדרות, מחירון וחוזים</button>
                     </div>
 
-                    {/* TAB 1: PROJECTS & CLIENTS */}
                     {activeTab === 'projects' && (
                         <div className="space-y-6">
                             <Card className="border-t-4 border-t-brand-500">
                                 <h2 className="text-xl font-black mb-6 text-slate-800">הקמת לקוח חדש (פתיחת פרויקט)</h2>
+                                <p className="text-sm text-slate-500 mb-4 font-bold">* הלקוח יקבל מייל וסיסמה, ייכנס למערכת לחתום על ההסכם, וימלא שאלון אפיון שיועבר אוטומטית לסוכן.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">שם הלקוח / עסק</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} placeholder="למשל: חיים כספות" /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">שם הלקוח / עסק</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">אימייל (להתחברות)</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">סיסמה ללקוח</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} placeholder="קבע סיסמה..." /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">תשלום מראש (₪)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" value={newClientData.paymentAmount} onChange={e=>setNewClientData({...newClientData, paymentAmount: e.target.value})} /></div>
                                     <div>
-                                        <label className="block text-xs font-bold mb-2 text-slate-600">אימייל (להתחברות הלקוח)</label>
-                                        <input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} placeholder="client@email.com" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold mb-2 text-slate-600">סיסמה ללקוח</label>
-                                        <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} placeholder="123456" />
-                                    </div>
-                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">תשלום שנגבה מראש (₪)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" value={newClientData.paymentAmount} onChange={e=>setNewClientData({...newClientData, paymentAmount: e.target.value})} /></div>
-                                    <div>
-                                        <label className="block text-xs font-bold mb-2 text-slate-600">שיוך איש מכירות/מפתח</label>
-                                        <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={newClientData.freelancerId} onChange={e=>setNewClientData({...newClientData, freelancerId: e.target.value})}>
+                                        <label className="block text-xs font-bold mb-2 text-brand-600">שיוך איש מכירות/מפתח</label>
+                                        <select className="w-full p-3 bg-brand-50 border border-brand-200 text-brand-800 rounded-xl font-bold" value={newClientData.freelancerId} onChange={e=>setNewClientData({...newClientData, freelancerId: e.target.value})}>
                                             <option value="">-- ללא שיוך כרגע --</option>
                                             {freelancers.map(f => <option key={f.uid} value={f.uid}>{f.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="col-span-full mt-2">
-                                        <Button onClick={handleCreateClient} className="w-full py-4 text-lg shadow-brand-500/30 shadow-lg">➕ הקם לקוח ופרויקט</Button>
+                                        <Button onClick={handleCreateClient} className="w-full py-4 text-lg">➕ הקם לקוח ופרויקט</Button>
                                     </div>
                                 </div>
                             </Card>
@@ -448,21 +445,26 @@
                                                     <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                                                         <td className="p-4">
                                                             <div className="font-black text-slate-800 text-lg">{p.customerName}</div>
-                                                            <div className="text-xs text-slate-400 font-mono mt-1">{p.id}</div>
+                                                            <div className="text-xs text-slate-400 font-mono mt-1">ID: {p.id}</div>
                                                         </td>
-                                                        <td className="p-4 text-center">
+                                                        <td className="p-4 text-center flex flex-col items-center gap-2">
                                                             <Badge color={statusColors[statusKey]}>{statusText[statusKey]}</Badge>
+                                                            {p.status === 'in_progress' && (
+                                                                <div className={`text-xs px-2 py-1.5 rounded-lg border ${getEfficiencyColor(p.timeSpent)}`}>
+                                                                    זמן פיתוח: {(p.timeSpent / 3600).toFixed(1)} שעות
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td className="p-4 text-center font-black text-lg text-slate-700">₪{totalValue}</td>
                                                         <td className="p-4 bg-brand-50/50">
                                                             <div className="flex flex-col gap-2 max-w-[200px] mx-auto">
-                                                                <select className="w-full p-2 text-sm bg-white border border-brand-200 rounded-lg outline-none font-bold text-brand-900 focus:ring-2 focus:ring-brand-500" value={p.freelancerId || ''} onChange={(e) => updateProject(p.id, { freelancerId: e.target.value })}>
+                                                                <select className="w-full p-2.5 text-sm bg-white border border-brand-200 rounded-lg outline-none font-bold text-brand-900 focus:ring-2 focus:ring-brand-500" value={p.freelancerId || ''} onChange={(e) => updateProject(p.id, { freelancerId: e.target.value })}>
                                                                     <option value="">-- בחר סוכן --</option>
                                                                     {freelancers.map(f => <option key={f.uid} value={f.uid}>{f.name}</option>)}
                                                                 </select>
-                                                                <label className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
-                                                                    <input type="checkbox" checked={p.isAgentBroughtClient || false} onChange={(e) => updateProject(p.id, { isAgentBroughtClient: e.target.checked })} className="rounded text-brand-500 focus:ring-brand-500" />
-                                                                    הובא ע"י הסוכן (+5%)
+                                                                <label className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                                                                    <input type="checkbox" checked={p.isAgentBroughtClient || false} onChange={(e) => updateProject(p.id, { isAgentBroughtClient: e.target.checked })} className="rounded text-brand-500 focus:ring-brand-500 w-4 h-4" />
+                                                                    סוכן הביא תלקוח (+5%)
                                                                 </label>
                                                             </div>
                                                         </td>
@@ -472,15 +474,19 @@
                                                                     const clientUser = usersList.find(u => u.uid === p.clientId);
                                                                     if(clientUser) setImpersonatedUser(clientUser);
                                                                     else showAlert("לא נמצא משתמש לקוח מחובר לפרויקט זה.");
-                                                                }} variant="primary" className="text-xs py-1.5 w-full justify-center bg-indigo-600 hover:bg-indigo-700 shadow-md">🚪 כנס לאזור הלקוח</Button>
-                                                                <Button onClick={() => setViewProject(p)} variant="secondary" className="text-xs py-1.5 w-full justify-center">📄 פרופיל, אפיון והסכם</Button>
-                                                                <Button onClick={() => showConfirm('האם למחוק פרויקט זה לחלוטין ממסד הנתונים?', () => deleteProject(p.id))} variant="outline" className="text-xs py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 w-full justify-center">🗑️ מחק פרויקט</Button>
+                                                                }} variant="purple" className="text-xs py-2 w-full justify-center">🚪 כנס לאזור הלקוח</Button>
+                                                                
+                                                                <Button onClick={() => setViewProject(p)} variant="secondary" className="text-xs py-2 w-full justify-center bg-slate-800 text-white hover:bg-slate-900">👁️ צפה באפיון ופרופיל</Button>
+                                                                
+                                                                {p.status === 'qa_review' && <Button onClick={() => updateProject(p.id, { status: 'completed' })} variant="success" className="text-xs py-2 w-full justify-center">✅ אישור סופי והעברה ללקוח</Button>}
+                                                                
+                                                                <Button onClick={() => showConfirm('האם למחוק פרויקט זה לחלוטין ממסד הנתונים?', () => deleteProject(p.id))} variant="outline" className="text-xs py-2 border-rose-200 text-rose-600 hover:bg-rose-50 w-full justify-center">🗑️ מחק פרויקט</Button>
                                                             </div>
                                                         </td>
                                                     </tr>
                                                 );
                                             })}
-                                            {projects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-500">אין פרויקטים במערכת. צור את הלקוח הראשון!</td></tr>}
+                                            {projects.length === 0 && <tr><td colSpan="5" className="text-center p-8 text-slate-500">אין פרויקטים במערכת. צור את הלקוח הראשון!</td></tr>}
                                         </tbody>
                                     </table>
                                 </div>
@@ -488,29 +494,28 @@
                         </div>
                     )}
 
-                    {/* TAB 2: USERS & TEAM */}
                     {activeTab === 'users' && (
                         <div className="space-y-6">
-                            <Card className="border-t-4 border-t-brand-500">
-                                <h2 className="text-xl font-black mb-6 text-slate-800">יצירת פרילנסר / עובד חדש</h2>
+                            <Card className="border-t-4 border-t-brand-500 bg-brand-50/30">
+                                <h2 className="text-xl font-black mb-2 text-slate-800">הקמת חבר צוות (סוכן/מפתח)</h2>
+                                <p className="text-rose-600 font-bold text-sm mb-6">⚠️ שים לב: כאן מקימים אך ורק פרילנסרים. לקוחות יש להקים אך ורק דרך לשונית "הקמת לקוחות ופרויקטים"!</p>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">שם מלא</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} placeholder="למשל: דני פיתוח" /></div>
-                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">אימייל</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} /></div>
-                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">סיסמה התחלתית</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left" dir="ltr" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} placeholder="123456" /></div>
-                                    <Button onClick={() => { if(!newUser.name || !newUser.email || !newUser.password) return showAlert("מלא את כל שדות החובה"); addUser(newUser); setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40 }); showAlert("העובד הוקם בהצלחה!"); }} className="w-full py-4 text-lg">➕ צור עובד</Button>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">שם מלא</label><input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-xl" value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">אימייל</label><input type="email" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-left" dir="ltr" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} /></div>
+                                    <div><label className="block text-xs font-bold mb-2 text-slate-600">סיסמה</label><input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-left" dir="ltr" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} /></div>
+                                    <Button onClick={() => { if(!newUser.name || !newUser.email || !newUser.password) return showAlert("מלא את כל השדות"); addUser(newUser); setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 40, teamLeaderId: '' }); showAlert("חבר צוות הוקם בהצלחה!"); }} className="w-full py-3.5 text-lg">➕ הוסף סוכן</Button>
                                 </div>
                             </Card>
 
                             <Card>
                                 <h2 className="text-xl font-black mb-6 text-slate-800">משתמשים קיימים במסד הנתונים</h2>
                                 <div className="overflow-x-auto pb-4">
-                                    <table className="w-full text-right min-w-[700px]">
+                                    <table className="w-full text-right min-w-[800px]">
                                         <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-sm">
                                             <tr>
                                                 <th className="p-4 rounded-tr-xl">שם משתמש ומייל</th>
                                                 <th className="p-4 text-center">הרשאה</th>
-                                                <th className="p-4 text-center">עמלת בסיס (לסוכן)</th>
-                                                <th className="p-4 text-center">עמלת שדרוגים (לסוכן)</th>
+                                                <th className="p-4 text-center">עמלת בסיס / שיוך מנהל</th>
                                                 <th className="p-4 rounded-tl-xl text-center">פעולות ופרופיל</th>
                                             </tr>
                                         </thead>
@@ -526,30 +531,34 @@
                                                     </td>
                                                     <td className="p-4 text-center">
                                                         {u.role === 'freelancer' ? (
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <span className="text-xs font-bold text-slate-500">עמלה:</span>
-                                                                <input type="number" className="w-16 p-2 bg-white border border-slate-200 rounded-lg text-center font-bold" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, { basePercentage: Number(e.target.value) })} />
-                                                                <span className="text-xs font-bold text-slate-500">%</span>
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-bold text-slate-500">עמלת בסיס:</span>
+                                                                    <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                                                        <input type="number" className="w-16 p-2 text-center font-bold text-slate-800 outline-none" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, { basePercentage: Number(e.target.value) })} />
+                                                                        <span className="bg-slate-100 px-2 py-2 text-slate-500 font-bold border-r border-slate-200">%</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-bold text-slate-500">עמלת שדרוג:</span>
+                                                                    <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                                                        <input type="number" className="w-16 p-2 text-center font-bold text-slate-800 outline-none" value={u.upsellPercentage || 40} onChange={(e) => updateUser(u.uid, { upsellPercentage: Number(e.target.value) })} />
+                                                                        <span className="bg-slate-100 px-2 py-2 text-slate-500 font-bold border-r border-slate-200">%</span>
+                                                                    </div>
+                                                                </div>
+                                                                <select className="text-xs p-2 border border-brand-200 rounded-lg w-full bg-brand-50 text-brand-800 font-bold" value={u.teamLeaderId || ''} onChange={(e) => updateUser(u.uid, { teamLeaderId: e.target.value })}>
+                                                                    <option value="">-- ללא מנהל צוות --</option>
+                                                                    {freelancers.filter(f => f.uid !== u.uid).map(f => <option key={f.uid} value={f.uid}>צוות: {f.name}</option>)}
+                                                                </select>
                                                             </div>
-                                                        ) : <span className="text-slate-300">-</span>}
+                                                        ) : '-'}
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        {u.role === 'freelancer' ? (
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <span className="text-xs font-bold text-slate-500">אפסייל:</span>
-                                                                <input type="number" className="w-16 p-2 bg-white border border-slate-200 rounded-lg text-center font-bold" value={u.upsellPercentage || 40} onChange={(e) => updateUser(u.uid, { upsellPercentage: Number(e.target.value) })} />
-                                                                <span className="text-xs font-bold text-slate-500">%</span>
-                                                            </div>
-                                                        ) : <span className="text-slate-300">-</span>}
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <div className="flex flex-col gap-2">
-                                                            <Button onClick={() => setImpersonatedUser(u)} variant="primary" className="text-xs py-1.5 w-full justify-center bg-indigo-600 hover:bg-indigo-700 shadow-md">🚪 כנס למסך המשתמש</Button>
-                                                            <Button onClick={() => setEditUser(u)} variant="secondary" className="text-xs py-1.5 w-full justify-center bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">✏️ ערוך פרטים וסיסמה</Button>
-                                                            <Button onClick={() => setViewUser(u)} variant="secondary" className="text-xs py-1.5 w-full justify-center">📄 צפה בפרופיל וחתימה</Button>
-                                                            {u.uid !== 'master_admin' && (
-                                                                <Button onClick={() => showConfirm('למחוק משתמש זה? לא תהיה לו יותר גישה למערכת.', () => deleteUser(u.uid))} variant="outline" className="text-xs py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 w-full justify-center">🗑️ מחק משתמש</Button>
-                                                            )}
+                                                        <div className="flex flex-col gap-2 max-w-[200px] mx-auto">
+                                                            <Button onClick={() => setImpersonatedUser(u)} variant="purple" className="text-xs py-2 w-full justify-center">🚪 כנס לאזור משתמש</Button>
+                                                            <Button onClick={() => setViewUser(u)} variant="secondary" className="text-xs py-2 w-full justify-center bg-slate-800 text-white hover:bg-slate-900">👁️ צפה בפרופיל וחתימה</Button>
+                                                            <Button onClick={() => setEditUser(u)} variant="secondary" className="text-xs py-2 w-full justify-center bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200">✏️ ערוך פרטים וסיסמה</Button>
+                                                            {u.uid !== 'master_admin' && <Button onClick={() => showConfirm('למחוק משתמש זה לחלוטין?', () => deleteUser(u.uid))} variant="outline" className="text-xs py-2 border-rose-200 text-rose-600 hover:bg-rose-50 w-full justify-center">🗑️ מחק משתמש</Button>}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -561,154 +570,159 @@
                         </div>
                     )}
 
-                    {/* TAB 3: SETTINGS & CONTRACTS */}
                     {activeTab === 'settings' && (
                         <div className="space-y-6 fade-in">
                             <Card>
-                                <h2 className="text-xl font-black mb-2 text-slate-800">הגדרות חוזים וטקסטים</h2>
-                                <p className="text-slate-500 mb-6 text-sm">הטקסטים שיופיעו במסכי החתימה של הלקוחות והפרילנסרים.</p>
+                                <h2 className="text-xl font-black mb-2 text-slate-800">הגדרות, מחירון וחוזים</h2>
+                                <p className="text-slate-500 mb-6 text-sm">ניהול הליבה של הסוכנות: טקסט ההסכמים, הודעות לצוות, ומחירון השדרוגים (MRR).</p>
                                 
                                 <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">נוסח הסכם פרילנסר (כולל סעיפי מחשב ו-AI)</label>
-                                        <textarea className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl h-40 outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed font-medium" value={localSettings.freelancerAgreementText} onChange={e=>setLocalSettings({...localSettings, freelancerAgreementText: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">נוסח הסכם לקוח (לאחר תשלום)</label>
-                                        <textarea className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl h-32 outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed font-medium" value={localSettings.clientAgreementText} onChange={e=>setLocalSettings({...localSettings, clientAgreementText: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">הודעת מערכת (תופיע בדשבורד הפרילנסרים)</label>
-                                        <textarea className="w-full p-4 bg-amber-50 border border-amber-200 rounded-xl h-20 outline-none focus:ring-2 focus:ring-amber-500 text-sm font-bold text-amber-900" value={localSettings.announcement} onChange={e=>setLocalSettings({...localSettings, announcement: e.target.value})} />
-                                    </div>
+                                    <div><label className="block text-sm font-bold text-slate-700 mb-2">הודעת מערכת (מופיעה בדשבורד של הפרילנסרים)</label><textarea className="w-full p-4 bg-amber-50 border border-amber-200 rounded-xl h-20 outline-none font-bold text-amber-900" value={localSettings.announcement} onChange={e=>setLocalSettings({...localSettings, announcement: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-slate-700 mb-2">הסכם פרילנסר (סוכן/מפתח יחתום על כך טרם העבודה)</label><textarea className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl h-40 outline-none font-medium text-sm" value={localSettings.freelancerAgreementText} onChange={e=>setLocalSettings({...localSettings, freelancerAgreementText: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-slate-700 mb-2">הסכם פיתוח לקוח (הלקוח יחתום על כך לפני תחילת העבודה)</label><textarea className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl h-40 outline-none font-medium text-sm" value={localSettings.clientAgreementText} onChange={e=>setLocalSettings({...localSettings, clientAgreementText: e.target.value})} /></div>
                                 </div>
 
                                 <div className="border-t border-slate-200 pt-8 mt-8">
-                                    <h3 className="font-black text-xl text-slate-900 mb-2">💰 חנות מוצרים ושירותים (ללקוח לאחר סיום)</h3>
-                                    <p className="text-sm text-slate-500 mb-6">כאן תוכל להוסיף ולתמחר מוצרים שיוצעו ללקוח באזור האישי (כולל מוצרי חינם בתמחור 0 ש"ח כמו נגישות ודומיין).</p>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div>
+                                            <h3 className="font-black text-xl text-slate-900">💰 חנות מוצרים וריטיינרים (מוצג ללקוח)</h3>
+                                            <p className="text-sm text-slate-500">הלקוח יוכל לרכוש מוצרים אלו בדשבורד שלו. שים מחיר "0" כדי להציג כ"חינם".</p>
+                                        </div>
+                                        <div className="bg-purple-50 p-3 rounded-xl border border-purple-200">
+                                            <label className="text-xs font-bold text-purple-800 block mb-1">עמלת ראש צוות (MLM)</label>
+                                            <div className="flex items-center bg-white border border-purple-300 rounded overflow-hidden">
+                                                <span className="px-2 font-black text-purple-800">₪</span>
+                                                <input type="number" className="w-20 p-1.5 font-black text-center outline-none" value={localSettings.mlmBonus || 150} onChange={e=>setLocalSettings({...localSettings, mlmBonus: Number(e.target.value)})} />
+                                            </div>
+                                        </div>
+                                    </div>
                                     
-                                    <div className="flex gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-200 items-end">
-                                        <div className="flex-1"><label className="block text-xs font-bold mb-1.5 text-slate-700">שם המוצר / שירות</label><input type="text" className="w-full p-2.5 bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-500 font-medium" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} placeholder="לדוגמה: הנגשת אתר תקנית..." /></div>
-                                        <div className="w-32"><label className="block text-xs font-bold mb-1.5 text-slate-700">מחיר (₪)</label><input type="number" className="w-full p-2.5 bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-500 font-black text-center" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: e.target.value})} /></div>
-                                        <Button onClick={() => { if(!newProduct.name) return showAlert("אנא הכנס שם מוצר"); const updated = [...(localSettings.products || []), {id: `prod_${Date.now()}`, name: newProduct.name, price: Number(newProduct.price)}]; setLocalSettings({...localSettings, products: updated}); setNewProduct({name:'', price:0}); }} variant="primary" className="py-2.5">➕ הוסף לחנות</Button>
+                                    <div className="flex flex-wrap md:flex-nowrap gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200 items-end shadow-inner">
+                                        <div className="flex-1 min-w-[200px]"><label className="block text-xs font-bold mb-1.5 text-slate-700">שם מוצר / שירות חדש</label><input type="text" className="w-full p-3 bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} placeholder="לדוגמה: כפתור וואטסאפ..." /></div>
+                                        <div className="w-32"><label className="block text-xs font-bold mb-1.5 text-slate-700">מחיר (₪)</label><input type="number" className="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-black outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: e.target.value})} /></div>
+                                        <Button onClick={() => { if(!newProduct.name) return showAlert("הכנס שם מוצר"); const updated = [...(localSettings.products || []), {id: `prod_${Date.now()}`, name: newProduct.name, price: Number(newProduct.price)}]; setLocalSettings({...localSettings, products: updated}); setNewProduct({name:'', price:0}); }} variant="primary" className="py-3 px-6 h-[46px] w-full md:w-auto whitespace-nowrap">➕ הוסף למחירון</Button>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {(localSettings.products || []).map(prod => (
-                                            <div key={prod.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center group hover:border-brand-300 transition-all">
+                                            <div key={prod.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center group hover:border-brand-300 transition-colors">
                                                 <div>
                                                     <div className="font-black text-slate-800">{prod.name}</div>
-                                                    <div className={`text-sm font-bold mt-1 ${prod.price === 0 ? 'text-emerald-500' : 'text-brand-600'}`}>{prod.price === 0 ? 'חינם (0 ₪)' : `₪${prod.price}`}</div>
+                                                    <div className={`text-sm font-bold mt-1 ${prod.price === 0 ? 'text-emerald-500' : 'text-brand-600'}`}>{prod.price === 0 ? 'חינם לגמרי' : `₪${prod.price}`}</div>
                                                 </div>
-                                                <button onClick={() => { const updated = localSettings.products.filter(p => p.id !== prod.id); setLocalSettings({...localSettings, products: updated}); }} className="text-slate-300 hover:text-rose-500 transition-colors p-2 text-lg" title="מחק מוצר">🗑️</button>
+                                                <button onClick={() => { setLocalSettings({...localSettings, products: localSettings.products.filter(p => p.id !== prod.id)}); }} className="w-10 h-10 rounded-full bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 font-bold text-lg flex items-center justify-center transition-colors">🗑️</button>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-
                                 <div className="mt-8 pt-8 border-t border-slate-200">
-                                    <Button onClick={() => { updateSettings(localSettings); showAlert("הגדרות המערכת נשמרו בהצלחה!"); }} className="w-full py-4 text-xl">💾 שמור את כל ההגדרות והמחירון</Button>
+                                    <Button onClick={() => { updateSettings(localSettings); showAlert("הגדרות המערכת והמחירון נשמרו בהצלחה!"); }} className="w-full py-4 text-xl">💾 שמור את כל ההגדרות והשינויים</Button>
                                 </div>
                             </Card>
                         </div>
                     )}
 
-                    {/* Extended Details Modals */}
+                    {/* Modals for Admin */}
                     <DetailsModal isOpen={!!viewProject} onClose={() => setViewProject(null)} title={`פרופיל פרויקט: ${viewProject?.customerName}`}>
                         {viewProject && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">סטטוס התקדמות</span><span className="font-black text-brand-700">{statusText[statusColors[viewProject.status] ? viewProject.status : 'unknown']}</span></div>
-                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">שווי פרויקט</span><span className="font-black text-slate-800">₪{viewProject.paymentAmount}</span></div>
-                                    <div className="bg-emerald-50 p-4 rounded-xl"><span className="text-xs text-emerald-600 block">תשלום פרויקט</span><span className="font-black text-emerald-700">שולם מראש ✔️</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">סטטוס פרויקט</span><span className="font-black text-brand-700">{statusText[statusColors[viewProject.status] ? viewProject.status : 'unknown']}</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">שווי כולל (שקלים)</span><span className="font-black text-slate-800">₪{viewProject.paymentAmount + (viewProject.upgrades || []).reduce((s, u) => s + u.price, 0)}</span></div>
+                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200"><span className="text-xs text-emerald-600 block">סטטוס תשלום בסיס</span><span className="font-black text-emerald-700 text-lg">שולם מראש ✔️</span></div>
                                 </div>
                                 <div>
-                                    <h4 className="font-black text-slate-800 mb-2">אפיון הלקוח / הערות נציג</h4>
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[100px] whitespace-pre-wrap font-medium text-slate-700">
-                                        {viewProject.brief || 'טרם הוזן אפיון.'}
+                                    <h4 className="font-black text-slate-800 mb-2 flex items-center gap-2"><span>📝</span> אפיון הלקוח / הערות הפרילנסר</h4>
+                                    <div className="bg-brand-50 p-5 rounded-2xl border border-brand-100 min-h-[120px] whitespace-pre-wrap font-medium text-brand-900 leading-relaxed shadow-inner text-sm">
+                                        {viewProject.brief || 'טרם הוזן אפיון. הלקוח או הפרילנסר צריכים לעדכן את השדה הזה.'}
                                     </div>
                                 </div>
                                 {viewProject.clientSignature && (
                                     <div>
-                                        <h4 className="font-black text-slate-800 mb-2">חתימת לקוח על חוזה</h4>
-                                        <img src={viewProject.clientSignature} alt="Client Signature" className="border border-slate-200 rounded-xl bg-white h-32 object-contain" />
+                                        <h4 className="font-black text-slate-800 mb-2 flex items-center gap-2"><span>✍️</span> חתימת לקוח על חוזה פיתוח</h4>
+                                        <img src={viewProject.clientSignature} alt="Client Signature" className="border-2 border-slate-200 rounded-2xl bg-white h-40 object-contain p-2 shadow-sm" />
                                     </div>
                                 )}
                             </div>
                         )}
                     </DetailsModal>
 
-                    <DetailsModal isOpen={!!viewUser} onClose={() => setViewUser(null)} title={`פרופיל עובד/לקוח: ${viewUser?.name}`}>
+                    <DetailsModal isOpen={!!viewUser} onClose={() => setViewUser(null)} title={`פרופיל משתמש: ${viewUser?.name}`}>
                         {viewUser && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">אימייל</span><span className="font-black text-slate-800">{viewUser.email}</span></div>
-                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">הרשאה</span><span className="font-black text-brand-700">{viewUser.role}</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">אימייל התחברות</span><span className="font-black text-slate-800">{viewUser.email}</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">הרשאת מערכת</span><span className="font-black text-brand-700 uppercase tracking-widest">{viewUser.role}</span></div>
                                 </div>
                                 {viewUser.role === 'freelancer' && viewUser.signature && (
-                                <div>
-                                    <h4 className="font-black text-slate-800 mb-2">חתימת פרילנסר על חוזה סודיות ותנאים</h4>
-                                    <img src={viewUser.signature} alt="Freelancer Signature" className="border border-slate-200 rounded-xl bg-white h-32 object-contain" />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </DetailsModal>
+                                    <div><h4 className="font-black text-slate-800 mb-2">חתימה דיגיטלית על הסכם עבודה</h4><img src={viewUser.signature} alt="Signature" className="border-2 border-slate-200 rounded-2xl bg-white h-40 object-contain p-2 shadow-sm" /></div>
+                                )}
+                            </div>
+                        )}
+                    </DetailsModal>
 
-                <DetailsModal isOpen={!!editUser} onClose={() => setEditUser(null)} title={`עריכת משתמש: ${editUser?.name}`}>
-                    {editUser && (
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold mb-2 text-slate-600">שם מלא</label>
-                                <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500" value={editUser.name} onChange={e=>setEditUser({...editUser, name: e.target.value})} />
+                    <DetailsModal isOpen={!!editUser} onClose={() => setEditUser(null)} title={`עריכת פרטי התחברות: ${editUser?.name}`}>
+                        {editUser && (
+                            <div className="space-y-4">
+                                <div><label className="block text-xs font-bold mb-2 text-slate-700">שם מלא</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500" value={editUser.name} onChange={e=>setEditUser({...editUser, name: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold mb-2 text-slate-700">אימייל (שם משתמש)</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left outline-none focus:border-brand-500" dir="ltr" value={editUser.email} onChange={e=>setEditUser({...editUser, email: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold mb-2 text-slate-700">סיסמה חדשה</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-left outline-none focus:border-brand-500" dir="ltr" value={editUser.password} onChange={e=>setEditUser({...editUser, password: e.target.value})} /></div>
+                                <Button onClick={() => { updateUser(editUser.uid, {name: editUser.name, email: editUser.email, password: editUser.password}); showAlert("הפרטים עודכנו בהצלחה!"); setEditUser(null); }} className="w-full py-4 text-lg mt-4">💾 שמור פרטים וסיסמה</Button>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold mb-2 text-slate-600">אימייל להתחברות</label>
-                                <input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 text-left" dir="ltr" value={editUser.email} onChange={e=>setEditUser({...editUser, email: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold mb-2 text-slate-600">סיסמה</label>
-                                <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 text-left" dir="ltr" value={editUser.password} onChange={e=>setEditUser({...editUser, password: e.target.value})} />
-                            </div>
-                            <div className="pt-4 mt-2 border-t border-slate-100">
-                                <Button onClick={() => { 
-                                    updateUser(editUser.uid, {name: editUser.name, email: editUser.email, password: editUser.password}); 
-                                    if (editUser.role === 'client' && editUser.projectId) {
-                                        updateProject(editUser.projectId, { customerName: editUser.name });
-                                    }
-                                    showAlert("פרטי המשתמש והסיסמה עודכנו בהצלחה!"); 
-                                    setEditUser(null); 
-                                }} className="w-full py-4 text-lg">💾 שמור שינויים</Button>
-                            </div>
-                        </div>
-                    )}
-                </DetailsModal>
+                        )}
+                    </DetailsModal>
+                </div>
+            );
+        };
 
-            </div>
-        );
-    };
-
-    const FreelancerDashboard = () => {
-            const { currentUser, projects, updateProject, updateUser, systemSettings, showAlert, showConfirm } = useContext(AppContext);
+        const FreelancerDashboard = () => {
+            const { currentUser, projects, updateProject, updateUser, usersList, systemSettings, showAlert, showConfirm } = useContext(AppContext);
             const myProjects = projects.filter(p => p.freelancerId === currentUser.uid && p.status !== 'completed');
             
-            // Allow freelancer to edit brief from phone calls
             const [editingBriefs, setEditingBriefs] = useState({});
+            const [activeTimer, setActiveTimer] = useState(null);
+            
+            // Financial calculations for Freelancer
+            const myCompletedProjects = projects.filter(p => p.freelancerId === currentUser.uid && p.status === 'completed');
+            const activeIncome = myCompletedProjects.reduce((sum, p) => {
+                const baseComm = p.paymentAmount * ((currentUser.basePercentage || 60) + (p.isAgentBroughtClient ? 5 : 0)) / 100;
+                const upsellComm = (p.upgrades || []).reduce((s, u) => s + u.price, 0) * (currentUser.upsellPercentage || 40) / 100;
+                return sum + baseComm + upsellComm;
+            }, 0);
+            
+            // MLM Calculation
+            const mySubAgents = projects.filter(p => p.status === 'completed' && p.freelancerId !== currentUser.uid && usersList?.find(u => u.uid === p.freelancerId)?.teamLeaderId === currentUser.uid);
+            const passiveIncome = mySubAgents.length * (systemSettings.mlmBonus || 150);
+
+            const totalIncome = activeIncome + passiveIncome;
+            const goal = 50000;
+            const progressPercent = Math.min((totalIncome / goal) * 100, 100);
+
+            useEffect(() => {
+                let interval;
+                if (activeTimer) {
+                    interval = setInterval(() => {
+                        const proj = projects.find(p => p.id === activeTimer);
+                        if(proj) updateProject(activeTimer, { timeSpent: (proj.timeSpent || 0) + 1 });
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [activeTimer, projects]);
 
             const handleSignContract = (signatureData) => {
                 updateUser(currentUser.uid, { signature: signatureData });
-                showAlert("החוזה נחתם בהצלחה. כעת תוכל לגשת לפרויקטים שלך.");
+                showAlert("החוזה נחתם. המערכת פתוחה לעבודה, המון בהצלחה!");
             };
 
             if (!currentUser.signature) {
                 return (
-                    <div className="max-w-3xl mx-auto mt-10">
+                    <div className="max-w-3xl mx-auto mt-10 p-4">
                         <Card className="border-t-4 border-t-amber-500 shadow-xl">
-                            <h2 className="text-2xl font-black mb-4 text-slate-800 text-center">ברוך הבא לצוות המפתחים! חתימה על הסכם חובה</h2>
-                            <div className="bg-slate-50 p-6 rounded-2xl text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-medium border border-slate-200 mb-6">
+                            <h2 className="text-2xl font-black mb-4 text-slate-800 text-center">חתימה על הסכם פרילנסר - חובה</h2>
+                            <p className="text-center text-slate-500 text-sm mb-6 font-bold">לא ניתן להתחיל לעבוד ולהרוויח כסף במערכת ללא קריאה וחתימה על הסכם זה.</p>
+                            <div className="bg-slate-50 p-6 rounded-2xl text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-64 overflow-y-auto shadow-inner">
                                 {systemSettings.freelancerAgreementText}
                             </div>
-                            <p className="text-center font-bold text-slate-600 mb-4">אנא חתום את שמך המלא בתיבה מטה (באמצעות העכבר או האצבע):</p>
                             <SignaturePad onSave={handleSignContract} />
                         </Card>
                     </div>
@@ -718,41 +732,74 @@
             return (
                 <div className="max-w-5xl mx-auto space-y-6 fade-in">
                     {systemSettings.announcement && (
-                        <div className="bg-amber-100 border-r-4 border-amber-500 text-amber-900 p-4 rounded-l-xl shadow-sm font-bold text-center">
-                            📣 הודעת מערכת: {systemSettings.announcement}
+                        <div className="bg-gradient-to-r from-amber-100 to-amber-50 border-r-4 border-amber-500 text-amber-900 p-5 rounded-2xl shadow-sm font-bold flex items-center gap-4">
+                            <span className="text-2xl">📣</span> <span>{systemSettings.announcement}</span>
                         </div>
                     )}
                     
-                    <h2 className="text-2xl font-black text-slate-800 mb-6">הפרויקטים הפעילים שלי</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-slate-900 text-white md:col-span-2 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+                            <h3 className="font-black text-xl mb-4 text-slate-200">יעד הכנסות חודשי: 50,000 ש"ח</h3>
+                            <div className="flex justify-between font-bold mb-2 text-lg">
+                                <span className="text-emerald-400">₪{totalIncome.toLocaleString()} הושגו</span>
+                                <span className="text-slate-400">₪{(goal - totalIncome).toLocaleString()} נותרו</span>
+                            </div>
+                            <div className="w-full bg-slate-800 rounded-full h-5 mb-2 overflow-hidden shadow-inner p-1">
+                                <div className="bg-gradient-to-r from-emerald-400 to-emerald-600 h-full rounded-full transition-all duration-1000 relative" style={{width: `${progressPercent}%`}}>
+                                    {progressPercent > 5 && <div className="absolute inset-0 bg-white/20 animate-pulse"></div>}
+                                </div>
+                            </div>
+                            <div className="flex justify-between mt-4 text-sm font-bold text-slate-400 border-t border-slate-700 pt-4">
+                                <span>פעילות אישית (אתרים/שדרוגים): ₪{activeIncome.toLocaleString()}</span>
+                                {passiveIncome > 0 && <span className="text-purple-400">MLM (ראשי צוותים): ₪{passiveIncome.toLocaleString()}</span>}
+                            </div>
+                        </Card>
+                        
+                        <Card className="flex flex-col justify-center items-center text-center shadow-lg border-2 border-brand-100">
+                            <h3 className="text-slate-500 font-bold mb-2">משימות פתוחות בתור</h3>
+                            <div className="text-6xl font-black text-brand-600 mb-2">{myProjects.length}</div>
+                            <p className="text-xs text-slate-400 font-bold">סגור אותן כדי לשחרר כסף!</p>
+                        </Card>
+                    </div>
+                    
+                    <h2 className="text-2xl font-black text-slate-800 mb-6 mt-8 flex items-center gap-2"><span>🚀</span> הפרויקטים הפעילים שלי</h2>
                     
                     {myProjects.map(p => (
-                        <Card key={p.id} className="border-t-4 border-t-brand-500 mb-6 shadow-md">
+                        <Card key={p.id} className="border-t-4 border-t-brand-500 mb-6 shadow-md hover:shadow-lg transition-shadow">
                             <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900">{p.customerName}</h3>
-                                    <span className="text-xs text-slate-400 font-mono">ID: {p.id}</span>
-                                </div>
-                                <Badge color={p.status === 'in_progress' ? 'purple' : p.status === 'qa_review' ? 'brand' : 'amber'}>{p.status.replace(/_/g, ' ')}</Badge>
+                                <div><h3 className="text-xl font-black text-slate-900">{p.customerName}</h3><span className="text-xs text-slate-400 font-mono font-bold">ID: {p.id}</span></div>
+                                <Badge color={p.status === 'in_progress' ? 'purple' : 'amber'}>{p.status}</Badge>
                             </div>
                             
-                            <div className="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-200">
-                                <h4 className="font-black text-slate-800 mb-2">אפיון והערות פרויקט (ניתן לערוך במהלך שיחה)</h4>
+                            <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <div className="font-mono text-2xl font-black text-slate-700 flex-1 text-center md:text-right">⏱️ {(p.timeSpent / 3600).toFixed(2)} שעות פיתוח</div>
+                                {activeTimer === p.id ? (
+                                    <Button onClick={() => setActiveTimer(null)} variant="danger" className="animate-pulse w-full md:w-auto px-8 py-3 text-lg">⏸️ השהה טיימר</Button>
+                                ) : (
+                                    <Button onClick={() => { updateProject(p.id, {status: 'in_progress'}); setActiveTimer(p.id); }} variant="primary" className="w-full md:w-auto px-8 py-3 text-lg shadow-brand-500/40">▶️ התחל טיימר עבודה</Button>
+                                )}
+                            </div>
+                            
+                            <div className="bg-brand-50 p-5 rounded-2xl mb-6 border border-brand-200">
+                                <h4 className="font-black text-brand-900 mb-2">📝 אפיון והערות פרויקט (ניתן לערוך במהלך שיחה עם לקוח)</h4>
+                                <p className="text-xs text-brand-700 mb-3 font-bold">מה שהלקוח מילא בדשבורד שלו יופיע כאן אוטומטית. תוכל לערוך ולשמור.</p>
                                 <textarea 
-                                    className="w-full p-3 bg-white border border-slate-200 rounded-lg min-h-[120px] outline-none focus:border-brand-500 text-sm font-medium"
+                                    className="w-full p-4 bg-white border border-brand-200 rounded-xl min-h-[150px] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 text-sm font-medium leading-relaxed shadow-inner"
                                     value={editingBriefs[p.id] !== undefined ? editingBriefs[p.id] : (p.brief || '')}
                                     onChange={(e) => setEditingBriefs({...editingBriefs, [p.id]: e.target.value})}
                                     placeholder="הזן סיכום שיחה עם הלקוח או ערוך את האפיון..."
                                 />
-                                <Button onClick={() => { updateProject(p.id, { brief: editingBriefs[p.id] }); showAlert("האפיון נשמר בהצלחה!"); }} variant="secondary" className="mt-2 text-xs py-1.5 px-4">💾 שמור עדכון אפיון</Button>
+                                <Button onClick={() => { updateProject(p.id, { brief: editingBriefs[p.id] }); showAlert("האפיון נשמר בהצלחה במסד הנתונים."); }} variant="secondary" className="mt-3 text-sm py-2 px-6 font-black bg-brand-600 text-white hover:bg-brand-700 border-none shadow-md">💾 שמור עדכון אפיון</Button>
                             </div>
 
-                            <div className="flex gap-3 pt-2 mt-4 border-t border-slate-100">
-                                <Button onClick={()=>updateProject(p.id, {status: 'qa_review'})} variant="success" className="flex-1 text-base py-3 shadow-md">✔️ הגש לבקרת איכות (QA)</Button>
-                                <Button onClick={()=>showConfirm('בטוח שברצונך לדווח על תקיעה/בעיה בלקוח?', ()=>showAlert('הדיווח נשלח להנהלה.'))} variant="danger" className="text-base py-3 px-6 shadow-md">🔴 נתקעתי</Button>
+                            <div className="flex gap-4 pt-4 border-t border-slate-100">
+                                <Button onClick={()=>showConfirm('האם סיימת את כל הצ\'ק ליסט (מובייל, מהירות, נגישות)? האם הכל תקין?', () => { setActiveTimer(null); updateProject(p.id, {status: 'qa_review'}); })} variant="success" className="flex-1 py-4 text-lg shadow-emerald-500/30">✔️ הגש לבקרת איכות (QA)</Button>
+                                <Button onClick={()=>{ setActiveTimer(null); showConfirm('לדווח על בעיה למנהל הסטודיו? זה יעצור את הטיימר.', ()=>showAlert('הדיווח נשלח למנהל בהצלחה.')); }} variant="danger" className="py-4 px-6 text-lg shadow-rose-500/30">🔴 נתקעתי</Button>
                             </div>
                         </Card>
                     ))}
-                    {myProjects.length === 0 && <div className="text-center p-12 bg-white rounded-3xl border border-slate-100 text-slate-500 font-bold text-lg">אין לך פרויקטים פעילים כרגע. צא למכור!</div>}
+                    {myProjects.length === 0 && <div className="text-center p-16 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-2xl">אין לך פרויקטים פתוחים לעבודה. צא למכור! 💸</div>}
                 </div>
             );
         };
@@ -760,114 +807,179 @@
         const ClientPortal = () => {
             const { currentUser, projects, updateProject, systemSettings, showAlert } = useContext(AppContext);
             const project = projects.find(p => p.id === currentUser.projectId);
-            const [localBrief, setLocalBrief] = useState(project?.brief || '');
             
-            // Payment Modal State for MRR
-            const [paymentModalData, setPaymentModalData] = useState({ isOpen: false, amount: 0, reason: '', product: null });
+            const [briefData, setBriefData] = useState({ q1: '', q2: '', q3: '', q4: '' });
+            const [paymentModalData, setPaymentModalData] = useState({ isOpen: false, amount: 0, reason: '', product: null, isInitial: false });
 
-            const handleSignClient = (signatureData) => updateProject(project.id, { clientSignature: signatureData });
+            const handleSignClient = (signatureData) => {
+                // מפעיל את מודל התשלום לפני שמירת החתימה סופית - הלקוח צריך קודם לשלם כדי להמשיך
+                setPaymentModalData({ isOpen: true, amount: project.paymentAmount, reason: 'תשלום על פיתוח והקמת האתר', product: null, isInitial: true, pendingSignature: signatureData });
+            };
+            
             const handleSubmitBrief = () => {
-                updateProject(project.id, { brief: localBrief, status: 'brief_submitted' });
-                showAlert("האפיון נשלח בהצלחה לצוות הפיתוח!");
+                // אורז את השאלות המנחות לבלוק טקסט נקי לפרילנסר
+                const formattedBrief = `1. על העסק וקהל היעד:\n${briefData.q1}\n\n2. מתחרים והשראה:\n${briefData.q2}\n\n3. סגנון עיצובי וצבעים:\n${briefData.q3}\n\n4. הערות נוספות:\n${briefData.q4}`;
+                updateProject(project.id, { brief: formattedBrief, status: 'in_progress' });
+                showAlert("האפיון נשלח בהצלחה לצוות הפיתוח! אנחנו מתחילים לעבוד.");
             };
 
-            const simulatePayment = () => {
-                if(paymentModalData.product) {
+            const processPayment = () => {
+                if (paymentModalData.isInitial) {
+                    updateProject(project.id, { clientSignature: paymentModalData.pendingSignature });
+                    showAlert("התשלום התקבל וההסכם נחתם בהצלחה! בוא נאפיין את האתר.");
+                } else if(paymentModalData.product) {
                     const currentUpgrades = project.upgrades || [];
                     updateProject(project.id, { upgrades: [...currentUpgrades, paymentModalData.product] });
-                    showAlert(`השדרוג ${paymentModalData.product.name} נוסף בהצלחה לאתר שלך!`);
+                    showAlert(`המוצר ${paymentModalData.product.name} נוסף בהצלחה לאתר שלך!`);
                 }
-                setPaymentModalData({ isOpen: false, amount: 0, reason: '', product: null });
+                setPaymentModalData({ isOpen: false, amount: 0, reason: '', product: null, isInitial: false, pendingSignature: null });
             };
 
-            if (!project) return <div className="text-center p-10 font-bold">לא נמצא פרויקט מקושר.</div>;
+            if (!project) return <div className="text-center p-10 font-bold text-rose-500">שגיאה: לא נמצא פרויקט מקושר למשתמש זה. פנה למנהל.</div>;
 
             const isCompleted = project.status === 'completed';
+            const isBriefSubmitted = project.status !== 'paid_waiting_for_brief'; // אם הוא לא בסטטוס ראשוני, סימן שהאפיון כבר הוגש או בפיתוח
 
             return (
                 <div className="max-w-4xl mx-auto space-y-8 fade-in">
                     
-                    {/* Payment Checkout Modal */}
                     {paymentModalData.isOpen && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[300] p-4 fade-in">
-                            <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-100 text-center">
-                                <h3 className="text-2xl font-black text-slate-900 mb-2">קופה ותשלום מאובטח</h3>
-                                <p className="text-slate-500 mb-6 font-medium">עבור: {paymentModalData.reason}</p>
-                                <div className="text-4xl font-black text-brand-600 mb-8">₪{paymentModalData.amount}</div>
+                            <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl text-center">
+                                <div className="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🔒</div>
+                                <h3 className="text-2xl font-black text-slate-900 mb-2">קופה מאובטחת</h3>
+                                <p className="text-slate-500 mb-6 font-medium text-sm">{paymentModalData.reason}</p>
+                                <div className="text-5xl font-black text-brand-600 mb-8 tracking-tight">₪{paymentModalData.amount}</div>
                                 
                                 <div className="space-y-3 mb-6">
-                                    <Button onClick={simulatePayment} className="w-full py-4 text-lg justify-between px-6 bg-slate-900 hover:bg-slate-800">
-                                        <span>תשלום באשראי</span><span>💳</span>
+                                    <Button onClick={processPayment} className="w-full py-4 text-lg justify-between px-6 bg-slate-900 hover:bg-slate-800 shadow-xl">
+                                        <span className="font-black tracking-wide">אשראי / Apple Pay</span><span className="text-2xl">💳</span>
                                     </Button>
-                                    <Button onClick={simulatePayment} className="w-full py-4 text-lg justify-between px-6 bg-white text-slate-900 border-2 border-slate-200 hover:bg-slate-50">
-                                        <span>Google Pay</span><span>📱</span>
+                                    <Button onClick={processPayment} variant="secondary" className="w-full py-4 justify-between px-6 text-sm border-2 border-slate-200 hover:border-slate-300 font-black">
+                                        <span>העברה בנקאית / ביט</span><span className="text-xl">🏦</span>
                                     </Button>
-                                    <Button onClick={simulatePayment} variant="secondary" className="w-full py-3 justify-between px-6 text-sm">
-                                        <span>העברה בנקאית / מזומן</span><span>🏦</span>
+                                    <Button onClick={processPayment} variant="secondary" className="w-full py-3 justify-between px-6 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold">
+                                        <span>תשלום במזומן לסוכן</span><span className="text-xl">💵</span>
                                     </Button>
                                 </div>
-                                <button onClick={() => setPaymentModalData({ isOpen: false, amount: 0, reason: '', product: null })} className="text-slate-400 hover:text-slate-600 font-bold text-sm underline">ביטול תשלום</button>
+                                <button onClick={() => setPaymentModalData({ isOpen: false, amount: 0, reason: '', product: null, isInitial: false })} className="text-slate-400 hover:text-slate-600 font-bold text-sm underline">ביטול וחזרה</button>
                             </div>
                         </div>
                     )}
 
-                    <Card className="text-center py-10 shadow-lg border-b-4 border-brand-500">
+                    <Card className="text-center py-10 shadow-lg border-b-4 border-brand-500 bg-white">
                         <h2 className="text-3xl font-black mb-2 text-slate-800">שלום, {currentUser.name}!</h2>
-                        <p className="text-slate-500 font-medium">פורטל הלקוחות הדיגיטלי שלך.</p>
+                        <p className="text-slate-500 font-medium">ברוך הבא לפורטל הלקוחות הדיגיטלי שלך.</p>
+                        
+                        <div className="flex justify-center items-center mt-8 max-w-md mx-auto">
+                            <div className="flex flex-col items-center w-24">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black shadow-md">1</div>
+                                <span className="text-xs mt-2 font-bold text-slate-600 text-center leading-tight">הסכם<br/>ותשלום</span>
+                            </div>
+                            <div className="flex-1 h-1 bg-emerald-500 mx-2 rounded-full"></div>
+                            <div className="flex flex-col items-center w-24">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black shadow-md ${project.clientSignature ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>2</div>
+                                <span className={`text-xs mt-2 font-bold text-center leading-tight ${project.clientSignature ? 'text-slate-600' : 'text-slate-400'}`}>אפיון<br/>טכני</span>
+                            </div>
+                            <div className={`flex-1 h-1 mx-2 rounded-full ${isBriefSubmitted ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>
+                            <div className="flex flex-col items-center w-24">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black shadow-md ${isCompleted ? 'bg-emerald-500 text-white' : isBriefSubmitted ? 'bg-brand-500 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}`}>3</div>
+                                <span className={`text-xs mt-2 font-bold text-center leading-tight ${isCompleted ? 'text-emerald-600' : isBriefSubmitted ? 'text-brand-600' : 'text-slate-400'}`}>{isCompleted ? 'הושלם' : 'בפיתוח'}</span>
+                            </div>
+                        </div>
                     </Card>
 
                     {!project.clientSignature ? (
-                        <Card className="shadow-xl">
-                            <h3 className="text-xl font-black mb-4 text-slate-800">שלב 1: אישור הסכם פיתוח</h3>
-                            <div className="bg-slate-50 p-6 rounded-2xl text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-medium border border-slate-200 mb-6">
+                        <Card className="shadow-xl border-t-4 border-t-brand-500">
+                            <h3 className="text-2xl font-black mb-2 text-slate-800">שלב 1: אישור הסכם פיתוח ותשלום</h3>
+                            <p className="text-slate-500 mb-6 font-medium text-sm">אנא קרא וחתום על ההסכם מטה. לאחר החתימה תועבר לקופה המאובטחת.</p>
+                            <div className="bg-slate-50 p-6 rounded-2xl text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-64 overflow-y-auto shadow-inner">
                                 {systemSettings.clientAgreementText}
+                            </div>
+                            <div className="bg-brand-50 border border-brand-200 p-4 rounded-xl mb-6 flex justify-between items-center">
+                                <span className="font-bold text-brand-900">סך לתשלום (מקדמה/מלא):</span>
+                                <span className="text-2xl font-black text-brand-700">₪{project.paymentAmount}</span>
                             </div>
                             <SignaturePad onSave={handleSignClient} />
                         </Card>
+                    ) : !isBriefSubmitted ? (
+                        <Card className="shadow-xl border-t-4 border-t-brand-500">
+                            <h3 className="text-2xl font-black mb-2 text-slate-800">שלב 2: שאלון אפיון האתר שלך</h3>
+                            <p className="text-slate-500 text-sm mb-6 font-medium">התשובות שלך כאן יועברו ישירות לצוות הפיתוח כדי שנוכל לדייק את האתר בדיוק לצרכים שלך.</p>
+                            
+                            <div className="space-y-6">
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                    <label className="block text-sm font-black text-slate-800 mb-2">1. תאר בקצרה את העסק שלך ומי קהל היעד העיקרי?</label>
+                                    <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 text-sm font-medium" rows="3" onChange={e=>setBriefData({...briefData, q1: e.target.value})} placeholder="לדוגמה: אנחנו מסעדה איטלקית שפונה למשפחות..."></textarea>
+                                </div>
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                    <label className="block text-sm font-black text-slate-800 mb-2">2. צרף קישורים לאתרים של מתחרים או אתרים שאהבת את העיצוב שלהם:</label>
+                                    <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 text-sm font-medium text-left" dir="ltr" rows="2" onChange={e=>setBriefData({...briefData, q2: e.target.value})} placeholder="www.example.com"></textarea>
+                                </div>
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                    <label className="block text-sm font-black text-slate-800 mb-2">3. האם יש לך לוגו, צבעי מותג או סגנון עיצובי מועדף? (שחור נקי, צבעוני ושמח...)</label>
+                                    <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 text-sm font-medium" rows="2" onChange={e=>setBriefData({...briefData, q3: e.target.value})}></textarea>
+                                </div>
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                    <label className="block text-sm font-black text-slate-800 mb-2">4. הערות נוספות שחשוב שצוות הפיתוח ידע:</label>
+                                    <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 text-sm font-medium" rows="2" onChange={e=>setBriefData({...briefData, q4: e.target.value})}></textarea>
+                                </div>
+                            </div>
+
+                            <Button onClick={handleSubmitBrief} className="w-full py-4 text-xl mt-8 shadow-brand-500/40">שלח אפיון והתחל פיתוח 🚀</Button>
+                        </Card>
                     ) : !isCompleted ? (
-                        <Card className="shadow-xl">
-                            <h3 className="text-xl font-black mb-4 text-slate-800">שלב 2: אפיון האתר שלך</h3>
-                            <p className="text-slate-500 text-sm mb-6 font-medium">ספר לנו על העסק שלך. נציג הפיתוח שלך רואה את הנתונים האלו בזמן אמת ויכול לעזור לך למלא אותם בטלפון.</p>
-                            <textarea 
-                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl h-48 outline-none focus:ring-2 focus:ring-brand-500 text-base font-medium mb-4"
-                                value={localBrief} onChange={e=>setLocalBrief(e.target.value)}
-                                placeholder="תאר את העסק, צבעים מועדפים, קישורים לרשתות חברתיות..."
-                            />
-                            <Button onClick={handleSubmitBrief} className="w-full py-4 text-lg">שלח אפיון לצוות הפיתוח</Button>
+                        <Card className="text-center py-20 shadow-xl border-t-4 border-t-brand-500 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-100 rounded-full blur-3xl opacity-50 -mr-20 -mt-20"></div>
+                            <div className="text-7xl mb-8 animate-bounce relative z-10">⚙️</div>
+                            <h3 className="text-4xl font-black text-slate-800 mb-4 relative z-10">האתר שלך בפיתוח פעיל!</h3>
+                            <p className="text-slate-500 font-bold text-lg max-w-lg mx-auto relative z-10">צוות הפיתוח שלנו קיבל את האפיון ועובד על האתר שלך במלוא המרץ. נודיע לך ברגע שיהיה מוכן לבקרת איכות.</p>
                         </Card>
                     ) : (
-                        <Card className="border-t-4 border-t-emerald-500 text-center shadow-xl py-12">
-                            <div className="text-8xl mb-6">🎉</div>
-                            <h3 className="text-4xl font-black text-emerald-800 mb-4 tracking-tight">האתר שלך באוויר!</h3>
-                            <p className="text-slate-600 font-medium text-xl mb-12">מזל טוב! פיתוח הפרויקט הושלם ונמסר.</p>
+                        <div className="space-y-8">
+                            <Card className="border-t-4 border-t-emerald-500 text-center shadow-xl py-12 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-100 rounded-full blur-3xl opacity-50 -ml-20 -mt-20"></div>
+                                <div className="text-8xl mb-6 relative z-10">🎉</div>
+                                <h3 className="text-4xl font-black text-emerald-800 mb-2 tracking-tight relative z-10">האתר שלך באוויר!</h3>
+                                <p className="text-slate-600 font-bold text-xl relative z-10">מזל טוב! פיתוח הפרויקט הושלם בהצלחה.</p>
+                            </Card>
+
+                            <Card className="bg-gradient-to-br from-brand-50 to-white border-brand-200 shadow-lg">
+                                <h4 className="font-black text-2xl mb-2 text-brand-900 flex items-center gap-2"><span>🎁</span> תוכנית "הבא חבר" - מגיע לך בונוס!</h4>
+                                <p className="text-brand-700 text-sm mb-6 font-bold">שתף את הקישור שלך עם חברים ועסקים. על כל לקוח שיגיע ויסגור דרכך, תקבל קרדיט או החזר כספי!</p>
+                                <div className="bg-white p-4 rounded-xl border border-brand-200 font-mono text-center font-black text-brand-600 text-lg select-all shadow-inner">
+                                    https://orizisweb.com/ref/{currentUser.uid.substring(5, 12)}
+                                </div>
+                            </Card>
                             
-                            <div className="border-t border-slate-100 pt-10">
-                                <h4 className="font-black text-2xl mb-8 text-slate-800 text-center">חנות תוספים ושירותים לאתר שלך</h4>
+                            <div className="pt-6">
+                                <h4 className="font-black text-3xl text-slate-800 text-center mb-2">שדרג את האתר שלך</h4>
+                                <p className="text-center text-slate-500 font-bold mb-8">הוסף יכולות, שירותים ומוצרי פרימיום בלחיצת כפתור</p>
+                                
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {(systemSettings.products || []).map(prod => {
                                         const alreadyPurchased = (project.upgrades || []).find(u => u.id === prod.id);
                                         return (
-                                            <div key={prod.id} className={`bg-white border-2 p-6 rounded-3xl text-center shadow-md flex flex-col justify-between ${alreadyPurchased ? 'border-slate-200 opacity-60' : prod.price === 0 ? 'border-emerald-200 hover:border-emerald-400' : 'border-brand-100 hover:border-brand-300'} transition-all`}>
+                                            <div key={prod.id} className={`bg-white border-2 p-6 rounded-3xl text-center shadow-md flex flex-col justify-between ${alreadyPurchased ? 'border-slate-200 opacity-60 bg-slate-50' : prod.price === 0 ? 'border-emerald-200 hover:border-emerald-400 hover:shadow-lg' : 'border-brand-100 hover:border-brand-300 hover:shadow-lg'} transition-all`}>
                                                 <div>
-                                                    <h4 className="font-black text-lg mb-2 text-slate-800">{prod.name}</h4>
-                                                    <div className={`text-3xl font-black mb-6 ${prod.price === 0 ? 'text-emerald-500' : 'text-brand-600'}`}>
+                                                    <h4 className="font-black text-xl mb-3 text-slate-800">{prod.name}</h4>
+                                                    <div className={`text-4xl font-black mb-6 tracking-tight ${prod.price === 0 ? 'text-emerald-500' : 'text-brand-600'}`}>
                                                         {prod.price === 0 ? 'חינם' : `₪${prod.price}`}
                                                     </div>
                                                 </div>
                                                 {alreadyPurchased ? (
-                                                    <div className="bg-slate-100 text-slate-500 py-3 rounded-xl font-bold text-sm">נרכש ופעיל ✔️</div>
+                                                    <div className="bg-slate-200 text-slate-600 py-3.5 rounded-xl font-black text-sm">נרכש ופעיל באתר ✔️</div>
                                                 ) : (
-                                                    <Button onClick={() => setPaymentModalData({ isOpen: true, amount: prod.price, reason: prod.name, product: prod })} variant={prod.price === 0 ? 'success' : 'primary'} className="w-full py-3">
+                                                    <Button onClick={() => setPaymentModalData({ isOpen: true, amount: prod.price, reason: `רכישת שדרוג: ${prod.name}`, product: prod, isInitial: false })} variant={prod.price === 0 ? 'success' : 'primary'} className="w-full py-3.5 text-base shadow-md">
                                                         {prod.price === 0 ? '➕ הוסף בחינם' : 'רכוש שדרוג'}
                                                     </Button>
                                                 )}
                                             </div>
                                         );
                                     })}
-                                    {(systemSettings.products || []).length === 0 && <div className="col-span-full text-slate-400">אין מוצרים זמינים כרגע.</div>}
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     )}
                 </div>
             );
@@ -876,29 +988,22 @@
         const DashboardLayout = () => {
             const { currentUser, loggedInUser, logout, setImpersonatedUser } = useContext(AppContext);
             if (!currentUser) return <LoginScreen />;
-
             const isImpersonating = loggedInUser && currentUser.uid !== loggedInUser.uid;
 
             return (
                 <div className="min-h-screen flex flex-col">
                     {isImpersonating && (
-                        <div className="bg-indigo-600 text-white text-center py-2.5 px-4 text-sm font-bold flex flex-col sm:flex-row justify-center items-center gap-4 z-[60] shadow-md">
-                            <span>👀 מצב צפייה: אתה רואה כעת את המערכת בדיוק כפי שרואה אותה {currentUser.name} ({currentUser.role === 'client' ? 'לקוח' : 'פרילנסר'})</span>
-                            <button onClick={() => setImpersonatedUser(null)} className="bg-white text-indigo-700 px-4 py-1.5 rounded-full text-xs hover:bg-indigo-50 transition shadow-sm font-black">חזור למסך המנהל</button>
+                        <div className="bg-purple-600 text-white text-center py-3 px-4 text-sm font-bold flex flex-col sm:flex-row justify-center items-center gap-4 z-[60] shadow-md border-b-4 border-purple-800">
+                            <span>👀 מצב צפייה (Impersonation): אתה רואה כעת את המערכת בדיוק כפי שרואה אותה {currentUser.name} ({currentUser.role})</span>
+                            <button onClick={() => setImpersonatedUser(null)} className="bg-white text-purple-700 px-5 py-2 rounded-full text-xs hover:bg-purple-50 transition shadow-sm font-black">חזור למסך הניהול שלך</button>
                         </div>
                     )}
                     <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-2xl font-black text-slate-900 tracking-tight">ORIZIS<span className="text-brand-600">WEB</span></h1>
-                                <Badge color="brand">ERP</Badge>
-                            </div>
+                            <div className="flex items-center gap-4"><h1 className="text-3xl font-black text-slate-900 tracking-tighter">ORIZIS<span className="text-brand-600">WEB</span></h1><Badge color="brand">ERP</Badge></div>
                             <div className="flex items-center gap-6">
-                                <div className="text-left hidden sm:block">
-                                    <div className="text-sm font-black text-slate-800">{currentUser.name}</div>
-                                    <div className="text-xs text-slate-500 font-bold">{currentUser.email}</div>
-                                </div>
-                                <Button onClick={logout} variant="outline" className="text-sm py-2">התנתק מהמערכת</Button>
+                                <div className="text-left hidden sm:block"><div className="text-sm font-black text-slate-800">{currentUser.name}</div><div className="text-xs text-slate-500 font-bold uppercase">{currentUser.role}</div></div>
+                                <Button onClick={logout} variant="outline" className="text-sm py-2 bg-white">התנתק</Button>
                             </div>
                         </div>
                     </header>
