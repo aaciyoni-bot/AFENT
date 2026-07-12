@@ -217,8 +217,15 @@
             const updateUser = async (userId, updates) => await db.collection('users').doc(userId).update(updates);
 
             const deleteUser = async (userId) => {
-                if(window.confirm("אזהרה: האם למחוק משתמש זה? זה יחסום את גישתו למערכת לחלוטין.")) {
+                if(window.confirm("אזהרה: האם למחוק משתמש זה? זה יחסום את גישתו למערכת לחלוטין וימחק גם את הפרויקטים המשויכים אליו!")) {
+                    // מחיקת המשתמש
                     await db.collection('users').doc(userId).delete();
+                    
+                    // מחיקת הפרויקטים של המשתמש (כדי לא להשאיר פרויקטים יתומים בדוח הפיננסי)
+                    const userProjects = projects.filter(p => p.clientId === userId);
+                    for (const p of userProjects) {
+                        await db.collection('projects').doc(p.id).delete();
+                    }
                 }
             };
 
