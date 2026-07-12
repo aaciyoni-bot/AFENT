@@ -175,7 +175,6 @@
             const [loginPassword, setLoginPassword] = useState('');
             const [alertData, setAlertData] = useState({ isOpen: false });
 
-            // DB Fetching
             useEffect(() => {
                 if(!db) return;
                 
@@ -250,7 +249,6 @@
                 }
             };
 
-            // Global DB Actions
             const updateUser = async (id, data) => { if(db) await db.collection('users').doc(id).set(data, {merge: true}); };
             const updateProject = async (id, data) => { if(db) await db.collection('projects').doc(id).set(data, {merge: true}); };
             
@@ -291,29 +289,33 @@
 
             if (!currentUser) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-4">
-                        <Card className="w-full max-w-md p-8 shadow-2xl relative overflow-hidden fade-in border-none">
-                            <h1 className="text-4xl font-black text-center text-white mb-2 tracking-tight">ORIZIS<span className="text-brand-500">WEB</span></h1>
-                            <p className="text-center text-slate-400 mb-8 font-medium">התחברות למערכת ה-ERP</p>
+                    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4 relative overflow-hidden">
+                        {/* Background Glow Effects */}
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <Card className="w-full max-w-md p-8 shadow-2xl relative overflow-hidden fade-in border-none z-10 bg-white">
+                            <h1 className="text-4xl font-black text-center text-slate-900 mb-2 tracking-tight">ORIZIS<span className="text-brand-500">WEB</span></h1>
+                            <p className="text-center text-slate-500 mb-8 font-medium">התחברות למערכת ה-ERP</p>
                             
-                            <form onSubmit={handleLoginSubmit} className="space-y-4">
+                            <form onSubmit={handleLoginSubmit} className="space-y-5">
                                 <div>
-                                    <label className="text-sm font-bold text-slate-300 block mb-1">כתובת אימייל</label>
+                                    <label className="text-sm font-bold text-slate-700 block mb-2">כתובת אימייל</label>
                                     <input 
                                         type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} 
-                                        className="w-full p-3 bg-slate-700 text-white border border-slate-600 rounded-xl outline-none focus:border-brand-500 transition-colors text-left" dir="ltr"
+                                        className="w-full p-4 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all text-left" dir="ltr"
                                         placeholder="your@email.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-bold text-slate-300 block mb-1">סיסמה</label>
+                                    <label className="text-sm font-bold text-slate-700 block mb-2">סיסמה</label>
                                     <input 
                                         type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} 
-                                        className="w-full p-3 bg-slate-700 text-white border border-slate-600 rounded-xl outline-none focus:border-brand-500 transition-colors text-left" dir="ltr"
+                                        className="w-full p-4 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all text-left" dir="ltr"
                                         placeholder="••••••••"
                                     />
                                 </div>
-                                <Button type="submit" className="w-full py-4 text-lg mt-2">היכנס למערכת</Button>
+                                <Button type="submit" className="w-full py-4 text-lg mt-4 font-black tracking-wide">היכנס למערכת</Button>
                             </form>
                         </Card>
                         <AlertModal {...alertData} />
@@ -358,7 +360,6 @@
         const AdminDashboard = ({ users, projects, storeItems, createProjectAndClient, createFreelancer, createStoreItem, updateProject, deleteItem, showAlert, impersonateUser }) => {
             const [activeTab, setActiveTab] = useState('projects');
             
-            // Forms State
             const [newClient, setNewClient] = useState({ name: '', email: '', password: '', freelancerId: '' });
             const [newFreelancer, setNewFreelancer] = useState({ name: '', email: '', password: '', phone: '' });
             const [newStoreItem, setNewStoreItem] = useState({ name: '', price: '', description: '', isMRR: false });
@@ -400,14 +401,13 @@
                         </div>
                     </Card>
 
-                    {/* Tabs Navigation */}
                     <div className="flex border-b border-slate-200 gap-6">
                         <button onClick={() => setActiveTab('projects')} className={`pb-3 text-lg transition-colors ${activeTab === 'projects' ? 'tab-active' : 'tab-inactive'}`}>📋 פרויקטים ולקוחות</button>
                         <button onClick={() => setActiveTab('freelancers')} className={`pb-3 text-lg transition-colors ${activeTab === 'freelancers' ? 'tab-active' : 'tab-inactive'}`}>👥 צוות פרילנסרים</button>
                         <button onClick={() => setActiveTab('store')} className={`pb-3 text-lg transition-colors ${activeTab === 'store' ? 'tab-active' : 'tab-inactive'}`}>🛍️ חנות ושדרוגים</button>
                     </div>
 
-                    {/* TAB 1: Projects */}
+                    {}
                     {activeTab === 'projects' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
                             <div className="lg:col-span-2 space-y-6">
@@ -467,7 +467,7 @@
                         </div>
                     )}
 
-                    {/* TAB 2: Freelancers */}
+                    {}
                     {activeTab === 'freelancers' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
                             <div className="lg:col-span-2">
@@ -502,7 +502,7 @@
                         </div>
                     )}
 
-                    {/* TAB 3: Store/MRR */}
+                    {}
                     {activeTab === 'store' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
                             <div className="lg:col-span-2">
@@ -541,7 +541,6 @@
 
         const FreelancerDashboard = ({ user, users, projects, updateUser, updateProject, createProjectAndClient, showAlert, impersonateUser }) => {
             
-            // 1. Agreement Enforcement
             if (!user?.hasSignedAgreement) {
                 return (
                     <div className="max-w-3xl mx-auto mt-10">
@@ -560,14 +559,11 @@
                 );
             }
 
-            // 2. Dashboard
             const myProjects = projects.filter(p => p?.freelancerId === user?.id);
             const [newClient, setNewClient] = useState({ name: '', email: '', password: '' });
 
             return (
                 <div className="space-y-8 fade-in">
-                    
-                    {/* Freelancer Self-Sourcing Client */}
                     <Card className="border-t-4 border-t-emerald-500 shadow-md">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg text-2xl">🤝</div>
@@ -599,7 +595,6 @@
                                         </div>
                                     </div>
 
-                                    {/* Quote Stage */}
                                     {p.status === 'waiting_for_quote' && (
                                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mt-4 flex items-center gap-4">
                                             <div>
@@ -610,7 +605,6 @@
                                         </div>
                                     )}
 
-                                    {/* Dev Stage (Timer & QA) */}
                                     {p.status === 'in_progress' && (
                                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="bg-slate-900 text-white p-6 rounded-2xl text-center">
@@ -630,7 +624,6 @@
                                         </div>
                                     )}
 
-                                    {/* Brief Output */}
                                     {p.brief && (
                                         <div className="mt-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
                                             <h4 className="font-black text-slate-800 mb-3">📝 אפיון ה-AI</h4>
@@ -693,7 +686,6 @@
             return (
                 <div className="max-w-4xl mx-auto space-y-8 fade-in pb-20">
                     
-                    {/* Stage 1: AI Chat */}
                     {project.status === 'waiting_for_brief' && (
                         <Card className="shadow-2xl border-t-4 border-t-brand-500 p-0 overflow-hidden flex flex-col h-[600px] max-h-[80vh]">
                             <div className="bg-brand-50 p-4 border-b border-brand-100 flex items-center gap-3">
@@ -716,7 +708,6 @@
                         </Card>
                     )}
 
-                    {/* Stage 2: Wait for quote */}
                     {project.status === 'waiting_for_quote' && (
                         <Card className="text-center py-24 bg-gradient-to-b from-amber-50 to-white border border-amber-100 shadow-xl rounded-3xl">
                             <div className="text-7xl mb-8">⏳</div>
@@ -725,7 +716,6 @@
                         </Card>
                     )}
 
-                    {/* Stage 3: Agreement & Payment */}
                     {project.status === 'waiting_for_payment' && (
                         <Card className="p-6 md:p-10 border-t-4 border-t-brand-500 shadow-2xl rounded-3xl">
                             <h2 className="text-3xl font-black text-slate-800 mb-3">אישור הצעת מחיר והסכם</h2>
@@ -746,7 +736,6 @@
                         </Card>
                     )}
 
-                    {/* Store / VIP Section (Always visible after start) */}
                     {(project.status === 'in_progress' || project.status === 'completed' || project.status === 'qa_review') && (
                         <div className="space-y-8">
                             <Card className="text-center py-16 bg-gradient-to-b from-emerald-50 to-white border border-emerald-100 shadow-lg rounded-3xl">
