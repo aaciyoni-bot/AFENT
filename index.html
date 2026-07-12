@@ -148,7 +148,6 @@
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
                 
-                // התיקון הקריטי לקנה המידה של העט!
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
                 
@@ -195,7 +194,6 @@
             const [loginPassword, setLoginPassword] = useState('');
             const [alertData, setAlertData] = useState({ isOpen: false });
 
-            // סינכרון חי מול Firebase
             useEffect(() => {
                 if(!db) return;
                 
@@ -218,7 +216,6 @@
                 return () => { unsubUsers(); unsubProjects(); unsubStore(); unsubSettings(); };
             }, []);
 
-            // רשת הביטחון שתמיד לוקחת את המצב החי של המשתמש (למניעת תקיעות אחרי חתימה)
             const activeUser = currentUser ? (users.find(u => u.id === currentUser.id) || currentUser) : null;
 
             const showAlert = (message, title = "הודעה", type = "info", onConfirmAction = null) => {
@@ -237,7 +234,6 @@
                 e.preventDefault();
                 let user = users.find(u => u?.email?.toLowerCase() === loginEmail.trim().toLowerCase() && u?.password === loginPassword);
                 
-                // מנגנון תיקון אוטומטי למנהל (Auto-Heal) - מסדר טעויות של Manager/Admin
                 if (loginEmail.trim().toLowerCase() === 'aaci.yoni@gmail.com' && loginPassword === '6962697') {
                     const existingAdmin = users.find(u => u?.email?.toLowerCase() === loginEmail.trim().toLowerCase());
                     if (existingAdmin) {
@@ -251,7 +247,6 @@
                         user = newAdmin;
                     }
                     
-                    // פרילנסר טסט
                     if(!users.find(u => u?.role === 'freelancer')) {
                         await db.collection('users').doc('free_test').set({ id: 'free_test', role: 'freelancer', name: 'פרילנסר טסט', email: 'free@test.com', password: '123', hasSignedAgreement: false });
                     }
@@ -449,7 +444,6 @@
 
             return (
                 <div className="space-y-8 fade-in">
-                    {/* User Edit Modal */}
                     {editingUser && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm fade-in">
                             <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border-t-4 border-t-brand-500">
@@ -484,7 +478,6 @@
                         <button onClick={() => setActiveTab('settings')} className={`pb-3 text-lg transition-colors ${activeTab === 'settings' ? 'tab-active' : 'tab-inactive'}`}>⚙️ הגדרות והסכמים</button>
                     </div>
 
-                    {/* Projects Tab */}
                     {activeTab === 'projects' && (
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 fade-in">
                             <div className="xl:col-span-2 space-y-6">
@@ -548,7 +541,6 @@
                         </div>
                     )}
 
-                    {/* Freelancers Tab */}
                     {activeTab === 'freelancers' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
                             <div className="lg:col-span-2">
@@ -592,7 +584,6 @@
                         </div>
                     )}
 
-                    {/* Store Tab */}
                     {activeTab === 'store' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
                             <div className="lg:col-span-2">
@@ -634,7 +625,6 @@
                         </div>
                     )}
 
-                    {/* Settings Tab */}
                     {activeTab === 'settings' && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
                             <Card className="border-t-4 border-t-slate-800 shadow-md">
@@ -832,12 +822,16 @@
 
                 const sysPrompt = `אתה יונתן, מנהל פרויקטים סופר-מקצועי בחברת ORIZISWEB. מטרתך לאסוף מידע מלקוח לאפיון אתר. שאל שאלות קצרות. אסור לך לתת מחירים בשום אופן. כשיש לך מספיק מידע של קהל יעד ומטרת האתר, כתוב רק את המילה המדויקת בסוף: [סיכום_אפיון].`;
 
+                // FILTER: We remove the very first message from the array sent to Gemini IF it's from 'model'
+                // This prevents the "Bad Request" error because Gemini strictly expects the first message to be from 'user'
+                const apiMessages = newMessages.filter((m, i) => !(i === 0 && m.role === 'model'));
+
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             systemInstruction: { parts: [{ text: sysPrompt }] },
-                            contents: newMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
+                            contents: apiMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
                         })
                     });
                     
@@ -866,7 +860,6 @@
             return (
                 <div className="max-w-4xl mx-auto space-y-8 fade-in pb-20">
                     
-                    {/* Fallback עבור סטטוס שבור או חסר - פותר את בעיית המסך הלבן */}
                     {(!knownStatuses.includes(project.status)) && (
                         <Card className="text-center p-12 shadow-2xl border-t-4 border-t-rose-500 mt-10">
                             <div className="text-6xl mb-4">🕵️‍♂️</div>
@@ -886,12 +879,15 @@
 
                     {project.status === 'waiting_for_brief' && (
                         <Card className="shadow-2xl border-t-4 border-t-brand-500 p-0 overflow-hidden flex flex-col h-[650px] max-h-[85vh] rounded-3xl">
-                            <div className="bg-gradient-to-r from-brand-50 to-white p-5 border-b border-brand-100 flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-2xl shadow-lg">🤖</div>
-                                <div>
-                                    <h3 className="font-black text-slate-800 text-xl">יונתן - אוריזיס</h3>
-                                    <p className="text-sm text-brand-600 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> מנהל פרויקטים חכם (AI)</p>
+                            <div className="bg-gradient-to-r from-brand-50 to-white p-5 border-b border-brand-100 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-2xl shadow-lg">🤖</div>
+                                    <div>
+                                        <h3 className="font-black text-slate-800 text-xl">יונתן - אוריזיס</h3>
+                                        <p className="text-sm text-brand-600 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> מנהל פרויקטים חכם (AI)</p>
+                                    </div>
                                 </div>
+                                <Button disabled={isReadOnly} onClick={() => updateProject(project.id, {status: 'waiting_for_quote', brief: 'הלקוח בחר לדלג על האפיון הדיגיטלי עם ה-AI וממתין לאפיון טלפוני/ידני.'})} variant="secondary" className="!text-xs border border-slate-300 bg-white hover:bg-slate-50 shadow-sm text-slate-700">📞 דלג לאפיון טלפוני</Button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50">
                                 {messages.map((m, i) => (
