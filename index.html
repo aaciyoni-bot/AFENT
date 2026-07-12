@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -25,7 +26,6 @@
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext, useRef } = React;
 
-        // --- COMPONENTS ---
         const Card = ({ children, className = '' }) => <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${className}`}>{children}</div>;
         const Badge = ({ children, color = 'gray' }) => {
             const colors = {
@@ -35,7 +35,7 @@
             };
             return <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colors[color] || colors.gray}`}>{children}</span>;
         };
-        const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, type = 'button' }) => {
+        const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, type = 'button', title }) => {
             const base = "px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
             const variants = {
                 primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-md shadow-brand-500/20",
@@ -44,13 +44,13 @@
                 danger: "bg-red-50 text-red-700 hover:bg-red-100",
                 outline: "bg-transparent border-2 border-gray-200 text-gray-700 hover:border-gray-300"
             };
-            return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+            return <button type={type} onClick={onClick} disabled={disabled} title={title} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
         };
 
         const AlertModal = ({ isOpen, message, onClose }) => {
             if (!isOpen) return null;
             return (
-                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
                     <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-100">
                         <div className="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🔔</div>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">הודעת מערכת</h3>
@@ -61,7 +61,6 @@
             );
         };
 
-        // --- SIGNATURE PAD COMPONENT ---
         const SignaturePad = ({ onSave }) => {
             const canvasRef = useRef(null);
             const [isDrawing, setIsDrawing] = useState(false);
@@ -118,12 +117,11 @@
                         onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
                         onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
                     />
-                    <button onClick={clear} className="text-xs text-red-500 mt-2 font-medium hover:underline">מחק חתימה ונסה שוב</button>
+                    <button onClick={clear} type="button" className="text-xs text-red-500 mt-2 font-medium hover:underline">מחק חתימה ונסה שוב</button>
                 </div>
             );
         };
 
-        // --- CONTEXT & DATA ---
         const AppContext = createContext();
 
         tailwind.config = {
@@ -132,6 +130,7 @@
 
         const initialSettings = {
             freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ (להלן "החברה") לבין נותן השירותים הנרשם למערכת (להלן "הפרילנסר").\n\n1. מהות ההתקשרות והיעדר יחסי עובד מעביד\nמוסכם במפורש כי הפרילנסר פועל כקבלן עצמאי ומספק שירותים כנגד חשבונית מס/קבלה כדין. לא מתקיימים ולא יתקיימו יחסי עובד ומעביד בין הצדדים, ואין בהסכם זה כדי להקנות לפרילנסר זכויות סוציאליות כלשהן. הפרילנסר יישא לבדו בכל חבות מס הנובעת מהתקשרות זו.\n\n2. כלים טכנולוגיים והוצאות (מנוי AI)\nהפרילנסר מתחייב להחזיק ולתחזק על חשבונו הבלעדי מנוי חודשי פעיל במערכת/ות בינה מלאכותית (AI) מסחרית מתקדמת (כגון ChatGPT Plus וכדומה), כפי שיוגדר ויידרש מעת לעת על ידי החברה, כתנאי יסוד לביצוע העבודה וקבלת פרויקטים.\n\n3. סודיות, אי-תחרות ואי-הכפשה\n3.1. הפרילנסר מתחייב לשמור בסודיות מוחלטת כל מידע מסחרי, טכנולוגי ולקוחות של החברה.\n3.2. הפרילנסר מתחייב שלא לפנות, לשדל או להציע שירותים ישירות ללקוחות החברה, עמם בא במגע במסגרת עבודתו, במהלך ההתקשרות ולמשך 24 חודשים ממועד סיומה.\n3.3. הפרילנסר מתחייב להימנע מכל אמירה, פרסום או פעולה שיש בהם כדי להכפיש, לפגוע במוניטין או לגרום נזק תדמיתי לחברה.\n\n4. בעלות על לקוחות, קניין רוחני ושותפים (אפיליאציה)\nכל הלקוחות המועברים לפרילנסר דרך המערכת, לרבות פרילנסרים אחרים (אפיליאטורים) שיגויסו על ידו תחת רשת החברה, שייכים לחברה בלבד. קוד המקור, העיצובים והתוצרים שייכים לחברה וללקוח. ברגע סיום ההתקשרות מכל סיבה שהיא, רשת הסוכנים נשארת בבעלות החברה.\n\n5. אחריות על טיב העבודה\nהפרילנסר מתחייב לספק עבודה מקצועית ונטולת תקלות. במקרה של תקלות (באגים) הנובעות מעבודתו, הפרילנסר יתקנם על חשבון זמנו תוך 48 שעות מדרישת החברה.\n\n6. קנס מוסכם\nהפרילנסר מסכים כי הפרה יסודית של סעיף 3 או 4 לעיל, תזכה את החברה בפיצוי מוסכם מראש וללא הוכחת נזק בסך 50,000 ש"ח, וזאת מבלי לפגוע בזכות החברה לתבוע כל סעד אחר על פי דין.`,
+            clientAgreementText: `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ ח.פ 516977758 הפועלת באמצעות מותג ORIZISWEB שתיקרא להלן החברה לבין הלקוח המזמין את השירותים דרך פורטל הלקוחות הדיגיטלי שייקרא להלן הלקוח.\n\nסימון התיבה בטופס האפיון ויציאה לדרך בצירוף חתימה כמוהו כהסכם מחייב לכל סעיפי הסכם זה.\n\n1. מהות ההתקשרות ותכולת העבודה\n1.1. החברה תספק ללקוח שירותי פיתוח ועיצוב אתר אינטרנט בהתאם למידע, לדרישות ולתוספות שהוזנו ואושרו על ידי הלקוח בטופס אפיון ויציאה לדרך במערכת ORIZISWEB.\n1.2. כל בקשה לפיתוח או עיצוב החורגת ממה שסוכם באפיון הראשוני או שנבחרה בחנות השדרוגים תתומחר בנפרד ותדרוש אישור ותשלום נוסף.\n\n2. התחייבויות הלקוח\n2.1. הלקוח מתחייב להעביר לחברה את כל החומרים הנדרשים כגון לוגו, טקסטים, תמונות, קישורים וכדומה במועד מילוי טופס האפיון.\n2.2. עיכוב במסירת חומרים על ידי הלקוח יגרור עיכוב בלוחות הזמנים של הפרויקט ולא יהווה עילה לביטול העסקה או לפיצוי.\n\n3. לוחות זמנים ומסירת הפרויקט\n3.1. החברה תחל בפיתוח האתר מיד עם קבלת התשלום, אישור ההסכם וקבלת כל חומרי האפיון הנדרשים מהלקוח.\n3.2. זמן האספקה המשוער הוא עד 14 ימי עסקים אלא אם הלקוח רכש שדרוג מסירת אקספרס עד 48 שעות.\n3.3. עם סיום הפיתוח האתר יועבר לסטטוס בקרת איכות. הלקוח יקבל קישור לאתר החי לשם צפייה ואישור.\n\n4. סבבי תיקונים\n4.1. הלקוח זכאי ל-2 סבבי תיקונים לאחר קבלת הקישור הראשוני לאתר וזאת בתנאי שהתיקונים המבוקשים הם במסגרת האפיון המקורי.\n4.2. שינוי קונספט עיצוב מלא או הוספת פיצ'רים חדשים בשלב בקרת האיכות לא ייחשבו כתיקון אלא יתומחרו בנפרד.\n\n5. תשלומים ותוספות\n5.1. התשלום בגין הפיתוח מתבצע מראש אלא אם סוכם אחרת בכתב.\n5.2. הלקוח רשאי להוסיף יכולות ופיצ'רים לאתר דרך חנות השדרוגים במערכת בכל עת טרם מסירת האתר. הוספת שדרוג תחייב את הלקוח בעלות המצוינת במערכת ותשולם בהתאם למדיניות החברה.\n\n6. קניין רוחני וזכויות יוצרים\n6.1. עם פירעון מלוא התשלום לחברה זכויות השימוש והבעלות על קוד האתר והעיצובים מלבד תבניות או רכיבי צד שלישי עוברים ללקוח.\n6.2. הלקוח מצהיר כי כל החומרים שהוא מעביר לחברה לרבות תמונות, טקסטים ולוגו הם בבעלותו הבלעדית ואין בשימוש בהם משום הפרת זכויות יוצרים של צד שלישי.\n\n7. אחריות ותחזוקה\n7.1. לאחר אישור האתר הסופי על ידי הלקוח והעברה לסטטוס הושלם החברה מעניקה תקופת אחריות של 30 ימים לתיקון באגים או תקלות טכניות הנובעות מעבודת הפיתוח.\n7.2. אחסון האתר, תחזוקה שוטפת, עדכוני אבטחה וחידוש דומיין אינם כלולים בהסכם זה אלא אם נרכש שירות ריטיינר או תחזוקה ייעודית מול החברה.\n\n8. ביטול עסקה\n8.1. מכיוון שמדובר בטובין המיוצרים במיוחד עבור הצרכן בהתאם לחוק הגנת הצרכן, ביטול העסקה לאחר אישור האפיון ותחילת הפיתוח אינו מזכה בהחזר כספי מלא. ביטול בשלב זה יגרור חיוב יחסי בגין העבודה שבוצעה עד רגע הביטול.\n\nהצהרת הלקוח:\nחתימתי בטופס הדיגיטלי במערכת מהווה חתימה אלקטרונית ומאשרת כי קראתי הבנתי ואני מסכים לכל תנאי התקשרות אלו.`,
             storeProducts: [
                 { id: 'prod_1', name: 'עיצוב פרימיום מותאם אישית', price: 800, timeMinutes: 120, isRecurring: false, desc: 'שדרוג עיצוב בסיסי לעיצוב ייחודי עם אנימציות.' },
                 { id: 'prod_2', name: 'חבילת SEO מתקדמת', price: 1200, timeMinutes: 180, isRecurring: false, desc: 'מחקר מילות מפתח, אופטימיזציה לתוכן והגדרות סכמה.' },
@@ -142,7 +141,7 @@
 
         const AppProvider = ({ children }) => {
             const [currentUser, setCurrentUser] = useState(null);
-            // Simulated login persistence
+            
             useEffect(() => {
                 const saved = localStorage.getItem('orizis_user');
                 if(saved) setCurrentUser(JSON.parse(saved));
@@ -154,14 +153,14 @@
 
             const [projects, setProjects] = useState([
                 { id: 'P-1001', customerName: 'קפה שרה בע"מ', customerEmail: 'sarah@cafe.com', status: 'paid_waiting_for_brief', paymentAmount: 2500, freelancerId: null, createdAt: Date.now(), brief: null, addons: [], hasSignedAgreement: false },
-                { id: 'P-1002', customerName: 'יוסי נדל"ן', customerEmail: 'yossi@realestate.com', status: 'brief_submitted', paymentAmount: 3200, freelancerId: null, createdAt: Date.now(), brief: { businessName: 'יוסי נכסים', audience: 'משקיעים', callToAction: 'השאר פרטים' }, addons: [], hasSignedAgreement: true },
-                { id: 'P-1003', customerName: 'טק סטארט', customerEmail: 'info@techstart.co.il', status: 'in_progress', paymentAmount: 4500, freelancerId: 'user_freelancer_1', createdAt: Date.now(), brief: { businessName: 'Tech Start', audience: 'B2B', callToAction: 'Demo' }, addons: [], hasSignedAgreement: true, timerStartedAt: null, timeSpent: 3600, isTimerRunning: false },
-                { id: 'P-1004', customerName: 'מסעדת הדגים', customerEmail: 'fish@food.com', status: 'qa_review', paymentAmount: 1800, freelancerId: 'user_freelancer_1', createdAt: Date.now(), brief: { businessName: 'הדג', audience: 'משפחות', callToAction: 'הזמן שולחן' }, addons: [{ id: 'prod_1', name: 'עיצוב פרימיום', price: 800 }], hasSignedAgreement: true, timerStartedAt: null, timeSpent: 14000, isTimerRunning: false }
+                { id: 'P-1002', customerName: 'יוסי נדל"ן', customerEmail: 'yossi@realestate.com', status: 'brief_submitted', paymentAmount: 3200, freelancerId: null, createdAt: Date.now(), brief: { businessName: 'יוסי נכסים', audience: 'משקיעים', callToAction: 'השאר פרטים' }, addons: [], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '12/07/2026 10:00:00' },
+                { id: 'P-1003', customerName: 'טק סטארט', customerEmail: 'info@techstart.co.il', status: 'in_progress', paymentAmount: 4500, freelancerId: 'user_freelancer_1', createdAt: Date.now(), brief: { businessName: 'Tech Start', audience: 'B2B', callToAction: 'Demo' }, addons: [], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '13/07/2026 11:00:00', timerStartedAt: null, timeSpent: 3600, isTimerRunning: false },
+                { id: 'P-1004', customerName: 'מסעדת הדגים', customerEmail: 'fish@food.com', status: 'qa_review', paymentAmount: 1800, freelancerId: 'user_freelancer_1', createdAt: Date.now(), brief: { businessName: 'הדג', audience: 'משפחות', callToAction: 'הזמן שולחן' }, addons: [{ id: 'prod_1', name: 'עיצוב פרימיום', price: 800 }], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '10/07/2026 09:00:00', timerStartedAt: null, timeSpent: 14000, isTimerRunning: false }
             ]);
 
             const [usersList, setUsersList] = useState([
                 { uid: 'admin_1', role: 'manager', name: 'מנהל מערכת', email: 'admin@orizis.com', password: '123' },
-                { uid: 'user_freelancer_1', role: 'freelancer', name: 'דני (פרילנסר בכיר)', email: 'dani@free.com', password: '123', basePercentage: 60, upsellPercentage: 10, hasSignedAgreement: true, signedAgreementAt: '12/07/2026 09:30:00', signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' }, // Dummy base64 for demo
+                { uid: 'user_freelancer_1', role: 'freelancer', name: 'דני (פרילנסר בכיר)', email: 'dani@free.com', password: '123', basePercentage: 60, upsellPercentage: 10, hasSignedAgreement: true, signedAgreementAt: '12/07/2026 09:30:00', signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' }, 
                 { uid: 'user_freelancer_2', role: 'freelancer', name: 'רון (ג\'וניור)', email: 'ron@free.com', password: '123', basePercentage: 50, upsellPercentage: 5, teamLeaderId: 'user_freelancer_1', hasSignedAgreement: false },
                 { uid: 'user_client_1', role: 'client', name: 'שרה לוי', email: 'sarah@cafe.com', password: '123', projectId: 'P-1001' }
             ]);
@@ -244,8 +243,8 @@
             const [showArchive, setShowArchive] = useState(false);
             const [pendingFreelancerId, setPendingFreelancerId] = useState(null);
             
-            // מודל הצגת חתימה
-            const [viewingSignature, setViewingSignature] = useState(null);
+            const [viewingSignature, setViewingSignature] = useState(null); // לפרילנסר
+            const [viewingClientSignature, setViewingClientSignature] = useState(null); // ללקוח
 
             const revenue = projects.reduce((sum, p) => sum + p.paymentAmount + p.addons.reduce((a,b)=>a+(b.price||0),0), 0);
             
@@ -257,7 +256,7 @@
                         const baseCost = p.paymentAmount * ((fl.basePercentage || 60) / 100);
                         const upsellCost = p.addons.reduce((a,b)=>a+(b.price||0),0) * ((fl.upsellPercentage || 0) / 100);
                         freelancerCosts += (baseCost + upsellCost);
-                        if(fl.teamLeaderId) freelancerCosts += 150;
+                        if(fl.teamLeaderId) freelancerCosts += 150; // עמלת אפיליאציה לראש צוות
                     }
                 }
             });
@@ -356,11 +355,16 @@
                                                     {p.isBlocked && <Button onClick={() => updateProject(p.id, { isBlocked: false, blockReason: '' })} variant="success" className="w-full text-xs">שחרר חסימה</Button>}
                                                     {p.status === 'qa_review' && (
                                                         <div className="flex gap-2">
-                                                            <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs flex-1">✅ אשר פרויקט</Button>
-                                                            <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר לתיקונים."); }} variant="danger" className="text-xs flex-1">❌ החזר לפיתוח</Button>
+                                                            <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs flex-1">✅ אישור סופי</Button>
+                                                            <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר לתיקונים."); }} variant="danger" className="text-xs flex-1">❌ לתיקונים</Button>
                                                         </div>
                                                     )}
-                                                    {p.status === 'completed' && <span className="text-xs text-gray-400 font-bold">בארכיון</span>}
+                                                    {p.status === 'completed' && <span className="text-xs text-gray-400 font-bold">בארכיון הושלמו</span>}
+                                                    {p.clientSignatureData && (
+                                                        <Button onClick={() => setViewingClientSignature(p)} variant="outline" className="text-xs px-2 py-1 mt-2 w-full border-brand-200 text-brand-700 hover:bg-brand-50">
+                                                            📄 הסכם לקוח חתום
+                                                        </Button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -455,36 +459,35 @@
                         </div>
                     )}
 
-                    {/* MODAL: VIEW SIGNED AGREEMENT */}
-                    {viewingSignature && (
-                        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                    {}
+                    {(viewingSignature || viewingClientSignature) && (
+                        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
                             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border-t-4 border-emerald-500">
                                 <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
                                     <h3 className="font-black text-xl text-gray-900 flex items-center gap-2">
-                                        <span className="text-emerald-500">✅</span> הסכם חתום - {viewingSignature.name}
+                                        <span className="text-emerald-500">✅</span> הסכם חתום - {viewingSignature ? viewingSignature.name : viewingClientSignature.customerName}
                                     </h3>
-                                    <button onClick={() => setViewingSignature(null)} className="text-gray-400 font-bold hover:text-gray-700">✕ סגור</button>
+                                    <button onClick={() => { setViewingSignature(null); setViewingClientSignature(null); }} className="text-gray-400 font-bold hover:text-gray-700">✕ סגור</button>
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 bg-white custom-scrollbar">
                                     <div className="mb-6 p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 flex justify-between items-center">
                                         <div className="font-bold">נחתם דיגיטלית ואושר במערכת</div>
-                                        <div className="text-sm font-mono bg-white px-3 py-1 rounded-lg border border-emerald-100">{viewingSignature.signedAgreementAt || 'תאריך לא ידוע'}</div>
+                                        <div className="text-sm font-mono bg-white px-3 py-1 rounded-lg border border-emerald-100">{viewingSignature ? viewingSignature.signedAgreementAt : viewingClientSignature.clientSignedAt}</div>
                                     </div>
                                     <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6 font-medium">
-                                        {systemSettings.freelancerAgreementText}
+                                        {viewingSignature ? systemSettings.freelancerAgreementText : systemSettings.clientAgreementText}
                                     </div>
                                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-gray-50">
                                         <div className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">אישור וחתימת המשתמש</div>
-                                        {viewingSignature.signatureData ? (
-                                            <img src={viewingSignature.signatureData} alt="חתימה" className="max-h-32 mx-auto mix-blend-multiply" />
+                                        {(viewingSignature ? viewingSignature.signatureData : viewingClientSignature.clientSignatureData) ? (
+                                            <img src={viewingSignature ? viewingSignature.signatureData : viewingClientSignature.clientSignatureData} alt="חתימה" className="max-h-32 mx-auto mix-blend-multiply" />
                                         ) : (
                                             <div className="text-red-500 font-bold">לא נמצאה תמונת חתימה</div>
                                         )}
-                                        <div className="mt-4 text-xs text-gray-400 font-medium border-t border-gray-200 pt-4">User ID: {viewingSignature.uid} | IP Logged</div>
                                     </div>
                                 </div>
                                 <div className="p-4 border-t bg-gray-50 flex justify-end">
-                                    <Button onClick={() => setViewingSignature(null)} className="px-8 shadow-sm">סגור מסמך</Button>
+                                    <Button onClick={() => { setViewingSignature(null); setViewingClientSignature(null); }} className="px-8 shadow-sm">סגור מסמך</Button>
                                 </div>
                             </div>
                         </div>
@@ -506,6 +509,15 @@
                                     className="w-full p-4 border rounded-xl h-64 text-sm font-medium bg-gray-50"
                                     value={systemSettings.freelancerAgreementText}
                                     onChange={(e) => setSystemSettings({...systemSettings, freelancerAgreementText: e.target.value})}
+                                />
+                            </Card>
+                            <Card className="p-6">
+                                <h3 className="font-bold text-gray-900 mb-2">🤝 הסכם לקוח (שירותי אינטרנט)</h3>
+                                <p className="text-sm text-gray-500 mb-4">טקסט זה יוצג ללקוח רגע לפני שהוא שולח אפיון וידרוש את חתימתו.</p>
+                                <textarea 
+                                    className="w-full p-4 border rounded-xl h-64 text-sm font-medium bg-gray-50"
+                                    value={systemSettings.clientAgreementText}
+                                    onChange={(e) => setSystemSettings({...systemSettings, clientAgreementText: e.target.value})}
                                 />
                             </Card>
                         </div>
@@ -559,7 +571,7 @@
                         </Card>
 
                         {showAgreementModal && (
-                            <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
+                            <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
                                 <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-t-4 border-gray-800">
                                     <div className="p-5 bg-gray-50 border-b flex justify-between items-center"><h3 className="font-black text-xl text-gray-900 flex items-center gap-2"><span>📄</span> הסכם פרילנסר</h3><button onClick={()=>setShowAgreementModal(false)} className="text-gray-400 font-bold">✕ סגור</button></div>
                                     <div className="p-6 overflow-y-auto flex-1 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed font-medium bg-white custom-scrollbar">
@@ -752,7 +764,7 @@
                     </div>
 
                     {blockerInput.show && (
-                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                                 <h3 className="text-xl font-bold text-red-600 mb-2">דיווח על חסימה/עיכוב</h3>
                                 <p className="text-sm text-gray-600 mb-4">הטיימר ייעצר מיד והפרויקט יעבור לטיפול מנהל.</p>
@@ -772,6 +784,9 @@
             const { currentUser, projects, updateProject, systemSettings, showAlert } = useContext(AppContext);
             const project = projects.find(p => p.id === currentUser.projectId);
             const [briefData, setBriefData] = useState({ businessName: '', audience: '', callToAction: '' });
+            
+            const [clientSignature, setClientSignature] = useState(null);
+            const [termsAccepted, setTermsAccepted] = useState(false);
 
             if (!project) return <div className="text-center p-10 text-gray-500 font-bold">לא נמצא פרויקט. פנה לתמיכה.</div>;
 
@@ -834,19 +849,38 @@
                     </Card>
 
                     {project.status === 'paid_waiting_for_brief' && (
-                        <Card className="p-6">
-                            <h3 className="text-xl font-bold text-gray-900 mb-6">שלב 2: שאלון אפיון מהיר</h3>
-                            <form onSubmit={(e) => { e.preventDefault(); updateProject(project.id, { status: 'brief_submitted', brief: briefData }); showAlert("האפיון נשלח בהצלחה לצוות הפיתוח!"); }} className="space-y-5">
+                        <Card className="p-6 border-t-4 border-t-brand-600">
+                            <h3 className="text-xl font-bold text-gray-900 mb-6">שלב 2: שאלון אפיון וחתימה על הסכם</h3>
+                            <form onSubmit={(e) => { 
+                                e.preventDefault(); 
+                                if(!termsAccepted) return showAlert("חובה לאשר את ההסכם.");
+                                if(!clientSignature) return showAlert("חובה לחתום בלוח הציור בטרם ההתקדמות.");
+                                updateProject(project.id, { 
+                                    status: 'brief_submitted', 
+                                    brief: briefData,
+                                    clientSignatureData: clientSignature,
+                                    clientSignedAt: new Date().toLocaleString('he-IL')
+                                }); 
+                                showAlert("האפיון נשלח בהצלחה לצוות הפיתוח!"); 
+                            }} className="space-y-5">
                                 <div><label className="block text-sm font-bold text-gray-700 mb-1">שם העסק / המותג</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.businessName} onChange={e=>setBriefData({...briefData, businessName: e.target.value})} /></div>
                                 <div><label className="block text-sm font-bold text-gray-700 mb-1">מי קהל היעד שלך?</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.audience} onChange={e=>setBriefData({...briefData, audience: e.target.value})} /></div>
                                 <div><label className="block text-sm font-bold text-gray-700 mb-1">מה הפעולה המרכזית שתרצה שגולש יעשה?</label><input type="text" required placeholder="למשל: השארת פרטים, רכישה..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.callToAction} onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} /></div>
-                                <div className="mt-6 pt-4 border-t border-gray-200">
-                                    <label className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl cursor-pointer">
-                                        <input type="checkbox" required className="mt-1 w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" />
-                                        <span className="text-sm font-bold text-emerald-900">אני מאשר את תקנון האתר ותנאי ההתקשרות כפי שהוגדרו (חתימה דיגיטלית).</span>
+                                
+                                <div className="mt-6 pt-6 border-t border-gray-200">
+                                    <h4 className="font-bold text-gray-900 mb-3 text-sm">אישור הסכם פיתוח ושירותים</h4>
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-600 h-32 overflow-y-auto mb-4 custom-scrollbar whitespace-pre-wrap">
+                                        {systemSettings.clientAgreementText}
+                                    </div>
+                                    <SignaturePad onSave={(data) => setClientSignature(data)} />
+                                    
+                                    <label className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl cursor-pointer mt-4 hover:bg-emerald-100 transition-colors">
+                                        <input type="checkbox" onChange={e => setTermsAccepted(e.target.checked)} required className="mt-1 w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" />
+                                        <span className="text-sm font-bold text-emerald-900">קראתי, אישרתי ואני חותם על הסכם הפיתוח המצורף לעיל. ידוע לי כי עם לחיצה על כפתור השליחה, העבודה יוצאת לדרך באופן מחייב.</span>
                                     </label>
                                 </div>
-                                <Button type="submit" className="w-full py-4 text-lg mt-4">שלח אפיון והתחל פיתוח</Button>
+
+                                <Button type="submit" className="w-full py-4 text-lg mt-4 shadow-lg shadow-brand-500/30">חתום, שלח אפיון והתחל פיתוח</Button>
                             </form>
                         </Card>
                     )}
