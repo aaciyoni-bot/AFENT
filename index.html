@@ -49,7 +49,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // המפתח האמיתי של Gemini שהבאת לי
+        // המפתח האמיתי של Gemini
         const GEMINI_API_KEY = "AQ.Ab8RN6KUs_h-e7vuWbqdoNKFQcS5h9c2fmqNucGwhUJDyBfMKg";
 
         // המפתחות האמיתיים שלך ל-Firebase
@@ -63,15 +63,15 @@
             measurementId: "G-X41B2CNGNN"
         };
 
-        const isFirebaseConfigured = true; // פיירבייס מוגדר!
-        
         let db = null;
-        if (isFirebaseConfigured) {
+        try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+        } catch(e) {
+            console.error("Firebase Init Error:", e);
         }
 
-        // אין יותר לקוחות פיקטיביים! רק אתה ופרילנסר אחד לבדיקות.
+        // משתמשי התחלה (אתה ופרילנסר טסט - אין לקוחות פיקטיביים!)
         const STARTING_USERS = [
             { id: 'admin1', role: 'admin', name: 'יוני (מנהל סוכנות)', email: 'aaci.yoni@gmail.com', password: '6962697' },
             { id: 'free1', role: 'freelancer', name: 'פרילנסר טסט', email: 'free@test.com', password: '123' }
@@ -88,8 +88,7 @@
                 secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
                 success: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/30",
                 danger: "bg-rose-500 text-white hover:bg-rose-600 shadow-lg shadow-rose-500/30",
-                warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/30",
-                purple: "bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-600/30"
+                warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/30"
             };
             return (
                 <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
@@ -185,15 +184,12 @@
             const [loginPassword, setLoginPassword] = useState('');
             const [alertData, setAlertData] = useState({ isOpen: false });
 
-            // סינכרון חי מול Firebase
             useEffect(() => {
                 if(!db) return;
-                
                 const unsubUsers = db.collection('users').onSnapshot(snap => {
                     if(!snap.empty) {
                         setUsers(snap.docs.map(d => ({id: d.id, ...d.data()})));
                     } else {
-                        // אם המסד נתונים ריק לחלוטין, דחוף את היוזרים ההתחלתיים שלנו
                         STARTING_USERS.forEach(u => db.collection('users').doc(u.id).set(u));
                     }
                 });
@@ -207,14 +203,6 @@
 
             const showAlert = (message, title = "הודעת מערכת", type = "info") => {
                 setAlertData({ isOpen: true, title, message, type, onConfirm: () => setAlertData({ isOpen: false }) });
-            };
-
-            const showConfirm = (message, onConfirm, title = "אישור פעולה") => {
-                setAlertData({ 
-                    isOpen: true, title, message, type: 'warning', 
-                    onConfirm: () => { onConfirm(); setAlertData({ isOpen: false }); },
-                    onCancel: () => setAlertData({ isOpen: false })
-                });
             };
 
             const handleLoginSubmit = (e) => {
@@ -250,9 +238,18 @@
                 setProjects(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
                 if(db) await db.collection('projects').doc(id).set(data, {merge: true});
             };
+
+            // פונקציית מחיקה (חדש - למנהל בלבד)
+            const deleteProjectAndClient = async (projectId, clientId) => {
+                setProjects(prev => prev.filter(p => p.id !== projectId));
+                setUsers(prev => prev.filter(u => u.id !== clientId));
+                if(db) {
+                    await db.collection('projects').doc(projectId).delete();
+                    await db.collection('users').doc(clientId).delete();
+                }
+            };
             
-            // פונקציית הקמת לקוח (מופעלת גם מהאדמין וגם מהפרילנסר)
-            // שימו לב: התקציב מאופס, הלקוח מתחיל באפיון!
+            // הקמת פרויקט (מתחיל באפיון, סכום 0 כברירת מחדל)
             const addProjectAndClient = async (clientData) => {
                 const clientId = 'client_' + Date.now();
                 const newClient = { id: clientId, role: 'client', ...clientData };
@@ -261,18 +258,16 @@
                     id: 'proj_' + Date.now(), 
                     clientId, 
                     freelancerId: clientData.freelancerId, 
-                    status: 'waiting_for_brief', // מתחיל רק באפיון
-                    paymentAmount: 0, 
+                    status: 'waiting_for_brief', // מתחיל ישר באפיון מול יונתן
+                    paymentAmount: 0, // הסכום מתעדכן רק ע"י פרילנסר אח"כ
                     brief: '', 
                     createdAt: Date.now(),
                     chatHistory: [{ role: 'model', text: 'שלום! אני יונתן, מנהל הפרויקטים החכם של אוריזיס. אני כאן כדי שנאפיין יחד את החזון שלך לאתר המושלם. ספר לי בכמה מילים - מה העסק שלך עושה ומי קהל היעד?' }]
                 };
 
-                // מעדכן מקומית כדי שלא נחכה
                 setUsers(prev => [...prev, newClient]);
                 setProjects(prev => [...prev, newProject]);
 
-                // שומר לענן הפיירבייס
                 if(db) {
                     await db.collection('users').doc(clientId).set(newClient);
                     await db.collection('projects').doc(newProject.id).set(newProject);
@@ -285,7 +280,7 @@
                         <Card className="w-full max-w-md p-8 shadow-2xl relative overflow-hidden fade-in">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
                             <h1 className="text-4xl font-black text-center text-slate-800 mb-2 tracking-tight">ORIZIS<span className="text-brand-500">WEB</span></h1>
-                            <p className="text-center text-slate-500 mb-8 font-medium">התחברות למערכת ה-ERP</p>
+                            <p className="text-center text-slate-500 mb-8 font-medium">התחברות לאזור האישי</p>
                             
                             <form onSubmit={handleLoginSubmit} className="space-y-4">
                                 <div>
@@ -304,7 +299,7 @@
                                         placeholder="••••••••"
                                     />
                                 </div>
-                                <Button type="submit" className="w-full py-4 text-lg mt-2">היכנס עכשיו</Button>
+                                <Button type="submit" className="w-full py-4 text-lg mt-2">היכנס למערכת</Button>
                             </form>
                         </Card>
                         <AlertModal {...alertData} />
@@ -319,7 +314,7 @@
                     <header className="bg-white border-b border-slate-200 sticky top-0 z-40 glass-panel">
                         {impersonatingAdmin && (
                             <div className="bg-purple-600 text-white text-center py-2 px-4 font-bold text-sm flex justify-between items-center shadow-inner">
-                                <span>👁️ מצב צפייה: אתה רואה את המסך כ-{currentUser.role === 'client' ? 'לקוח' : 'פרילנסר'} ({currentUser.name})</span>
+                                <span>👁️ מצב צפייה: אתה רואה את המסך של {currentUser.name}</span>
                                 <Button onClick={logout} variant="secondary" className="text-xs py-1 px-3 hover:bg-white text-slate-800">חזור למשתמש שלי</Button>
                             </div>
                         )}
@@ -328,7 +323,7 @@
                             <div className="flex items-center gap-4">
                                 <div className="text-left hidden sm:block">
                                     <div className="font-bold text-slate-700">{currentUser.name}</div>
-                                    <div className="text-xs text-brand-600 font-medium uppercase">{currentUser.role}</div>
+                                    <div className="text-xs text-brand-600 font-medium uppercase">{currentUser.role === 'admin' ? 'מנהל סוכנות' : currentUser.role === 'freelancer' ? 'פרילנסר' : 'לקוח'}</div>
                                 </div>
                                 <Button onClick={logout} variant="secondary" className="!p-2 rounded-full"><span className="text-xl">🚪</span></Button>
                             </div>
@@ -336,7 +331,7 @@
                     </header>
 
                     <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-                        {currentUser.role === 'admin' && <AdminDashboard users={users} projects={projects} addProjectAndClient={addProjectAndClient} showAlert={showAlert} impersonateUser={impersonateUser} />}
+                        {currentUser.role === 'admin' && <AdminDashboard users={users} projects={projects} addProjectAndClient={addProjectAndClient} showAlert={showAlert} impersonateUser={impersonateUser} deleteProjectAndClient={deleteProjectAndClient} updateProject={updateProject} />}
                         {currentUser.role === 'freelancer' && <FreelancerDashboard user={currentUser} projects={projects} updateProject={updateProject} showAlert={showAlert} users={users} impersonateUser={impersonateUser} addProjectAndClient={addProjectAndClient} />}
                         {currentUser.role === 'client' && <ClientPortal user={currentUser} projects={projects} updateProject={updateProject} />}
                     </main>
@@ -344,7 +339,7 @@
             );
         };
 
-        const AdminDashboard = ({ users, projects, addProjectAndClient, showAlert, impersonateUser }) => {
+        const AdminDashboard = ({ users, projects, addProjectAndClient, showAlert, impersonateUser, deleteProjectAndClient, updateProject }) => {
             const [newClientData, setNewClientData] = useState({ name: '', email: '', password: '', freelancerId: '' });
 
             const clients = users.filter(u => u.role === 'client');
@@ -357,14 +352,20 @@
                     return showAlert("חובה למלא הכל ולשייך לפרילנסר.", "שגיאה", "danger");
                 }
                 addProjectAndClient(newClientData);
-                showAlert("הלקוח הוקם בהצלחה! הוא נשלח ישירות לאפיון מול ה-AI.", "הצלחה", "success");
+                showAlert("הלקוח הוקם! הוא ישירות נשלח לאפיון מול יונתן ה-AI.", "הצלחה", "success");
                 setNewClientData({ name: '', email: '', password: '', freelancerId: '' });
+            };
+
+            const confirmDelete = (pId, cId) => {
+                if(window.confirm("האם אתה בטוח שברצונך למחוק פרויקט ולקוח זה לחלוטין?")) {
+                    deleteProjectAndClient(pId, cId);
+                }
             };
 
             return (
                 <div className="space-y-8 fade-in">
                     <Card className="bg-gradient-to-br from-brand-500 to-brand-700 text-white border-none shadow-xl">
-                        <h3 className="text-brand-100 font-medium mb-1">הכנסות מערכת סגורות</h3>
+                        <h3 className="text-brand-100 font-medium mb-1">הכנסות מערכת פוטנציאליות/סגורות</h3>
                         <div className="text-4xl font-black">₪{totalRevenue.toLocaleString()}</div>
                     </Card>
 
@@ -374,7 +375,7 @@
                                 <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2"><span>📋</span> מעקב לקוחות ופרויקטים</h2>
                                 {projects.length === 0 ? (
                                     <div className="text-center p-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                        המערכת נקייה ומוכנה לעבודה! הקם את הלקוח הראשון שלך.
+                                        המערכת ריקה. הקם לקוח או תן לפרילנסרים להקים.
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
@@ -383,28 +384,36 @@
                                                 <tr>
                                                     <th className="py-4 px-4">לקוח</th>
                                                     <th className="py-4 px-4">סטטוס</th>
-                                                    <th className="py-4 px-4">פרילנסר</th>
-                                                    <th className="py-4 px-4">צפייה</th>
+                                                    <th className="py-4 px-4">פרילנסר משויך (ניתן לשינוי)</th>
+                                                    <th className="py-4 px-4 text-left">פעולות</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {projects.map(p => {
                                                     const client = clients.find(c => c.id === p.clientId);
-                                                    const freelancer = freelancers.find(f => f.id === p.freelancerId);
-                                                    
                                                     let statusBadge = '';
                                                     if(p.status === 'waiting_for_brief') statusBadge = <span className="text-brand-600 bg-brand-50 px-2 py-1 rounded font-bold">🤖 מאפיין מול AI</span>;
-                                                    else if(p.status === 'waiting_for_quote') statusBadge = <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded font-bold">⚠️ ממתין לתמחור</span>;
-                                                    else if(p.status === 'waiting_for_payment') statusBadge = <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded font-bold">💳 מחכה לתשלום הלקוח</span>;
-                                                    else statusBadge = <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold">בפיתוח / מוכן</span>;
+                                                    else if(p.status === 'waiting_for_quote') statusBadge = <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded font-bold">⚠️ דורש תמחור</span>;
+                                                    else if(p.status === 'waiting_for_payment') statusBadge = <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded font-bold">💳 מחכה לתשלום (₪{p.paymentAmount})</span>;
+                                                    else statusBadge = <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold">בפיתוח</span>;
 
                                                     return (
                                                         <tr key={p.id} className="hover:bg-slate-50">
                                                             <td className="py-4 px-4 font-bold text-slate-800">{client?.name || 'טוען...'}</td>
                                                             <td className="py-4 px-4">{statusBadge}</td>
-                                                            <td className="py-4 px-4 text-slate-600">{freelancer?.name || 'לא משויך'}</td>
                                                             <td className="py-4 px-4">
-                                                                {client && <Button onClick={() => impersonateUser(client.id)} variant="secondary" className="!px-3 !py-1 text-xs">🚪 צפה כלקוח</Button>}
+                                                                <select 
+                                                                    value={p.freelancerId || ''} 
+                                                                    onChange={(e) => updateProject(p.id, {freelancerId: e.target.value})}
+                                                                    className="p-1 text-sm bg-white border border-slate-300 rounded outline-none w-full max-w-[150px]"
+                                                                >
+                                                                    <option value="">ללא שיוך</option>
+                                                                    {freelancers.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                                                </select>
+                                                            </td>
+                                                            <td className="py-4 px-4 flex gap-2 justify-end">
+                                                                {client && <Button onClick={() => impersonateUser(client.id)} variant="secondary" className="!px-3 !py-1 text-xs">🚪 צפה</Button>}
+                                                                <Button onClick={() => confirmDelete(p.id, p.clientId)} variant="danger" className="!px-3 !py-1 text-xs">🗑️ מחק</Button>
                                                             </td>
                                                         </tr>
                                                     );
@@ -418,11 +427,11 @@
 
                         <div className="space-y-6">
                             <Card className="border-t-4 border-t-brand-500">
-                                <h2 className="text-xl font-black text-slate-800 mb-6">➕ הקמת לקוח חדש</h2>
+                                <h2 className="text-xl font-black text-slate-800 mb-6">➕ מנהל: הקמת לקוח</h2>
                                 <div className="space-y-4">
-                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">שם הלקוח / עסק</label><input type="text" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="לדוגמה: חיים אינסטלציה" /></div>
-                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">אימייל (לכניסת הלקוח)</label><input type="email" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
-                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">סיסמה ללקוח</label><input type="text" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
+                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">שם הלקוח</label><input type="text" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
+                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">אימייל (לכניסה)</label><input type="email" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
+                                    <div><label className="text-sm font-bold text-slate-700 block mb-1">סיסמה</label><input type="text" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
                                     <div>
                                         <label className="text-sm font-bold text-slate-700 block mb-1">שייך לפרילנסר</label>
                                         <select value={newClientData.freelancerId} onChange={e=>setNewClientData({...newClientData, freelancerId: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl">
@@ -430,7 +439,7 @@
                                             {freelancers.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                                         </select>
                                     </div>
-                                    <Button onClick={handleCreateClient} className="w-full py-3 mt-2">שמור ושלח ללקוח אפיון</Button>
+                                    <Button onClick={handleCreateClient} className="w-full py-3 mt-2">הקם ושלח לאפיון</Button>
                                 </div>
                             </Card>
                         </div>
@@ -446,27 +455,31 @@
             const activeProjects = myProjects.filter(p => p.status !== 'completed');
 
             const handleCreateClient = () => {
-                if(!newClientData.name || !newClientData.email || !newClientData.password) return showAlert("חובה למלא הכל.");
+                if(!newClientData.name || !newClientData.email || !newClientData.password) return showAlert("חובה למלא את כל השדות.", "שגיאה", "danger");
+                
+                // יוצר את הלקוח ומשייך אוטומטית ל-ID של הפרילנסר שייצר אותו
                 addProjectAndClient({...newClientData, freelancerId: user.id});
-                showAlert("הלקוח הוקם! תוכל להציץ בשיחה שלו עם יונתן דרך כפתור 'צפה כלקוח'.", "לקוח הוקם", "success");
+                showAlert("גייסת לקוח בהצלחה! הלקוח כעת יכול להתחבר ולשוחח עם יונתן. הלקוח שויך אליך במערכת.", "לקוח הוקם", "success");
                 setNewClientData({ name: '', email: '', password: '' });
             };
 
             return (
                 <div className="space-y-8 fade-in">
+                    {/* הפרילנסר מגייס לקוח */}
                     <Card className="border-t-4 border-t-emerald-500 shadow-md">
-                        <h2 className="text-xl font-black text-slate-800 mb-4">➕ גיוס לקוח חדש (שיוך אוטומטי אליך)</h2>
+                        <h2 className="text-xl font-black text-slate-800 mb-2">➕ גיוס לקוח חדש לעבודה (שיוך אוטומטי אליך)</h2>
+                        <p className="text-sm text-slate-500 mb-4">סגרת לקוח בעצמך? הקם אותו כאן. הוא ייכנס ישירות לשיחת אפיון עם יונתן ותוכל לעקוב אחריו.</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div><label className="text-sm font-bold text-slate-700 block mb-1">שם העסק</label><input type="text" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
-                            <div><label className="text-sm font-bold text-slate-700 block mb-1">אימייל לקוח</label><input type="email" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
-                            <div><label className="text-sm font-bold text-slate-700 block mb-1">סיסמה ללקוח</label><input type="text" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" /></div>
+                            <div><label className="text-sm font-bold text-slate-700 block mb-1">שם העסק / הלקוח</label><input type="text" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="ישראל ישראלי"/></div>
+                            <div><label className="text-sm font-bold text-slate-700 block mb-1">אימייל (לכניסת הלקוח)</label><input type="email" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="client@email.com"/></div>
+                            <div><label className="text-sm font-bold text-slate-700 block mb-1">סיסמה ללקוח</label><input type="text" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="12345"/></div>
                         </div>
-                        <Button onClick={handleCreateClient} variant="success" className="w-full md:w-auto mt-4">הקם לקוח ושלח אותו לאפיון AI</Button>
+                        <Button onClick={handleCreateClient} variant="success" className="w-full md:w-auto mt-4 px-8">הקם לקוח ושלח אותו לאפיון AI</Button>
                     </Card>
 
                     <h2 className="text-2xl font-black text-slate-800 mb-4">תור העבודה שלי</h2>
                     {activeProjects.length === 0 ? (
-                        <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-slate-200 text-slate-500">אין לך פרויקטים פעילים. הבא לקוח חדש!</div>
+                        <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-slate-200 text-slate-500">אין לך פרויקטים פעילים. גייס לקוח חדש כדי להתחיל!</div>
                     ) : (
                         activeProjects.map(p => {
                             const client = users.find(u=>u.id===p.clientId);
@@ -475,27 +488,32 @@
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <h3 className="text-xl font-black text-slate-800">לקוח: {client?.name}</h3>
-                                            <div className="text-sm text-slate-500">סטטוס: {p.status === 'waiting_for_brief' ? 'מדבר עם יונתן (אפיון)' : p.status === 'waiting_for_quote' ? 'ממתין שתתמחר' : p.status === 'waiting_for_payment' ? 'ממתין לתשלום' : 'בפיתוח'}</div>
+                                            <div className="text-sm text-slate-500">סטטוס: {p.status === 'waiting_for_brief' ? '🤖 הלקוח מאפיין מול ה-AI (תוכל להציץ)' : p.status === 'waiting_for_quote' ? '⚠️ האפיון הסתיים, ממתין שתתמחר' : p.status === 'waiting_for_payment' ? `💳 מחכה שהלקוח ישלם ויחתום (₪${p.paymentAmount})` : '🚀 הלקוח שילם - בפיתוח'}</div>
                                         </div>
                                         <div className="flex gap-2 items-center">
-                                            <Button onClick={() => impersonateUser(client.id)} variant="secondary" className="!text-xs !py-1">🚪 צפה כלקוח (במעקב)</Button>
+                                            {/* הפרילנסר יכול להציץ ללקוח גם כשהוא מדבר עם יונתן! */}
+                                            <Button onClick={() => impersonateUser(client.id)} variant="secondary" className="!text-xs !py-1">🚪 צפה במסך הלקוח</Button>
                                         </div>
                                     </div>
 
+                                    {/* מסך התמחור - נפתח רק אחרי שיונתן סיים */}
                                     {p.status === 'waiting_for_quote' && (
                                         <div className="bg-amber-100 p-5 rounded-2xl mb-6 border border-amber-300">
-                                            <h4 className="font-black text-amber-900 mb-2">⚠️ תמחר את הפרויקט</h4>
-                                            <p className="text-sm text-amber-800 mb-4 font-bold">ה-AI סיים לאפיין. קרא את האפיון למטה והזן הצעת מחיר מדויקת ללקוח.</p>
+                                            <h4 className="font-black text-amber-900 mb-2">⚠️ הלקוח סיים לאפיין! תמחר את הפרויקט</h4>
+                                            <p className="text-sm text-amber-800 mb-4 font-bold">קרא את האפיון למטה, והזן הצעת מחיר. הלקוח ממתין להצעה במסך שלו.</p>
                                             <div className="flex gap-4 items-center bg-white p-3 rounded-xl border border-amber-200 w-fit">
-                                                <input type="number" onBlur={(e) => updateProject(p.id, {paymentAmount: Number(e.target.value)})} className="p-2 border border-slate-300 rounded outline-none font-bold w-32" placeholder="סכום ב-₪" />
-                                                <Button onClick={() => updateProject(p.id, {status: 'waiting_for_payment'})} variant="success">שמור ושלח ללקוח לתשלום</Button>
+                                                <input type="number" onBlur={(e) => updateProject(p.id, {paymentAmount: Number(e.target.value)})} className="p-2 border border-slate-300 rounded outline-none font-bold w-32 text-left" dir="ltr" placeholder="סכום ב-₪" />
+                                                <Button onClick={() => {
+                                                    if(p.paymentAmount > 0) updateProject(p.id, {status: 'waiting_for_payment'})
+                                                    else showAlert("יש להזין סכום תקין.", "שגיאה", "danger");
+                                                }} variant="success">שלח הצעת מחיר ללקוח לתשלום</Button>
                                             </div>
                                         </div>
                                     )}
                                     
                                     {p.brief && (
                                         <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                                            <h4 className="font-black text-slate-800 mb-2">📝 אפיון הלקוח</h4>
+                                            <h4 className="font-black text-slate-800 mb-2">📝 אפיון הלקוח מה-AI</h4>
                                             <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl min-h-[150px] text-sm text-slate-700" defaultValue={p.brief} onBlur={(e) => updateProject(p.id, {brief: e.target.value})} />
                                         </div>
                                     )}
@@ -526,12 +544,12 @@
                 setChatInput('');
                 setIsTyping(true);
 
-                // ההנחיה המחודשת: יונתן לא מדבר על כסף. הוא מסכם ומעביר להצעת מחיר!
+                // יונתן רק מאפיין, לעולם לא מדבר על כסף.
                 const sysPrompt = `השם שלך הוא יונתן. אתה מנהל פרויקטים ומאפיין אתרים מקצועי בסוכנות ORIZISWEB.
 מטרתך לאסוף מידע מהלקוח על: מהות העסק, קהל יעד, צבעים מועדפים והשראות.
 שאל שאלה אחת או שתיים קצרות בכל פעם כדי לא להעמיס.
-**חוק ברזל: אסור לך לתת הצעות מחיר או להבטיח זמנים. אתה רק אוסף מידע.**
-סיום השיחה: כשיש לך מספיק מידע, תגיד ללקוח שארזת הכל, שהעברת את האפיון לצוות המומחים שלנו לבחינה והרכבת הצעת מחיר מותאמת אישית, ותוסיף בסוף התשובה בדיוק את המילה [סיכום_אפיון].`;
+**חוק ברזל: אסור לך בשום אופן לתת הצעות מחיר, לדבר על כסף או להבטיח זמנים.**
+סיום השיחה: כשיש לך מספיק מידע כדי שהצוות יתחיל לתמחר, תגיד ללקוח שארזת הכל, שהעברת את האפיון לצוות המומחים שלנו לבחינה והרכבת הצעת מחיר מותאמת אישית שתופיע לו ממש פה במסך בקרוב, ותוסיף בסוף התשובה בדיוק את המילה [סיכום_אפיון].`;
 
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -544,9 +562,7 @@
                     });
                     
                     const data = await response.json();
-                    if(data.error) {
-                        throw new Error(data.error.message);
-                    }
+                    if(data.error) throw new Error(data.error.message);
                     
                     let aiText = data.candidates[0].content.parts[0].text;
                     const isFinished = aiText.includes('[סיכום_אפיון]');
@@ -557,12 +573,12 @@
                     
                     if (isFinished) {
                         const briefTranscript = finalMessages.map(m => `${m.role === 'user' ? 'לקוח' : 'יונתן'}: ${m.text}`).join('\n\n');
-                        // מעביר אוטומטית למצב "ממתין להצעת מחיר" של הפרילנסר!
+                        // מעביר אוטומטית למצב "ממתין לתמחור של הפרילנסר"
                         setTimeout(() => updateProject(project.id, { brief: briefTranscript, status: 'waiting_for_quote' }), 4000);
                     }
                 } catch (err) {
                     console.error(err);
-                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: 'מצטער, הייתה שגיאה בחיבור למערכת הבינה המלאכותית (בדוק את מפתח ה-API).' }] });
+                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: 'מצטער, הייתה שגיאה בחיבור לשרת ה-AI. אנא נסה שוב.' }] });
                 } finally {
                     setIsTyping(false);
                 }
@@ -578,7 +594,7 @@
                                 <div className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center text-white text-xl">🤖</div>
                                 <div>
                                     <h3 className="font-black text-slate-800 text-lg leading-tight">יונתן</h3>
-                                    <p className="text-xs text-brand-600 font-bold">מנהל פרויקטים AI</p>
+                                    <p className="text-xs text-brand-600 font-bold">מנהל פרויקטים AI - שלב אפיון</p>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-50">
@@ -604,34 +620,34 @@
                         </Card>
                     )}
 
-                    {/* שלב 2: יונתן סיים, הפרילנסר צריך לתת מחיר */}
+                    {/* שלב 2: יונתן סיים, הלקוח ממתין שהפרילנסר ישים מחיר */}
                     {project.status === 'waiting_for_quote' && (
                         <Card className="text-center py-20 bg-amber-50 border-amber-200 shadow-xl fade-in">
                             <div className="text-6xl mb-6">⏳</div>
                             <h2 className="text-3xl font-black text-amber-900 mb-4">האפיון עבר לצוות המומחים!</h2>
-                            <p className="text-amber-800 text-lg max-w-lg mx-auto">
-                                יונתן העביר לנו את כל הפרטים. הצוות שלנו עובר עליהם כעת כדי לתפור עבורך את הפתרון המדויק ולהכין הצעת מחיר הוגנת. תקבל מאיתנו עדכון ממש בקרוב.
+                            <p className="text-amber-800 text-lg max-w-lg mx-auto font-medium leading-relaxed">
+                                יונתן העביר לנו את כל הפרטים שאספתם יחד. הצוות שלנו קורא עכשיו את האפיון כדי לתפור עבורך את הפתרון המדויק ולהכין הצעת מחיר הוגנת. הצעת המחיר תופיע ממש פה במסך ברגע שתהיה מוכנה.
                             </p>
                         </Card>
                     )}
 
-                    {/* שלב 3: הפרילנסר שם מחיר, הלקוח משלם וחותם */}
+                    {/* שלב 3: הפרילנסר שם מחיר, הלקוח רואה את החוזה ויכול לשלם */}
                     {project.status === 'waiting_for_payment' && (
                         <Card className="p-6 md:p-10 border-t-4 border-t-brand-500 shadow-xl fade-in">
                             <h2 className="text-3xl font-black text-slate-800 mb-2">הצעת מחיר מותאמת אישית</h2>
-                            <p className="text-slate-600 mb-8">בהמשך לאפיון שלך, הנה הצעת המחיר להקמת הפרויקט.</p>
+                            <p className="text-slate-600 mb-8 font-medium">בהמשך לאפיון שלך מול יונתן, להלן הצעת המחיר להקמת הפרויקט.</p>
                             
-                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl mb-8 flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-slate-800">פיתוח והקמת הפרויקט</h3>
-                                    <p className="text-sm text-slate-500">על בסיס המידע שנאסף באפיון</p>
+                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="text-center md:text-right">
+                                    <h3 className="font-bold text-slate-800 text-lg">פיתוח והקמת הפרויקט</h3>
+                                    <p className="text-sm text-slate-500">הקמה מלאה על בסיס דרישות האפיון</p>
                                 </div>
-                                <div className="text-3xl font-black text-brand-600">₪{project.paymentAmount?.toLocaleString()}</div>
+                                <div className="text-4xl font-black text-brand-600">₪{project.paymentAmount?.toLocaleString()}</div>
                             </div>
                             
                             <div className="mb-8">
                                 <h4 className="font-bold text-slate-800 mb-2">אישור הסכם ותנאי התקשרות</h4>
-                                <div className="h-40 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 mb-4 leading-relaxed">
+                                <div className="h-40 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 mb-4 leading-relaxed font-medium">
                                     <h1 className="text-base font-bold mb-2">הסכם פיתוח, הקמה ושירותי אינטרנט</h1>
                                     <p>הסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ לבין הלקוח המזמין.</p><br/>
                                     <p><strong>1. מהות ההתקשרות:</strong> החברה תספק שירותי פיתוח ועיצוב בהתאם למידע שנאסף באפיון ה-AI.</p>
@@ -650,8 +666,8 @@
                         <Card className="text-center py-20 bg-brand-50 border-brand-200 shadow-xl fade-in">
                             <div className="text-6xl mb-6">🚀</div>
                             <h2 className="text-3xl font-black text-brand-900 mb-4">יצאנו לדרך!</h2>
-                            <p className="text-brand-800 text-lg max-w-lg mx-auto">
-                                ההסכם נחתם בהצלחה והצוות שלנו כבר התחיל לעבוד על הפרויקט שלך. נערוך פה עדכונים שוטפים.
+                            <p className="text-brand-800 text-lg max-w-lg mx-auto font-medium">
+                                ההסכם נחתם בהצלחה והצוות שלנו כבר התחיל לעבוד על הפרויקט שלך. אנו ניצור עמך קשר בקרוב עם עדכונים חמים מהפיתוח.
                             </p>
                         </Card>
                     )}
