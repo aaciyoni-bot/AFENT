@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -62,7 +63,7 @@
         ];
 
         const MOCK_PROJECTS = [
-            { id: 'proj1', clientId: 'client1', freelancerId: 'free1', status: 'waiting_for_brief', paymentAmount: 1500, brief: '', timeSpent: 0, timeBudget: 12600, customerSignature: null, createdAt: Date.now() },
+            { id: 'proj1', clientId: 'client1', freelancerId: 'free1', status: 'waiting_for_brief', paymentAmount: 0, brief: '', timeSpent: 0, timeBudget: 12600, customerSignature: null, createdAt: Date.now() },
             { id: 'proj2', clientId: 'client2', freelancerId: 'free1', status: 'in_progress', paymentAmount: 1500, brief: 'לקוח רוצה אתר תדמית כחול עם טופס לידים.', timeSpent: 7200, timeBudget: 12600, customerSignature: 'signed', createdAt: Date.now() - 86400000 }
         ];
 
@@ -216,7 +217,8 @@
             const addProjectAndClient = (clientData, freelancerId) => {
                 const clientId = 'client_' + Date.now();
                 const newClient = { id: clientId, role: 'client', name: clientData.name, email: clientData.email, password: clientData.password };
-                const newProject = { id: 'proj_' + Date.now(), clientId, freelancerId, status: 'waiting_for_brief', paymentAmount: Number(clientData.paymentAmount), brief: '', timeSpent: 0, timeBudget: 12600, customerSignature: null, createdAt: Date.now() };
+                // Project initially starts with 0 budget, pending quote from freelancer
+                const newProject = { id: 'proj_' + Date.now(), clientId, freelancerId, status: 'waiting_for_brief', paymentAmount: 0, brief: '', timeSpent: 0, timeBudget: 12600, customerSignature: null, createdAt: Date.now() };
                 setUsers(prev => [...prev, newClient]);
                 setProjects(prev => [...prev, newProject]);
             };
@@ -274,7 +276,7 @@
 
         const AdminDashboard = ({ users, setUsers, projects, setProjects, pricing, addProjectAndClient, showConfirm, showAlert, impersonateUser, updateUser }) => {
             const [activeTab, setActiveTab] = useState('projects');
-            const [newClientData, setNewClientData] = useState({ name: '', email: '', password: '', paymentAmount: '', freelancerId: '' });
+            const [newClientData, setNewClientData] = useState({ name: '', email: '', password: '', freelancerId: '' });
 
             const clients = users.filter(u => u.role === 'client');
             const freelancers = users.filter(u => u.role === 'freelancer');
@@ -287,7 +289,7 @@
                 if(!newClientData.name || !newClientData.email || !newClientData.password) return showAlert("חובה למלא שם עסק, אימייל וסיסמה.");
                 addProjectAndClient(newClientData, newClientData.freelancerId);
                 showAlert("הלקוח הוקם בהצלחה! הוא יופנה לאפיון AI בשלב הראשון.");
-                setNewClientData({ name: '', email: '', password: '', paymentAmount: '', freelancerId: '' });
+                setNewClientData({ name: '', email: '', password: '', freelancerId: '' });
             };
 
             const getEfficiencyColor = (timeSpent, timeBudget) => {
@@ -358,7 +360,7 @@
                                                     
                                                     let statusBadge = '';
                                                     if(p.status === 'waiting_for_brief') statusBadge = <span className="bg-brand-100 text-brand-700 px-2 py-1 rounded-md text-xs font-bold">1️⃣ שלב אפיון AI</span>;
-                                                    else if(p.status === 'waiting_for_quote') statusBadge = <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-xs font-bold animate-pulse">⚠️ דורש תמחור</span>;
+                                                    else if(p.status === 'waiting_for_quote') statusBadge = <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-xs font-bold animate-pulse">⚠️ דורש הצעת מחיר</span>;
                                                     else if(p.status === 'waiting_for_payment') statusBadge = <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-xs font-bold">2️⃣ ממתין לתשלום</span>;
                                                     else if(p.status === 'in_progress') statusBadge = <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold">3️⃣ בפיתוח פעיל</span>;
                                                     else if(p.status === 'qa_review') statusBadge = <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">👀 ממתין לבדיקתך</span>;
@@ -392,7 +394,6 @@
                                         <div><label className="text-sm font-bold text-slate-700 mb-1 block">שם העסק / הלקוח</label><input type="text" value={newClientData.name} onChange={e=>setNewClientData({...newClientData, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-500 outline-none" /></div>
                                         <div><label className="text-sm font-bold text-slate-700 mb-1 block">אימייל (כניסה)</label><input type="email" value={newClientData.email} onChange={e=>setNewClientData({...newClientData, email: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-500 outline-none" /></div>
                                         <div><label className="text-sm font-bold text-slate-700 mb-1 block">סיסמה זמנית</label><input type="text" value={newClientData.password} onChange={e=>setNewClientData({...newClientData, password: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-500 outline-none" /></div>
-                                        <div><label className="text-sm font-bold text-slate-700 mb-1 block">תקציב בסיס באפיון (₪)</label><input type="number" value={newClientData.paymentAmount} onChange={e=>setNewClientData({...newClientData, paymentAmount: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-500 outline-none" placeholder="למשל 1500" /></div>
                                         <div>
                                             <label className="text-sm font-bold text-slate-700 mb-1 block">שייך לפרילנסר</label>
                                             <select value={newClientData.freelancerId} onChange={e=>setNewClientData({...newClientData, freelancerId: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-500 outline-none">
@@ -527,37 +528,44 @@
                                         <h3 className="text-xl font-black text-slate-800">פרויקט ID: {p.id.slice(-4)}</h3>
                                         <div className="text-slate-500 font-medium">לקוח: {users.find(u=>u.id===p.clientId)?.name}</div>
                                     </div>
-                                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-black">בעבודה</span>
+                                    <span className={`${p.status === 'waiting_for_quote' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'} px-3 py-1 rounded-full text-xs font-black`}>
+                                        {p.status === 'waiting_for_quote' ? 'ממתין לתמחור שלך' : 'בעבודה'}
+                                    </span>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                    <div className="flex-1 bg-slate-50 p-6 rounded-2xl border border-slate-200 flex items-center justify-between">
-                                        <div>
-                                            <div className="text-sm font-bold text-slate-500 mb-1">טיימר עבודה</div>
-                                            <div className={`font-mono text-3xl font-black ${isOvertime ? 'text-rose-600' : 'text-slate-700'}`}>
-                                                {(p.timeSpent / 3600).toFixed(2)} / {(p.timeBudget / 3600).toFixed(2)}h
+                                {p.status === 'in_progress' && (
+                                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                                        <div className="flex-1 bg-slate-50 p-6 rounded-2xl border border-slate-200 flex items-center justify-between">
+                                            <div>
+                                                <div className="text-sm font-bold text-slate-500 mb-1">טיימר עבודה</div>
+                                                <div className={`font-mono text-3xl font-black ${isOvertime ? 'text-rose-600' : 'text-slate-700'}`}>
+                                                    {(p.timeSpent / 3600).toFixed(2)} / {(p.timeBudget / 3600).toFixed(2)}h
+                                                </div>
                                             </div>
+                                            {activeTimer === p.id ? (
+                                                <Button onClick={() => setActiveTimer(null)} variant="danger" className="animate-pulse shadow-rose-500/50">⏸️ עצור</Button>
+                                            ) : (
+                                                <Button onClick={() => setActiveTimer(p.id)} variant="primary" className="shadow-brand-500/50">▶️ התחל</Button>
+                                            )}
                                         </div>
-                                        {activeTimer === p.id ? (
-                                            <Button onClick={() => setActiveTimer(null)} variant="danger" className="animate-pulse shadow-rose-500/50">⏸️ עצור</Button>
-                                        ) : (
-                                            <Button onClick={() => setActiveTimer(p.id)} variant="primary" className="shadow-brand-500/50">▶️ התחל</Button>
-                                        )}
+                                        
+                                        <Button onClick={() => showAlert("דווח למנהל. הטיימר עצר.", "חסימה דווחה", "warning")} variant="secondary" className="md:w-32 !text-rose-600 border-2 border-rose-100 bg-rose-50 hover:bg-rose-100">
+                                            🛑 נתקעתי
+                                        </Button>
                                     </div>
-                                    
-                                    <Button onClick={() => showAlert("דווח למנהל. הטיימר עצר.", "חסימה דווחה", "warning")} variant="secondary" className="md:w-32 !text-rose-600 border-2 border-rose-100 bg-rose-50 hover:bg-rose-100">
-                                        🛑 נתקעתי
-                                    </Button>
-                                </div>
+                                )}
 
                                 {p.status === 'waiting_for_quote' && (
                                     <div className="bg-amber-100 p-5 rounded-2xl mb-6 border border-amber-300">
-                                        <h4 className="font-black text-amber-900 mb-2 flex items-center gap-2"><span className="text-xl">⚠️</span> דורש תמחור - מערכת מורכבת</h4>
-                                        <p className="text-sm text-amber-800 mb-4 font-bold">סוכן ה-AI העביר אליך את הפרויקט לבחינה ותמחור מחדש לפני תשלום הלקוח.</p>
+                                        <h4 className="font-black text-amber-900 mb-2 flex items-center gap-2"><span className="text-xl">⚠️</span> דורש הצעת מחיר</h4>
+                                        <p className="text-sm text-amber-800 mb-4 font-bold">סוכן ה-AI סיים את האפיון מול הלקוח. קרא את האפיון למטה, הזן הצעת מחיר מדויקת ושלח ללקוח לתשלום.</p>
                                         <div className="flex flex-wrap gap-4 items-center bg-white p-3 rounded-xl border border-amber-200">
-                                            <label className="text-sm font-bold text-slate-700">מחיר חדש ללקוח (₪):</label>
-                                            <input type="number" defaultValue={p.paymentAmount} onBlur={(e) => updateProject(p.id, {paymentAmount: Number(e.target.value)})} className="p-2 rounded-lg border border-slate-300 w-32 outline-none font-bold" />
-                                            <Button onClick={() => updateProject(p.id, {status: 'waiting_for_payment'})} variant="success">אשר ושלח ללקוח לתשלום</Button>
+                                            <label className="text-sm font-bold text-slate-700">הצעת מחיר סופית ללקוח (₪):</label>
+                                            <input type="number" defaultValue={p.paymentAmount || ''} onBlur={(e) => updateProject(p.id, {paymentAmount: Number(e.target.value)})} className="p-2 rounded-lg border border-slate-300 w-32 outline-none font-bold" placeholder="למשל 2500" />
+                                            <Button onClick={() => {
+                                                if(p.paymentAmount <= 0) return showAlert("חובה להזין סכום גדול מ-0", "שגיאה", "danger");
+                                                updateProject(p.id, {status: 'waiting_for_payment'})
+                                            }} variant="success">שלח הצעת מחיר ללקוח</Button>
                                         </div>
                                     </div>
                                 )}
@@ -572,9 +580,11 @@
                                     />
                                 </div>
 
-                                <Button onClick={() => showConfirm('האם סיימת את צ\'ק-ליסט ה-QA, בדיקות מובייל, נגישות ומהירות?', () => updateProject(p.id, {status: 'qa_review'}))} variant="success" className="w-full py-4 text-lg">
-                                    ✅ הגש לבקרת איכות (QA)
-                                </Button>
+                                {p.status === 'in_progress' && (
+                                    <Button onClick={() => showConfirm('האם סיימת את צ\'ק-ליסט ה-QA, בדיקות מובייל, נגישות ומהירות?', () => updateProject(p.id, {status: 'qa_review'}))} variant="success" className="w-full py-4 text-lg">
+                                        ✅ הגש לבקרת איכות (QA)
+                                    </Button>
+                                )}
                             </Card>
                         );
                     })}
@@ -592,7 +602,7 @@
         const ClientPortal = ({ user, projects, updateProject, showAlert, showConfirm, pricing }) => {
             const project = projects.find(p => p.clientId === user.id);
             const [chatInput, setChatInput] = useState('');
-            const [messages, setMessages] = useState([{ role: 'model', text: 'שלום! אני יונתן, מנהל הפרויקטים החכם של אוריזיס. אני כאן כדי שנאפיין יחד את האתר המנצח שלך. ספר לי בכמה מילים - מה העסק שלך עושה?' }]);
+            const [messages, setMessages] = useState([{ role: 'model', text: 'שלום! אני יונתן, מנהל הפרויקטים החכם של אוריזיס. אני כאן כדי שנאפיין יחד את החזון שלך לאתר המושלם. ספר לי בכמה מילים - מה העסק שלך עושה ומי קהל היעד?' }]);
             const [isTyping, setIsTyping] = useState(false);
             const chatEndRef = useRef(null);
 
@@ -615,10 +625,12 @@
 
                 const catalogStr = pricing.map(p => `${p.name} (ב-${p.price} ₪)`).join(', ');
                 const sysPrompt = `השם שלך הוא יונתן. אתה מנהל פרויקטים ומאפיין אתרים מקצועי בסוכנות ORIZISWEB.
-מטרתך: 1. הבנת מהות העסק. 2. מתחרים. 3. צבעים. 4. פיצ'רים. 
-חוקים: היה אדיב, שאל רק שאלה אחת בכל פעם!!
-**חשוב מאוד (Upsell):** הנה קטלוג השירותים שלנו שאפשר להוסיף בחנות: ${catalogStr}. אם הלקוח מציין צורך מתאים, הצע לו בעדינות.
-סיום השיחה: אם מספיק מידע ויש דרישות סטנדרטיות הוסף בדיוק את המילה [סיכום_אפיון]. אם הלקוח דורש מערכת מורכבת במיוחד הוסף בדיוק את המילה [בחינת_מתכנת].`;
+מטרתך לאסוף מידע מקיף מהלקוח לפני שמתמחרים את הפרויקט. עליך להבין: מהות העסק, מתחרים, צבעים/עיצוב, ופונקציונליות נדרשת (חנות, תורים וכו').
+חוקים חשובים:
+1. היה סופר אדיב ומקצועי.
+2. שאל רק שאלה אחת או שתיים קשורות בכל פעם. אל תציף.
+3. UPSALE: אם הלקוח מציין צורך שקיים אצלנו בחנות (${catalogStr}), הצע לו בעדינות להוסיף את זה להצעת המחיר שתישלח אליו.
+סיום השיחה: ברגע שיש לך את כל המידע הנדרש כדי שמתכנת יוכל לתמחר ולבנות את האתר, אמור ללקוח שמסרת את הכל לצוות ושהם ישלחו לו הצעת מחיר בקרוב, והוסף בסוף התשובה שלך בדיוק את המילה [סיכום_אפיון].`;
 
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -634,17 +646,16 @@
                     if(data.error) throw new Error(data.error.message);
                     
                     let aiText = data.candidates[0].content.parts[0].text;
-                    const isFinishedStandard = aiText.includes('[סיכום_אפיון]');
-                    const isFinishedComplex = aiText.includes('[בחינת_מתכנת]');
-                    aiText = aiText.replace('[סיכום_אפיון]', '').replace('[בחינת_מתכנת]', '').trim();
+                    const isFinished = aiText.includes('[סיכום_אפיון]');
+                    aiText = aiText.replace('[סיכום_אפיון]', '').trim();
                     
                     const finalMessages = [...newMessages, { role: 'model', text: aiText }];
                     setMessages(finalMessages);
                     
-                    if (isFinishedStandard || isFinishedComplex) {
+                    if (isFinished) {
                         const briefTranscript = finalMessages.map(m => `${m.role === 'user' ? 'לקוח' : 'יונתן (AI)'}: ${m.text}`).join('\n\n');
-                        const nextStatus = isFinishedComplex ? 'waiting_for_quote' : 'waiting_for_payment';
-                        setTimeout(() => updateProject(project.id, { brief: briefTranscript, status: nextStatus }), 3000);
+                        // הפרויקט עובר אוטומטית לבדיקה ותמחור של הפרילנסר
+                        setTimeout(() => updateProject(project.id, { brief: briefTranscript, status: 'waiting_for_quote' }), 3000);
                     }
                 } catch (err) {
                     setMessages([...newMessages, { role: 'model', text: 'שגיאת חיבור ל-AI. אנא בדוק אם מפתח ה-API תקין בהגדרות המערכת.' }]);
@@ -665,7 +676,7 @@
                         </div>
                         <div className="flex flex-col items-center gap-2 bg-white px-2">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl transition-all shadow-lg ${isPayPhase || isTriage ? 'bg-brand-500 text-white shadow-brand-500/40 scale-110' : !isAIPhase ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-400'}`}>2</div>
-                            <span className="text-xs font-bold text-slate-700">הסכם ותשלום</span>
+                            <span className="text-xs font-bold text-slate-700">הצעת מחיר והסכם</span>
                         </div>
                         <div className="flex flex-col items-center gap-2 bg-white px-2">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl transition-all shadow-lg ${isDevPhase ? 'bg-brand-500 text-white shadow-brand-500/40 scale-110' : isDone ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-400'}`}>3</div>
@@ -703,15 +714,15 @@
                             </div>
                         </Card>
                     ) : isTriage ? (
-                        <Card className="text-center py-20 bg-amber-50 border-amber-200 border-t-4 border-t-amber-500">
-                            <div className="text-6xl mb-6">🧐</div>
-                            <h3 className="text-2xl font-black text-slate-800 mb-2">אפיון מורכב בבחינה</h3>
-                            <p className="text-slate-600 font-medium max-w-md mx-auto">יונתן זיהה שהאתר שביקשת מכיל מערכות מתקדמות. צוות הפיתוח שלנו עובר כרגע על האפיון כדי לתת לך הצעת מחיר מדויקת ומותאמת אישית. נעדכן אותך בקרוב!</p>
+                        <Card className="text-center py-20 bg-brand-50 border-brand-200 border-t-4 border-t-brand-500">
+                            <div className="text-6xl mb-6">🎯</div>
+                            <h3 className="text-2xl font-black text-slate-800 mb-2">האפיון עבר לצוות המומחים שלנו!</h3>
+                            <p className="text-slate-600 font-medium max-w-md mx-auto">תודה רבה! יונתן סיים לאסוף את כל המידע הנדרש. ברגעים אלו הצוות שלנו עובר על האפיון שלך כדי לבנות עבורך הצעת מחיר מדויקת והוגנת שמותאמת בול לצרכים שלך. תקבל עדכון ברגע שההצעה וההסכם יהיו מוכנים כאן לחתימה.</p>
                         </Card>
                     ) : isPayPhase ? (
                         <Card className="border-t-4 border-t-emerald-500">
-                            <h2 className="text-2xl font-black text-slate-800 mb-2">שלב 2: אישור הסכם ותשלום</h2>
-                            <p className="text-slate-600 mb-6 font-medium">האפיון הושלם בהצלחה. סך לתשלום בגין הפיתוח: <span className="font-black text-emerald-600 text-xl">₪{project.paymentAmount.toLocaleString()}</span></p>
+                            <h2 className="text-2xl font-black text-slate-800 mb-2">שלב 2: אישור הצעת מחיר ותשלום</h2>
+                            <p className="text-slate-600 mb-6 font-medium">הצוות שלנו סיים לעבור על האפיון שלך. להלן הצעת המחיר הסופית בגין פיתוח הפרויקט: <span className="font-black text-emerald-600 text-xl">₪{project.paymentAmount.toLocaleString()}</span></p>
                             
                             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64 overflow-y-auto mb-6 text-sm text-slate-600 leading-relaxed font-medium">
                                 <h3 className="font-black text-slate-800 mb-4 text-base">הסכם פיתוח, הקמה ושירותי אינטרנט</h3>
