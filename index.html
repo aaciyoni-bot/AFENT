@@ -1,12 +1,19 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORIZIS WEB - Agency ERP</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics-compat.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -24,6 +31,23 @@
 
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext, useRef } = React;
+
+        // חיבור ה- Firebase המדויק שלך (מותאם לגרסת דפדפן)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
+            authDomain: "afent-8d50d.firebaseapp.com",
+            projectId: "afent-8d50d",
+            storageBucket: "afent-8d50d.firebasestorage.app",
+            messagingSenderId: "458196058965",
+            appId: "1:458196058965:web:bd4466b89c554b806b25dc",
+            measurementId: "G-X41B2CNGNN"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        const analytics = firebase.analytics();
 
         const Card = ({ children, className = '' }) => <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${className}`}>{children}</div>;
         const Badge = ({ children, color = 'gray' }) => {
@@ -63,60 +87,71 @@
         const SignaturePad = ({ onSave }) => {
             const canvasRef = useRef(null);
             const [isDrawing, setIsDrawing] = useState(false);
-            
-            useEffect(() => {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
-            }, []);
 
             const startDrawing = (e) => {
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
                 ctx.beginPath();
-                ctx.moveTo(clientX - rect.left, clientY - rect.top);
+                ctx.moveTo(x, y);
                 setIsDrawing(true);
             };
 
             const draw = (e) => {
                 if (!isDrawing) return;
+                e.preventDefault();
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                ctx.lineTo(clientX - rect.left, clientY - rect.top);
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+                ctx.lineTo(x, y);
                 ctx.stroke();
             };
 
             const stopDrawing = () => {
-                setIsDrawing(false);
-                onSave(canvasRef.current.toDataURL());
+                if(isDrawing) {
+                    setIsDrawing(false);
+                    onSave(canvasRef.current.toDataURL());
+                }
             };
 
-            const clear = (e) => {
-                e.preventDefault();
+            const clear = () => {
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 onSave(null);
             };
 
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+            }, []);
+
             return (
-                <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden bg-gray-50 p-2 relative">
-                    <div className="absolute top-2 right-2 text-xs font-bold text-gray-400 pointer-events-none">חתום כאן בתוך המסגרת (אצבע/עכבר)</div>
-                    <canvas 
-                        ref={canvasRef} width={400} height={150} 
-                        className="w-full bg-white rounded-lg shadow-inner cursor-crosshair touch-none"
-                        onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
-                        onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
+                <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden bg-white hover:border-brand-400 transition-colors">
+                    <div className="bg-gray-50 p-3 text-xs font-bold text-gray-500 border-b border-gray-200 flex justify-between items-center">
+                        <span className="flex items-center gap-2">✍️ צייר חתימה כאן (עכבר או אצבע)</span>
+                        <button type="button" onClick={clear} className="text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">נקה חתימה</button>
+                    </div>
+                    <canvas
+                        ref={canvasRef}
+                        width={600}
+                        height={200}
+                        className="w-full touch-none cursor-crosshair bg-white"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
                     />
-                    <button onClick={clear} type="button" className="text-xs text-red-500 mt-2 font-medium hover:underline">מחק חתימה ונסה שוב</button>
                 </div>
             );
         };
@@ -128,45 +163,62 @@
         };
 
         const initialSettings = {
-            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ (להלן "החברה") לבין נותן השירותים הנרשם למערכת (להלן "הפרילנסר").\n\n1. מהות ההתקשרות והיעדר יחסי עובד מעביד\nמוסכם במפורש כי הפרילנסר פועל כקבלן עצמאי ומספק שירותים כנגד חשבונית מס/קבלה כדין. לא מתקיימים ולא יתקיימו יחסי עובד ומעביד בין הצדדים, ואין בהסכם זה כדי להקנות לפרילנסר זכויות סוציאליות כלשהן. הפרילנסר יישא לבדו בכל חבות מס הנובעת מהתקשרות זו.\n\n2. הכשרה, אספקת לקוחות וציוד עבודה\n2.1. החברה תספק לפרילנסר הכשרה מקצועית וכן תדאג לאספקת לקוחות ופרויקטים באופן שוטף בהתאם לצרכיה.\n2.2. הפרילנסר יבצע את עבודתו תוך שימוש בציוד אישי שלו (מחשב נייד/נייח) ועל חשבונו.\n2.3. עמדת עבודה בחברה: החברה מציעה לפרילנסר אפשרות לעבוד מתוך סביבת העבודה של משרדי החברה, ולקבל עמדת עבודה פיזית בעלות מסובסדת, בכפוף לתיאום ואישור מראש.\n\n3. תגמול ובונוס הבאת לקוחות\nהתגמול הבסיסי לפרילנסר יעמוד על אחוזים כפי שיוגדרו מראש במערכת (כברירת מחדל 60%) מתוך כל פרויקט שיבצע. עם זאת, לקוחות שהפרילנסר יביא ויסגור בעצמו מחוץ למאגר החברה, יזכו את הפרילנסר בבונוס של 5% נוספים מעלות הפרויקט (מעבר לאחוז הבסיס שלו).\n\n4. כלים טכנולוגיים (מנוי AI)\nהפרילנסר מתחייב להחזיק ולתחזק על חשבונו הבלעדי מנוי חודשי פעיל במערכת/ות בינה מלאכותית (AI) מסחרית מתקדמת (כגון ChatGPT Plus וכדומה), כפי שיוגדר ויידרש מעת לעת על ידי החברה, כתנאי יסוד לביצוע העבודה וקבלת פרויקטים.\n\n5. סודיות, אי-תחרות ואי-הכפשה\n5.1. הפרילנסר מתחייב לשמור בסודיות מוחלטת כל מידע מסחרי, טכנולוגי ולקוחות של החברה.\n5.2. אי-תחרות: הפרילנסר מתחייב שלא לפנות, לשדל או להציע שירותים ישירות ללקוחות החברה, עמם בא במגע במסגרת עבודתו, במהלך ההתקשרות ולמשך 24 חודשים ממועד סיומה.\n5.3. הפרילנסר מתחייב להימנע מכל אמירה, פרסום או פעולה שיש בהם כדי להכפיש, לפגוע במוניטין או לגרום נזק תדמיתי לחברה.\n\n6. בעלות על לקוחות, קניין רוחני ושותפים (אפיליאציה)\nכל הלקוחות המועברים לפרילנסר דרך המערכת (ולרבות לקוחות שהביא בעצמו דרך המערכת), וכן כל פרילנסרים אחרים (אפיליאטורים) שיגויסו על ידו תחת רשת החברה - שייכים לחברה בלבד. קוד המקור, העיצובים והתוצרים שייכים לחברה וללקוח. ברגע סיום ההתקשרות מכל סיבה שהיא, רשת הסוכנים והלקוחות נשארים בבעלות החברה.\n\n7. אחריות על טיב העבודה\nהפרילנסר מתחייב לספק עבודה מקצועית ונטולת תקלות. במקרה של תקלות (באגים) הנובעות מעבודתו, הפרילנסר יתקנם על חשבון זמנו תוך 48 שעות מדרישת החברה.\n\n8. קנס מוסכם\nהפרילנסר מסכים כי הפרה יסודית של סעיף 5 או 6 לעיל, תזכה את החברה בפיצוי מוסכם מראש וללא הוכחת נזק בסך 50,000 ש"ח, וזאת מבלי לפגוע בזכות החברה לתבוע כל סעד אחר על פי דין.`,
-            clientAgreementText: `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ ח.פ 516977758 הפועלת באמצעות מותג ORIZISWEB שתיקרא להלן החברה לבין הלקוח המזמין את השירותים דרך פורטל הלקוחות הדיגיטלי שייקרא להלן הלקוח.\n\nסימון התיבה בטופס האפיון ויציאה לדרך בצירוף חתימה כמוהו כהסכם מחייב לכל סעיפי הסכם זה.\n\n1. מהות ההתקשרות ותכולת העבודה\n1.1. החברה תספק ללקוח שירותי פיתוח ועיצוב אתר אינטרנט בהתאם למידע, לדרישות ולתוספות שהוזנו ואושרו על ידי הלקוח בטופס אפיון ויציאה לדרך במערכת ORIZISWEB.\n1.2. כל בקשה לפיתוח או עיצוב החורגת ממה שסוכם באפיון הראשוני או שנבחרה בחנות השדרוגים תתומחר בנפרד ותדרוש אישור ותשלום נוסף.\n\n2. התחייבויות הלקוח\n2.1. הלקוח מתחייב להעביר לחברה את כל החומרים הנדרשים כגון לוגו, טקסטים, תמונות, קישורים וכדומה במועד מילוי טופס האפיון.\n2.2. עיכוב במסירת חומרים על ידי הלקוח יגרור עיכוב בלוחות הזמנים של הפרויקט ולא יהווה עילה לביטול העסקה או לפיצוי.\n\n3. לוחות זמנים ומסירת הפרויקט\n3.1. החברה תחל בפיתוח האתר מיד עם קבלת התשלום, אישור ההסכם וקבלת כל חומרי האפיון הנדרשים מהלקוח.\n3.2. זמן האספקה המשוער הוא עד 14 ימי עסקים אלא אם הלקוח רכש שדרוג מסירת אקספרס עד 48 שעות.\n3.3. עם סיום הפיתוח האתר יועבר לסטטוס בקרת איכות. הלקוח יקבל קישור לאתר החי לשם צפייה ואישור.\n\n4. סבבי תיקונים\n4.1. הלקוח זכאי ל-2 סבבי תיקונים לאחר קבלת הקישור הראשוני לאתר וזאת בתנאי שהתיקונים המבוקשים הם במסגרת האפיון המקורי.\n4.2. שינוי קונספט עיצוב מלא או הוספת פיצ'רים חדשים בשלב בקרת האיכות לא ייחשבו כתיקון אלא יתומחרו בנפרד.\n\n5. תשלומים ותוספות\n5.1. התשלום בגין הפיתוח מתבצע מראש אלא אם סוכם אחרת בכתב.\n5.2. הלקוח רשאי להוסיף יכולות ופיצ'רים לאתר דרך חנות השדרוגים במערכת בכל עת טרם מסירת האתר. הוספת שדרוג תחייב את הלקוח בעלות המצוינת במערכת ותשולם בהתאם למדיניות החברה.\n\n6. קניין רוחני וזכויות יוצרים\n6.1. עם פירעון מלוא התשלום לחברה זכויות השימוש והבעלות על קוד האתר והעיצובים מלבד תבניות או רכיבי צד שלישי עוברים ללקוח.\n6.2. הלקוח מצהיר כי כל החומרים שהוא מעביר לחברה לרבות תמונות, טקסטים ולוגו הם בבעלותו הבלעדית ואין בשימוש בהם משום הפרת זכויות יוצרים של צד שלישי.\n\n7. אחריות ותחזוקה\n7.1. לאחר אישור האתר הסופי על ידי הלקוח והעברה לסטטוס הושלם החברה מעניקה תקופת אחריות של 30 ימים לתיקון באגים או תקלות טכניות הנובעות מעבודת הפיתוח.\n7.2. אחסון האתר, תחזוקה שוטפת, עדכוני אבטחה וחידוש דומיין אינם כלולים בהסכם זה אלא אם נרכש שירות ריטיינר או תחזוקה ייעודית מול החברה.\n\n8. ביטול עסקה\n8.1. מכיוון שמדובר בטובין המיוצרים במיוחד עבור הצרכן בהתאם לחוק הגנת הצרכן, ביטול העסקה לאחר אישור האפיון ותחילת הפיתוח אינו מזכה בהחזר כספי מלא. ביטול בשלב זה יגרור חיוב יחסי בגין העבודה שבוצעה עד רגע הביטול.\n\nהצהרת הלקוח:\nחתימתי בטופס הדיגיטלי ועל גבי לוח הציור מהווה חתימה אלקטרונית ומאשרת כי קראתי הבנתי ואני מסכים לכל תנאי התקשרות אלו.`,
-            storeProducts: [
-                { id: 'prod_1', name: 'עיצוב פרימיום מותאם אישית', price: 800, timeMinutes: 120, isRecurring: false, desc: 'שדרוג עיצוב בסיסי לעיצוב ייחודי עם אנימציות.' },
-                { id: 'prod_2', name: 'חבילת SEO מתקדמת', price: 1200, timeMinutes: 180, isRecurring: false, desc: 'מחקר מילות מפתח, אופטימיזציה לתוכן והגדרות סכמה.' },
-                { id: 'prod_3', name: 'חבילת ריטיינר VIP (תחזוקה ואחסון)', price: 350, timeMinutes: 0, isRecurring: true, desc: 'אחסון מהיר, גיבוי יומי, ושעת מתכנת בחודש.' }
-            ],
-            announcements: [
-                { id: 1, text: "כנס סוכנות שנתי ב-24 לחודש! כולם מוזמנים. נוכחות חובה 🍕", date: "12/07/2026" }
-            ]
+            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ (להלן "החברה") לבין נותן השירותים הנרשם למערכת (להלן "הפרילנסר").\n\n1. מהות ההתקשרות והיעדר יחסי עובד מעביד\nמוסכם במפורש כי הפרילנסר פועל כקבלן עצמאי ומספק שירותים כנגד חשבונית מס/קבלה כדין. לא מתקיימים ולא יתקיימו יחסי עובד ומעביד בין הצדדים.\n\n2. הכשרה, אספקת לקוחות וציוד עבודה\n2.1. החברה תספק לפרילנסר הכשרה מקצועית ואספקת פרויקטים.\n2.2. הפרילנסר יעבוד עם ציוד אישי (מחשב) על חשבונו. ישנה אפשרות לעבוד ממשרדי החברה בעלות מסובסדת בתיאום מראש.\n\n3. תגמול ובונוס הבאת לקוחות\nהתגמול יעמוד על אחוזים כפי שיוגדרו במערכת. לקוחות שהפרילנסר מביא בעצמו (בונוס ייזום) יזכו אותו ב-5% נוספים.\n\n4. כלים טכנולוגיים (מנוי AI)\nהפרילנסר מתחייב להחזיק ולתחזק על חשבונו הבלעדי מנוי פעיל במערכת בינה מלאכותית (כגון ChatGPT Plus) כתנאי יסוד לעבודה.\n\n5. סודיות, אי-תחרות ואי-הכפשה\nהפרילנסר מתחייב לשמור בסודיות מוחלטת כל מידע. אי-תחרות: איסור פנייה ללקוחות החברה למשך 24 חודשים מסיום ההתקשרות.\n\n6. בעלות על לקוחות ואפיליאציה\nכל הלקוחות (גם שהביא בעצמו) וכל פרילנסרים אחרים שגייס תחת רשת החברה - שייכים לחברה בלבד. בעת עזיבה, הרשת נשארת בבעלות החברה.\n\n7. קנס מוסכם\nהפרה יסודית תזכה בפיצוי מוסכם מראש בסך 50,000 ש"ח.`,
+            clientAgreementText: `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ לבין הלקוח המזמין.\nחתימה דיגיטלית בטופס כמוה כהסכם מחייב.\n\n1. החברה תספק שירותי פיתוח בהתאם לאפיון. חריגות יתומחרו בנפרד.\n2. הלקוח מתחייב להעביר חומרים בזמן.\n3. זכויות קניין עוברות ללקוח רק לאחר פירעון מלוא התשלום.\n4. ביטול עסקה יגרור חיוב יחסי בגין העבודה שבוצעה עד רגע הביטול כקבוע בחוק (טובין המיוצרים במיוחד).`,
+            announcements: []
         };
 
         const AppProvider = ({ children }) => {
-            const [currentUser, setCurrentUser] = useState(null);
-            
-            useEffect(() => {
+            const [currentUser, setCurrentUser] = useState(() => {
                 const saved = localStorage.getItem('orizis_user');
-                if(saved) setCurrentUser(JSON.parse(saved));
-            }, []);
-
+                return saved ? JSON.parse(saved) : null;
+            });
             const [alertState, setAlertState] = useState({ isOpen: false, message: '' });
+            const [projects, setProjects] = useState([]);
+            const [usersList, setUsersList] = useState([]);
+            const [systemSettings, setSystemSettings] = useState(initialSettings);
+            const [isLoading, setIsLoading] = useState(true);
+
             const showAlert = (message) => setAlertState({ isOpen: true, message });
             const closeAlert = () => setAlertState({ isOpen: false, message: '' });
 
-            const [projects, setProjects] = useState([
-                { id: 'P-1001', customerName: 'קפה שרה בע"מ', customerEmail: 'sarah@cafe.com', status: 'paid_waiting_for_brief', paymentAmount: 2500, freelancerId: null, isSelfSourced: false, createdAt: Date.now(), brief: null, addons: [], hasSignedAgreement: false },
-                { id: 'P-1002', customerName: 'יוסי נדל"ן', customerEmail: 'yossi@realestate.com', status: 'brief_submitted', paymentAmount: 3200, freelancerId: null, isSelfSourced: false, createdAt: Date.now(), brief: { businessName: 'יוסי נכסים', audience: 'משקיעים', callToAction: 'השאר פרטים' }, addons: [], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '12/07/2026 10:00:00' },
-                { id: 'P-1003', customerName: 'טק סטארט', customerEmail: 'info@techstart.co.il', status: 'in_progress', paymentAmount: 4500, freelancerId: 'user_freelancer_1', isSelfSourced: true, createdAt: Date.now(), brief: { businessName: 'Tech Start', audience: 'B2B', callToAction: 'Demo' }, addons: [], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '13/07/2026 11:00:00', timerStartedAt: null, timeSpent: 3600, isTimerRunning: false },
-                { id: 'P-1004', customerName: 'מסעדת הדגים', customerEmail: 'fish@food.com', status: 'qa_review', paymentAmount: 1800, freelancerId: 'user_freelancer_1', isSelfSourced: false, createdAt: Date.now(), brief: { businessName: 'הדג', audience: 'משפחות', callToAction: 'הזמן שולחן' }, addons: [{ id: 'prod_1', name: 'עיצוב פרימיום', price: 800 }], hasSignedAgreement: true, clientSignatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', clientSignedAt: '10/07/2026 09:00:00', timerStartedAt: null, timeSpent: 14000, isTimerRunning: false }
-            ]);
+            // סנכרון חי מול שרתי Firebase
+            useEffect(() => {
+                // משיכת משתמשים בזמן אמת
+                const unsubUsers = db.collection('users').onSnapshot(snap => {
+                    if (snap.empty) {
+                        // אם הענן ריק לחלוטין - נצור מנהל ראשוני
+                        const admin = { uid: 'admin_1', role: 'manager', name: 'מנהל מערכת', email: 'admin@orizis.com', password: '123' };
+                        db.collection('users').doc('admin_1').set(admin);
+                    } else {
+                        const users = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+                        setUsersList(users);
+                        // עדכון המשתמש המחובר למקרה שמשהו השתנה בענן (למשל תגמול אחוזים)
+                        if (currentUser) {
+                            const updatedMe = users.find(u => u.uid === currentUser.uid);
+                            if (updatedMe) {
+                                setCurrentUser(updatedMe);
+                                localStorage.setItem('orizis_user', JSON.stringify(updatedMe));
+                            }
+                        }
+                    }
+                });
 
-            const [usersList, setUsersList] = useState([
-                { uid: 'admin_1', role: 'manager', name: 'מנהל מערכת', email: 'admin@orizis.com', password: '123' },
-                { uid: 'user_freelancer_1', role: 'freelancer', name: 'דני (פרילנסר בכיר)', email: 'dani@free.com', password: '123', basePercentage: 60, upsellPercentage: 10, hasSignedAgreement: true, signedAgreementAt: '12/07/2026 09:30:00', signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' }, 
-                { uid: 'user_freelancer_2', role: 'freelancer', name: 'רון (ג\'וניור)', email: 'ron@free.com', password: '123', basePercentage: 50, upsellPercentage: 5, teamLeaderId: 'user_freelancer_1', hasSignedAgreement: false },
-                { uid: 'user_client_1', role: 'client', name: 'שרה לוי', email: 'sarah@cafe.com', password: '123', projectId: 'P-1001' }
-            ]);
+                // משיכת פרויקטים בזמן אמת
+                const unsubProjects = db.collection('projects').onSnapshot(snap => {
+                    const projs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setProjects(projs);
+                });
 
-            const [systemSettings, setSystemSettings] = useState(initialSettings);
+                // משיכת הגדרות והודעות
+                const unsubSettings = db.collection('system').doc('settings').onSnapshot(doc => {
+                    if (doc.exists) setSystemSettings(doc.data());
+                    else db.collection('system').doc('settings').set(initialSettings);
+                    setIsLoading(false);
+                });
+
+                return () => { unsubUsers(); unsubProjects(); unsubSettings(); };
+            }, []);
 
             const login = (email, password) => {
                 const user = usersList.find(u => u.email === email && u.password === password);
@@ -181,13 +233,29 @@
                 localStorage.removeItem('orizis_user'); 
             };
 
-            const updateProject = (id, updates) => setProjects(projects.map(p => p.id === id ? { ...p, ...updates } : p));
-            const updateUser = (uid, updates) => setUsersList(usersList.map(u => u.uid === uid ? { ...u, ...updates } : u));
-            const addProject = (project) => setProjects([...projects, { id: `P-${Date.now().toString().slice(-4)}`, isSelfSourced: false, ...project }]);
-            const addUser = (user) => setUsersList([...usersList, { uid: `user_${Date.now()}`, ...user }]);
+            // הפונקציות עכשיו כותבות ישירות לענן של גוגל במקום לזיכרון!
+            const updateProject = (id, updates) => db.collection('projects').doc(id).update(updates);
+            const updateUser = (uid, updates) => db.collection('users').doc(uid).update(updates);
+            
+            const addProject = (project) => {
+                const id = `P-${Date.now().toString().slice(-4)}`;
+                db.collection('projects').doc(id).set({ id, isSelfSourced: false, ...project });
+                return id;
+            };
+            
+            const addUser = (user) => {
+                const uid = `user_${Date.now()}`;
+                db.collection('users').doc(uid).set({ uid, ...user });
+            };
+
+            const saveSystemSettings = (newSettings) => {
+                db.collection('system').doc('settings').set(newSettings, { merge: true });
+            };
+
+            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white font-bold">מתחבר למסד הנתונים בענן...</div>;
 
             return (
-                <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, addProject, usersList, updateUser, addUser, systemSettings, setSystemSettings, showAlert }}>
+                <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, addProject, usersList, updateUser, addUser, systemSettings, setSystemSettings: saveSystemSettings, showAlert }}>
                     {children}
                     <AlertModal isOpen={alertState.isOpen} message={alertState.message} onClose={closeAlert} />
                 </AppContext.Provider>
@@ -202,8 +270,8 @@
 
         const LoginScreen = () => {
             const { login } = useContext(AppContext);
-            const [email, setEmail] = useState('admin@orizis.com');
-            const [password, setPassword] = useState('123');
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
 
             return (
                 <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -218,36 +286,36 @@
                             <p className="text-gray-500 text-sm mt-1 font-medium">Agency Operating System</p>
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); login(email, password); }} className="space-y-5">
-                            <div><label className="block text-sm font-bold text-gray-700 mb-1">אימייל</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required /></div>
-                            <div><label className="block text-sm font-bold text-gray-700 mb-1">סיסמה</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required /></div>
-                            <Button type="submit" className="w-full py-4 text-lg mt-2">התחבר והישאר מחובר</Button>
-                        </form>
-                        
-                        <div className="mt-8 pt-6 border-t border-gray-100">
-                            <p className="text-xs text-center text-gray-400 mb-3 font-bold uppercase tracking-wider">גישה מהירה לדמו</p>
-                            <div className="grid grid-cols-3 gap-2">
-                                <button onClick={() => {setEmail('admin@orizis.com'); setPassword('123');}} className="text-xs py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium">מנהל</button>
-                                <button onClick={() => {setEmail('dani@free.com'); setPassword('123');}} className="text-xs py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium">פרילנסר</button>
-                                <button onClick={() => {setEmail('sarah@cafe.com'); setPassword('123');}} className="text-xs py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium">לקוח</button>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">אימייל</label>
+                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="הזן את המייל שלך" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required />
                             </div>
-                        </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">סיסמה</label>
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required />
+                            </div>
+                            <Button type="submit" className="w-full py-4 text-lg mt-2">התחבר למערכת</Button>
+                        </form>
                     </Card>
                 </div>
             );
         };
 
         const AdminDashboard = () => {
-            const { projects, usersList, updateProject, systemSettings, setSystemSettings, addUser, updateUser, showAlert } = useContext(AppContext);
+            const { projects, usersList, updateProject, systemSettings, setSystemSettings, addUser, updateUser, showAlert, addProject } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects');
             const [newUser, setNewUser] = useState({ name: '', email: '', role: 'client', password: '', basePercentage: 60, upsellPercentage: 10, teamLeaderId: '' });
             const [newAnnouncement, setNewAnnouncement] = useState('');
             const [showArchive, setShowArchive] = useState(false);
-            const [pendingFreelancerId, setPendingFreelancerId] = useState({}); // עכשיו אובייקט לניהול לפי פרויקט
+            const [pendingFreelancerId, setPendingFreelancerId] = useState({}); 
             
             const [viewingSignature, setViewingSignature] = useState(null); 
             const [viewingClientSignature, setViewingClientSignature] = useState(null); 
 
-            const revenue = projects.reduce((sum, p) => sum + p.paymentAmount + p.addons.reduce((a,b)=>a+(b.price||0),0), 0);
+            const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+            const [newProjectData, setNewProjectData] = useState({ customerName: '', customerEmail: '', paymentAmount: '' });
+
+            const revenue = projects.reduce((sum, p) => sum + p.paymentAmount + (p.addons || []).reduce((a,b)=>a+(b.price||0),0), 0);
             
             let freelancerCosts = 0;
             projects.forEach(p => {
@@ -256,9 +324,9 @@
                     if(fl) {
                         const bonusPct = p.isSelfSourced ? 5 : 0;
                         const baseCost = p.paymentAmount * (((fl.basePercentage || 60) + bonusPct) / 100);
-                        const upsellCost = p.addons.reduce((a,b)=>a+(b.price||0),0) * ((fl.upsellPercentage || 0) / 100);
+                        const upsellCost = (p.addons || []).reduce((a,b)=>a+(b.price||0),0) * ((fl.upsellPercentage || 0) / 100);
                         freelancerCosts += (baseCost + upsellCost);
-                        if(fl.teamLeaderId) freelancerCosts += 150; 
+                        if(fl.teamLeaderId) freelancerCosts += 150; // עמלת ראש צוות
                     }
                 }
             });
@@ -271,12 +339,36 @@
                     upsellPercentage: newUser.role === 'freelancer' ? Number(newUser.upsellPercentage || 0) : 0 
                 });
                 setNewUser({ name: '', email: '', role: 'client', password: '', basePercentage: 60, upsellPercentage: 10, teamLeaderId: '' });
-                showAlert("המשתמש נוסף בהצלחה!");
+                showAlert("המשתמש נוסף בהצלחה למסד הנתונים!");
+            };
+
+            const handleAddProject = (e) => {
+                e.preventDefault();
+                const newProjectId = addProject({
+                    customerName: newProjectData.customerName,
+                    customerEmail: newProjectData.customerEmail,
+                    paymentAmount: Number(newProjectData.paymentAmount),
+                    status: 'paid_waiting_for_brief',
+                    freelancerId: null,
+                    createdAt: Date.now(),
+                    addons: [],
+                    hasSignedAgreement: false
+                });
+                addUser({
+                    name: newProjectData.customerName,
+                    email: newProjectData.customerEmail,
+                    password: '123',
+                    role: 'client',
+                    projectId: newProjectId
+                });
+                setShowAddProjectModal(false);
+                setNewProjectData({ customerName: '', customerEmail: '', paymentAmount: '' });
+                showAlert("הלקוח נוצר בהצלחה ונשלחו אליו פרטי התחברות למילוי אפיון!");
             };
 
             const addAnnouncement = () => {
                 if(!newAnnouncement) return;
-                setSystemSettings({...systemSettings, announcements: [{id: Date.now(), text: newAnnouncement, date: new Date().toLocaleDateString('he-IL')}, ...(systemSettings.announcements || [])]});
+                setSystemSettings({...systemSettings, announcements: [{id: Date.now().toString(), text: newAnnouncement, date: new Date().toLocaleDateString('he-IL')}, ...(systemSettings.announcements || [])]});
                 setNewAnnouncement('');
                 showAlert("המודעה פורסמה לכל הצוות.");
             };
@@ -305,12 +397,15 @@
                     {activeTab === 'projects' && (
                         <Card className="overflow-hidden">
                             <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                                <h3 className="font-bold text-gray-800">פרויקטים</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-gray-600">הצג ארכיון:</span>
-                                    <button onClick={()=>setShowArchive(!showArchive)} className={`w-12 h-6 rounded-full transition-colors relative ${showArchive ? 'bg-brand-500' : 'bg-gray-300'}`}>
-                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${showArchive ? 'left-0.5' : 'left-[26px]'}`}></div>
-                                    </button>
+                                <h3 className="font-bold text-gray-800">פרויקטים בעבודה</h3>
+                                <div className="flex items-center gap-4">
+                                    <Button onClick={()=>setShowAddProjectModal(true)} className="text-xs bg-brand-600">➕ הוסף לקוח ידנית</Button>
+                                    <div className="flex items-center gap-2 border-r pr-4">
+                                        <span className="text-sm font-medium text-gray-600">הצג ארכיון:</span>
+                                        <button onClick={()=>setShowArchive(!showArchive)} className={`w-12 h-6 rounded-full transition-colors relative ${showArchive ? 'bg-brand-500' : 'bg-gray-300'}`}>
+                                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${showArchive ? 'left-0.5' : 'left-[26px]'}`}></div>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -330,7 +425,7 @@
                                                      p.status === 'qa_review' ? <Badge color="yellow">ממתין ל-QA שלך</Badge> :
                                                      <Badge color="green">הושלם ונמסר</Badge>}
                                                 </td>
-                                                <td className="p-4 font-medium">{p.paymentAmount + p.addons.reduce((a,b)=>a+(b.price||0),0)}</td>
+                                                <td className="p-4 font-medium">{p.paymentAmount + (p.addons || []).reduce((a,b)=>a+(b.price||0),0)}</td>
                                                 <td className="p-4">
                                                     <div className="flex flex-col gap-2">
                                                         <select 
@@ -351,7 +446,7 @@
                                                                 const newPending = {...pendingFreelancerId};
                                                                 delete newPending[p.id];
                                                                 setPendingFreelancerId(newPending);
-                                                                showAlert("השיוך עודכן בהצלחה!");
+                                                                showAlert("השיוך עודכן בהצלחה בענן!");
                                                             }} variant="success" className="text-xs py-1">אשר שיוך ללקוח</Button>
                                                         )}
 
@@ -381,11 +476,28 @@
                                                 </td>
                                             </tr>
                                         ))}
-                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">אין פרויקטים בסטטוס זה.</td></tr>}
+                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">אין פרויקטים להצגה (נסה להוסיף לקוח חדש).</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
                         </Card>
+                    )}
+
+                    {showAddProjectModal && (
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
+                            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">יצירת לקוח ופרויקט חדש</h3>
+                                <form onSubmit={handleAddProject} className="space-y-4">
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">שם הלקוח / העסק</label><input type="text" required className="w-full p-2 border rounded-lg" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">אימייל הלקוח</label><input type="email" required className="w-full p-2 border rounded-lg" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">סכום ששולם מראש (₪)</label><input type="number" required className="w-full p-2 border rounded-lg" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
+                                    <div className="flex gap-2 pt-4">
+                                        <Button type="submit" variant="primary" className="flex-1">צור לקוח ושלח אפיון</Button>
+                                        <Button onClick={()=>setShowAddProjectModal(false)} variant="secondary">ביטול</Button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     )}
 
                     {activeTab === 'users' && (
@@ -395,9 +507,9 @@
                                 <form onSubmit={handleAddUser} className="space-y-4">
                                     <input type="text" placeholder="שם מלא" className="w-full p-2 border rounded-lg" required value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} />
                                     <input type="email" placeholder="אימייל" className="w-full p-2 border rounded-lg" required value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} />
-                                    <input type="text" placeholder="סיסמה התחלתית" className="w-full p-2 border rounded-lg" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
+                                    <input type="text" placeholder="סיסמה התחלתית (למשל 123)" className="w-full p-2 border rounded-lg" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
                                     <select className="w-full p-2 border rounded-lg font-bold" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}>
-                                        <option value="client">לקוח (משלם)</option>
+                                        <option value="client">לקוח (צופה בלבד)</option>
                                         <option value="freelancer">פרילנסר (בצוות הפיתוח)</option>
                                         <option value="manager">מנהל מערכת</option>
                                     </select>
@@ -472,7 +584,6 @@
                         </div>
                     )}
 
-                    {/* Modal for viewing signatures (Client & Freelancer) */}
                     {(viewingSignature || viewingClientSignature) && (
                         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
                             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border-t-4 border-emerald-500">
@@ -517,7 +628,7 @@
                                 {systemSettings.announcements && systemSettings.announcements.length > 0 && (
                                     <div className="mt-4 space-y-2">
                                         {systemSettings.announcements.map(a => (
-                                            <div key={a.id} className="text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">{a.date} - {a.text}</div>
+                                            <div key={a.id} className="text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100"><span className="font-bold">{a.date}</span> - {a.text}</div>
                                         ))}
                                     </div>
                                 )}
@@ -563,7 +674,7 @@
                 if(!termsAccepted) return showAlert("חובה לאשר את ההסכם תחילה.");
                 if(!signatureData) return showAlert("חובה לחתום בלוח הציור בטרם ההתקדמות.");
                 await updateUser(currentUser.uid, { hasSignedAgreement: true, signedAgreementAt: new Date().toLocaleString('he-IL'), signatureData: signatureData });
-                showAlert("ברוך הבא לצוות! ההסכם נחתם בהצלחה.");
+                showAlert("ברוך הבא לצוות! ההסכם נחתם בהצלחה בענן.");
             };
 
             if (!currentUser.hasSignedAgreement) {
@@ -659,7 +770,7 @@
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-2">
                         <Card className="bg-gradient-to-br from-gray-900 to-gray-800 text-white border-none shadow-xl relative overflow-hidden">
                             <div className="relative z-10">
-                                <div className="text-gray-400 font-bold mb-1 text-sm flex justify-between"><span>הכנסות - אישי</span><span className="text-brand-400">{currentUser.basePercentage || 60}% מהפרויקט</span></div>
+                                <div className="text-gray-400 font-bold mb-1 text-sm flex justify-between"><span>הכנסות - אישי</span><span className="text-brand-400">{currentUser.basePercentage || 60}% עמלה</span></div>
                                 <div className="text-4xl font-black text-brand-400">₪{totalEarnings.toLocaleString()}</div>
                                 <div className="text-xs text-gray-400 mt-2 font-medium">על {completedProjects.length} לקוחות שהושלמו.</div>
                             </div>
@@ -771,7 +882,7 @@
                                                 let finalTime = currentSpent;
                                                 updateProject(project.id, { status: 'qa_review', isTimerRunning: false, timeSpent: finalTime, timerStartedAt: null });
                                                 setQaState({ mobile: false, form: false, a11y: false, speed: false });
-                                                showAlert("האתר הוגש למנהל לבדיקת QA!");
+                                                showAlert("האתר הוגש למנהל לבדיקת QA בענן!");
                                             }}
                                             disabled={!(qaState.mobile && qaState.form && qaState.a11y && qaState.speed) || project.isTimerRunning}
                                             className="w-full bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-gray-700 disabled:text-gray-500 border-none"
@@ -782,6 +893,7 @@
                                 </Card>
                             );
                         })}
+                        {myProjects.length === 0 && <div className="col-span-2 p-8 text-center text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">אין פרויקטים בתור העבודה כרגע.</div>}
                     </div>
 
                     {blockerInput.show && (
@@ -882,7 +994,7 @@
                                     clientSignatureData: clientSignature,
                                     clientSignedAt: new Date().toLocaleString('he-IL')
                                 }); 
-                                showAlert("האפיון והחוזה נשלחו בהצלחה לצוות הפיתוח!"); 
+                                showAlert("האפיון והחוזה נשלחו בהצלחה לצוות הפיתוח בענן!"); 
                             }} className="space-y-5">
                                 <div><label className="block text-sm font-bold text-gray-700 mb-1">שם העסק / המותג</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.businessName} onChange={e=>setBriefData({...briefData, businessName: e.target.value})} /></div>
                                 <div><label className="block text-sm font-bold text-gray-700 mb-1">מי קהל היעד שלך?</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.audience} onChange={e=>setBriefData({...briefData, audience: e.target.value})} /></div>
