@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +20,7 @@
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -194,9 +195,7 @@
                             localStorage.setItem('orizis_user', JSON.stringify(updatedMe));
                         }
                     }
-                }, error => {
-                    console.log("Firebase Rules error for users (expected if unauthenticated):", error);
-                });
+                }, error => console.log("Firebase Rules error for users:", error));
 
                 const unsubProjects = db.collection('projects').onSnapshot(snap => {
                     const projs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -214,12 +213,11 @@
                 return () => { unsubUsers(); unsubProjects(); unsubSettings(); };
             }, []);
 
-            // === THE MASTER KEY LOGIN FUNCTION ===
             const login = (email, password) => {
                 const inputEmail = String(email).toLowerCase().trim();
                 const inputPassword = String(password).trim();
                 
-                // 1. MASTER ADMIN OVERRIDE - NEVER GET LOCKED OUT!
+                // MASTER ADMIN OVERRIDE (Hardcoded to ensure you never get locked out)
                 if (inputEmail === 'aaci.yoni@gmail.com' && inputPassword === '123') {
                     const masterAdmin = { 
                         uid: 'admin_master', 
@@ -230,23 +228,23 @@
                     setCurrentUser(masterAdmin);
                     localStorage.setItem('orizis_user', JSON.stringify(masterAdmin));
                     
-                    // Attempt to write this admin to Firebase silently so it exists for future
+                    // Try to save the admin to Firestore for visibility, but don't fail if rules block it
                     db.collection('users').doc('admin_master').set({
                         ...masterAdmin,
                         password: '123'
-                    }).catch(e => console.log('Silent admin write failed (Rules):', e));
+                    }).catch(e => console.log('Silent admin write failed:', e));
                     
-                    return; // Exit function, login successful
+                    return; 
                 }
 
-                // 2. Normal User Login (from Firebase database)
+                // Normal User Login
                 const user = usersList.find(u => String(u.email).toLowerCase().trim() === inputEmail && String(u.password).trim() === inputPassword);
                 
                 if (user) { 
                     setCurrentUser(user); 
                     localStorage.setItem('orizis_user', JSON.stringify(user)); 
                 } else {
-                    showAlert('שם משתמש או סיסמה שגויים במערכת. שים לב: פרילנסרים ולקוחות יש ליצור דרך עמוד "צוות ולקוחות" בתוך המערכת בלבד.');
+                    showAlert('שם משתמש או סיסמה שגויים. בדוק את האותיות והמספרים.');
                 }
             };
 
@@ -270,7 +268,6 @@
                 db.collection('users').doc(uid).set({ uid, ...user });
             };
 
-            // NEW DELETION OPERATIONS
             const deleteProject = (id) => {
                 db.collection('projects').doc(id).delete();
                 showAlert("הפרויקט נמחק בהצלחה ממסד הנתונים.");
@@ -324,7 +321,7 @@
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); login(email, password); }} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">אימייל במערכת</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">אימייל</label>
                                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required />
                             </div>
                             <div>
@@ -346,15 +343,12 @@
             const [showArchive, setShowArchive] = useState(false);
             const [pendingFreelancerId, setPendingFreelancerId] = useState({}); 
             
-            // Signature Viewing States
             const [viewingSignature, setViewingSignature] = useState(null); 
             const [viewingClientSignature, setViewingClientSignature] = useState(null); 
 
-            // Project Creation
             const [showAddProjectModal, setShowAddProjectModal] = useState(false);
             const [newProjectData, setNewProjectData] = useState({ customerName: '', customerEmail: '', paymentAmount: '' });
 
-            // Financial calcs (Only active non-completed projects + completed ones, but we can just map all)
             const revenue = projects.reduce((sum, p) => sum + (Number(p.paymentAmount) || 0) + (p.addons || []).reduce((a,b)=>a+(b.price||0),0), 0);
             let freelancerCosts = 0;
             projects.forEach(p => {
@@ -365,7 +359,7 @@
                         const baseCost = (Number(p.paymentAmount) || 0) * (((fl.basePercentage || 60) + bonusPct) / 100);
                         const upsellCost = (p.addons || []).reduce((a,b)=>a+(b.price||0),0) * ((fl.upsellPercentage || 0) / 100);
                         freelancerCosts += (baseCost + upsellCost);
-                        if(fl.teamLeaderId) freelancerCosts += 150; // עמלת ראש צוות אפיליאציה
+                        if(fl.teamLeaderId) freelancerCosts += 150; 
                     }
                 }
             });
@@ -387,7 +381,7 @@
                     customerName: newProjectData.customerName,
                     customerEmail: newProjectData.customerEmail,
                     paymentAmount: Number(newProjectData.paymentAmount),
-                    status: 'paid_waiting_for_brief', // This status makes it show as "ממתין לאפיון"
+                    status: 'paid_waiting_for_brief', 
                     freelancerId: null,
                     createdAt: Date.now(),
                     addons: [],
@@ -418,27 +412,28 @@
 
             return (
                 <div className="space-y-8 fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
                         <Card className="p-6 bg-gradient-to-br from-brand-600 to-brand-800 text-white border-none"><div className="text-brand-100 font-medium mb-1">הכנסות כוללות</div><div className="text-3xl font-black">₪{revenue.toLocaleString()}</div></Card>
                         <Card className="p-6"><div className="text-gray-500 font-medium mb-1">עלויות צוות וסוכנים</div><div className="text-3xl font-black text-red-500">₪{freelancerCosts.toLocaleString()}</div></Card>
                         <Card className="p-6"><div className="text-gray-500 font-medium mb-1">רווח גולמי הערכה</div><div className="text-3xl font-black text-emerald-500">₪{(revenue - freelancerCosts).toLocaleString()}</div></Card>
                         <Card className="p-6"><div className="text-gray-500 font-medium mb-1">לקוחות פעילים</div><div className="text-3xl font-black text-gray-900">{projects.filter(p=>p.status!=='completed').length}</div></Card>
                     </div>
 
-                    <div className="flex border-b border-gray-200">
+                    <div className="flex overflow-x-auto border-b border-gray-200 custom-scrollbar">
                         {['projects', 'users', 'settings'].map(tab => (
-                            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 font-bold text-sm ${activeTab === tab ? 'text-brand-600 border-b-2 border-brand-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === tab ? 'text-brand-600 border-b-2 border-brand-600 bg-brand-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
                                 {tab === 'projects' ? 'ניהול פרויקטים' : tab === 'users' ? 'צוות ולקוחות' : 'הגדרות, חוזים וחנות'}
                             </button>
                         ))}
                     </div>
 
+                    {}
                     {activeTab === 'projects' && (
                         <Card className="overflow-hidden">
-                            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                            <div className="p-4 bg-gray-50 border-b flex flex-wrap gap-4 justify-between items-center">
                                 <h3 className="font-bold text-gray-800">פרויקטים בעבודה</h3>
                                 <div className="flex items-center gap-4">
-                                    <Button onClick={()=>setShowAddProjectModal(true)} className="text-xs bg-brand-600">➕ הוסף לקוח ידנית</Button>
+                                    <Button onClick={()=>setShowAddProjectModal(true)} className="text-xs bg-brand-600 px-3 py-2">➕ הוסף לקוח ידנית</Button>
                                     <div className="flex items-center gap-2 border-r pr-4">
                                         <span className="text-sm font-medium text-gray-600">הצג ארכיון:</span>
                                         <button onClick={()=>setShowArchive(!showArchive)} className={`w-12 h-6 rounded-full transition-colors relative ${showArchive ? 'bg-brand-500' : 'bg-gray-300'}`}>
@@ -447,17 +442,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-right text-sm">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-right text-sm min-w-[900px]">
                                     <thead className="bg-gray-50/50 text-gray-500 font-medium border-b">
-                                        <tr><th className="p-4">לקוח</th><th className="p-4">סטטוס</th><th className="p-4">שווי (₪)</th><th className="p-4">פרילנסר משויך ובונוס</th><th className="p-4">פעולות ואישורים</th></tr>
+                                        <tr><th className="p-4 w-1/5">לקוח</th><th className="p-4 w-1/5">סטטוס</th><th className="p-4 w-1/6">שווי (₪)</th><th className="p-4 w-1/4">פרילנסר משויך ובונוס</th><th className="p-4">פעולות ואישורים</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredProjects.map(p => (
                                             <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="p-4 font-bold text-gray-900">{p.customerName} <div className="text-xs font-normal text-gray-500">{p.id}</div></td>
+                                                <td className="p-4 font-bold text-gray-900 break-words">{p.customerName} <div className="text-xs font-normal text-gray-500 break-all">{p.id}</div></td>
                                                 <td className="p-4">
-                                                    {/* FIX: Better status fallback so old test data doesn't default to "Completed" */}
                                                     {p.isBlocked ? <Badge color="red">🚨 נחסם ע"י פרילנסר!</Badge> :
                                                      p.status === 'paid_waiting_for_brief' ? <Badge color="gray">ממתין לאפיון לקוח</Badge> :
                                                      p.status === 'brief_submitted' ? <Badge color="blue">אפיון מוכן - ללא סוכן</Badge> :
@@ -468,9 +462,9 @@
                                                 </td>
                                                 <td className="p-4 font-medium">{(Number(p.paymentAmount) || 0) + (p.addons || []).reduce((a,b)=>a+(b.price||0),0)}</td>
                                                 <td className="p-4">
-                                                    <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-col gap-2 max-w-[200px]">
                                                         <select 
-                                                            className="p-2 text-sm border rounded-lg bg-white"
+                                                            className="p-2 text-sm border rounded-lg bg-white w-full"
                                                             value={pendingFreelancerId[p.id] !== undefined ? pendingFreelancerId[p.id] : (p.freelancerId || '')}
                                                             onChange={(e) => setPendingFreelancerId({...pendingFreelancerId, [p.id]: e.target.value})}
                                                             disabled={p.status === 'completed' || p.status === 'paid_waiting_for_brief'}
@@ -488,10 +482,9 @@
                                                                 delete newPending[p.id];
                                                                 setPendingFreelancerId(newPending);
                                                                 showAlert("השיוך עודכן בהצלחה בענן!");
-                                                            }} variant="success" className="text-xs py-1">אשר שיוך ללקוח</Button>
+                                                            }} variant="success" className="text-xs py-1 w-full">אשר שיוך ללקוח</Button>
                                                         )}
 
-                                                        {/* Bonus Checkbox */}
                                                         {p.freelancerId && (
                                                             <label className="flex items-center gap-1 text-xs text-gray-600 mt-1 cursor-pointer hover:text-brand-600 transition-colors">
                                                                 <input type="checkbox" checked={p.isSelfSourced || false} onChange={(e) => updateProject(p.id, { isSelfSourced: e.target.checked })} className="rounded text-brand-600" />
@@ -501,41 +494,41 @@
                                                     </div>
                                                 </td>
                                                 <td className="p-4 space-y-2">
-                                                    {p.isBlocked && <Button onClick={() => updateProject(p.id, { isBlocked: false, blockReason: '' })} variant="success" className="w-full text-xs">שחרר חסימה</Button>}
+                                                    {p.isBlocked && <Button onClick={() => updateProject(p.id, { isBlocked: false, blockReason: '' })} variant="success" className="w-full max-w-[140px] text-xs">שחרר חסימה</Button>}
                                                     {p.status === 'qa_review' && (
-                                                        <div className="flex flex-col gap-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                            <span className="text-xs font-bold text-center text-yellow-800">פעולת מנהל נדרשת:</span>
-                                                            <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs flex-1">✅ אישור סופי</Button>
-                                                            <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר לתיקונים."); }} variant="danger" className="text-xs flex-1">❌ לתיקונים</Button>
+                                                        <div className="flex flex-col gap-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200 w-full max-w-[140px]">
+                                                            <span className="text-[10px] font-bold text-center text-yellow-800">פעולת מנהל:</span>
+                                                            <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs w-full py-1">✅ אישור</Button>
+                                                            <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר לתיקונים."); }} variant="danger" className="text-xs w-full py-1">❌ לתיקונים</Button>
                                                         </div>
                                                     )}
                                                     {p.clientSignatureData && (
-                                                        <Button onClick={() => setViewingClientSignature(p)} variant="outline" className="text-xs px-2 py-1 w-full border-brand-200 text-brand-700 hover:bg-brand-50 mt-1">
-                                                            📄 הסכם לקוח חתום
+                                                        <Button onClick={() => setViewingClientSignature(p)} variant="outline" className="text-xs px-2 py-1 w-full max-w-[140px] border-brand-200 text-brand-700 hover:bg-brand-50 mt-1">
+                                                            📄 הסכם לקוח
                                                         </Button>
                                                     )}
-                                                    {/* NEW: Admin Delete Button to clear old testing data */}
-                                                    <Button onClick={() => deleteProject(p.id)} variant="danger" className="text-xs px-2 py-1 w-full mt-2">
+                                                    <Button onClick={() => deleteProject(p.id)} variant="danger" className="text-xs px-2 py-1 w-full max-w-[140px] mt-2 border-red-200">
                                                         🗑️ מחק פרויקט
                                                     </Button>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">אין פרויקטים להצגה (נסה להוסיף לקוח חדש).</td></tr>}
+                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-medium">אין פרויקטים להצגה במסנן הנוכחי.</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
                         </Card>
                     )}
 
+                    {}
                     {showAddProjectModal && (
                         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in">
                             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                                 <h3 className="text-xl font-bold text-gray-900 mb-4">יצירת לקוח ופרויקט חדש</h3>
                                 <form onSubmit={handleAddProject} className="space-y-4">
-                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">שם הלקוח / העסק</label><input type="text" required className="w-full p-2 border rounded-lg" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
-                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">אימייל הלקוח</label><input type="email" required className="w-full p-2 border rounded-lg" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
-                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">סכום ששולם מראש (₪)</label><input type="number" required className="w-full p-2 border rounded-lg" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">שם הלקוח / העסק</label><input type="text" required className="w-full p-2 border rounded-lg outline-none focus:border-brand-500" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">אימייל הלקוח</label><input type="email" required className="w-full p-2 border rounded-lg outline-none focus:border-brand-500" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">סכום ששולם מראש (₪)</label><input type="number" required className="w-full p-2 border rounded-lg outline-none focus:border-brand-500" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
                                     <div className="flex gap-2 pt-4">
                                         <Button type="submit" variant="primary" className="flex-1">צור לקוח ושלח אפיון</Button>
                                         <Button onClick={()=>setShowAddProjectModal(false)} variant="secondary">ביטול</Button>
@@ -546,88 +539,125 @@
                     )}
 
                     {activeTab === 'users' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <Card className="p-6 lg:col-span-1 h-fit">
-                                <h3 className="font-bold text-gray-800 mb-4">יצירת משתמש חדש</h3>
-                                <form onSubmit={handleAddUser} className="space-y-4">
-                                    <input type="text" placeholder="שם מלא" className="w-full p-2 border rounded-lg" required value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} />
-                                    <input type="email" placeholder="אימייל" className="w-full p-2 border rounded-lg" required value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} />
-                                    <input type="text" placeholder="סיסמה התחלתית (למשל 123)" className="w-full p-2 border rounded-lg" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
-                                    <select className="w-full p-2 border rounded-lg font-bold" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}>
-                                        <option value="client">לקוח (צופה בלבד)</option>
-                                        <option value="freelancer">פרילנסר (בצוות הפיתוח)</option>
-                                        <option value="manager">מנהל מערכת</option>
-                                    </select>
+                        <div className="space-y-8">
+                            {/* Centered Create User Form */}
+                            <Card className="p-6 max-w-4xl mx-auto shadow-md border-t-4 border-t-brand-500">
+                                <h3 className="font-black text-gray-800 mb-6 text-center text-xl">יצירת משתמש / סוכן חדש למערכת</h3>
+                                <form onSubmit={handleAddUser} className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">שם מלא</label>
+                                            <input type="text" placeholder="הזן שם מלא" className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:border-brand-500 outline-none transition-colors" required value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">אימייל התחברות</label>
+                                            <input type="email" placeholder="email@domain.com" className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:border-brand-500 outline-none transition-colors" required value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">סיסמה התחלתית</label>
+                                            <input type="text" placeholder="למשל: 123456" className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:border-brand-500 outline-none transition-colors" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">הרשאה / תפקיד</label>
+                                            <select className="w-full p-2.5 border rounded-xl font-bold bg-gray-50 focus:bg-white focus:border-brand-500 outline-none transition-colors" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}>
+                                                <option value="client">לקוח (צופה בלבד)</option>
+                                                <option value="freelancer">פרילנסר (בצוות הפיתוח)</option>
+                                                <option value="manager">מנהל מערכת</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     
                                     {newUser.role === 'freelancer' && (
-                                        <div className="p-4 bg-gray-50 border rounded-lg space-y-3 mt-4">
-                                            <div className="text-sm font-bold text-brand-600 mb-2">הגדרות תגמול ואפיליאציה:</div>
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-600">אחוז תגמול מפרויקט (%):</label>
-                                                <input type="number" className="w-full p-2 border rounded-lg text-sm mt-1" value={newUser.basePercentage} onChange={e=>setNewUser({...newUser, basePercentage: e.target.value})} />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-600">עמלת מכירות/אפסייל (%):</label>
-                                                <input type="number" className="w-full p-2 border rounded-lg text-sm mt-1" value={newUser.upsellPercentage} onChange={e=>setNewUser({...newUser, upsellPercentage: e.target.value})} />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-600">שיוך לראש צוות (אופציונלי):</label>
-                                                <select className="w-full p-2 border rounded-lg text-sm mt-1 bg-white" value={newUser.teamLeaderId} onChange={e=>setNewUser({...newUser, teamLeaderId: e.target.value})}>
-                                                    <option value="">-- ללא שיוך (סוכן ישיר) --</option>
-                                                    {usersList.filter(u => u.role === 'freelancer').map(tl => <option key={tl.uid} value={tl.uid}>{tl.name}</option>)}
-                                                </select>
+                                        <div className="p-5 bg-brand-50 border border-brand-100 rounded-xl space-y-4">
+                                            <div className="text-sm font-black text-brand-800 border-b border-brand-200 pb-2">הגדרות תגמול ואפיליאציה:</div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-700">אחוז תגמול מפרויקט (%):</label>
+                                                    <input type="number" className="w-full p-2 border border-brand-200 rounded-lg text-sm mt-1 bg-white outline-none focus:border-brand-500" value={newUser.basePercentage} onChange={e=>setNewUser({...newUser, basePercentage: e.target.value})} />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-700">עמלת מכירות/אפסייל (%):</label>
+                                                    <input type="number" className="w-full p-2 border border-brand-200 rounded-lg text-sm mt-1 bg-white outline-none focus:border-brand-500" value={newUser.upsellPercentage} onChange={e=>setNewUser({...newUser, upsellPercentage: e.target.value})} />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-700">שיוך לראש צוות (אופציונלי):</label>
+                                                    <select className="w-full p-2 border border-brand-200 rounded-lg text-sm mt-1 bg-white outline-none focus:border-brand-500" value={newUser.teamLeaderId} onChange={e=>setNewUser({...newUser, teamLeaderId: e.target.value})}>
+                                                        <option value="">-- סוכן ישיר (ללא מנהל) --</option>
+                                                        {usersList.filter(u => u.role === 'freelancer').map(tl => <option key={tl.uid} value={tl.uid}>{tl.name}</option>)}
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
-                                    <Button type="submit" className="w-full">צור משתמש</Button>
+                                    <div className="flex justify-center pt-2">
+                                        <Button type="submit" className="w-full md:w-1/2 py-3 text-base shadow-lg shadow-brand-500/30">✨ הוסף משתמש למערכת</Button>
+                                    </div>
                                 </form>
                             </Card>
                             
-                            <Card className="lg:col-span-2 overflow-hidden">
-                                <h3 className="font-bold text-gray-800 p-4 bg-gray-50 border-b">משתמשים קיימים במסד הנתונים (Firestore)</h3>
-                                <div className="p-4">
-                                    <table className="w-full text-right text-sm">
-                                        <thead className="text-gray-500 font-medium border-b"><tr><th className="pb-2">שם משתמש ומייל</th><th className="pb-2">הרשאה</th><th className="pb-2">תגמול (לפרילנסר)</th><th className="pb-2">פעולות ואבטחה</th></tr></thead>
-                                        <tbody className="divide-y">
+                            {/* Full Width Users Table */}
+                            <Card className="overflow-hidden shadow-sm">
+                                <h3 className="font-bold text-gray-800 p-5 bg-gray-50 border-b flex justify-between items-center">
+                                    <span>משתמשים קיימים במסד הנתונים ({usersList.length})</span>
+                                </h3>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-right text-sm min-w-[850px]">
+                                        <thead className="text-gray-500 font-medium border-b bg-white">
+                                            <tr>
+                                                <th className="p-4 w-1/4">שם משתמש ומייל</th>
+                                                <th className="p-4 w-1/6">הרשאה</th>
+                                                <th className="p-4 w-1/4">תגמול (לפרילנסר)</th>
+                                                <th className="p-4 w-1/3">פעולות ואבטחה</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
                                             {usersList.map(u => (
-                                                <tr key={u.uid}>
-                                                    <td className="py-3">
-                                                        <div className="font-bold text-gray-900">{u.name}</div>
-                                                        <div className="text-xs text-gray-500">{u.email}</div>
-                                                        {u.teamLeaderId && <div className="text-xs text-blue-600 font-bold mt-1">👤 תחת ראש צוות: {usersList.find(l=>l.uid===u.teamLeaderId)?.name}</div>}
+                                                <tr key={u.uid} className="hover:bg-gray-50/50 transition-colors">
+                                                    <td className="p-4">
+                                                        <div className="font-bold text-gray-900 text-base">{u.name}</div>
+                                                        <div className="text-xs text-gray-500 mt-0.5">{u.email}</div>
+                                                        {u.teamLeaderId && <div className="text-xs text-blue-600 font-bold mt-1.5 bg-blue-50 inline-block px-2 py-0.5 rounded">👤 תחת: {usersList.find(l=>l.uid===u.teamLeaderId)?.name}</div>}
                                                     </td>
-                                                    <td className="py-3"><Badge color={u.role==='manager'?'purple':u.role==='freelancer'?'blue':'gray'}>{u.role}</Badge></td>
-                                                    <td className="py-3 text-xs text-gray-600">
+                                                    <td className="p-4">
+                                                        <Badge color={u.role==='manager'?'purple':u.role==='freelancer'?'blue':'gray'}>{u.role}</Badge>
+                                                    </td>
+                                                    <td className="p-4 text-xs text-gray-600">
                                                         {u.role === 'freelancer' ? 
-                                                            <div className="flex flex-col gap-1">
-                                                                <label className="flex items-center gap-2"><span>פרויקט:</span><input type="number" className="border w-16 p-1 rounded text-center" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, {basePercentage: Number(e.target.value)})} />%</label>
-                                                                <label className="flex items-center gap-2"><span>אפסייל:</span><input type="number" className="border w-16 p-1 rounded text-center" value={u.upsellPercentage || 0} onChange={(e) => updateUser(u.uid, {upsellPercentage: Number(e.target.value)})} />%</label>
+                                                            <div className="flex flex-col gap-2">
+                                                                <label className="flex items-center gap-2">
+                                                                    <span className="w-12">פרויקט:</span>
+                                                                    <input type="number" className="border border-gray-200 w-16 p-1.5 rounded-md text-center bg-white outline-none focus:border-brand-500" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, {basePercentage: Number(e.target.value)})} />%
+                                                                </label>
+                                                                <label className="flex items-center gap-2">
+                                                                    <span className="w-12">אפסייל:</span>
+                                                                    <input type="number" className="border border-gray-200 w-16 p-1.5 rounded-md text-center bg-white outline-none focus:border-brand-500" value={u.upsellPercentage || 0} onChange={(e) => updateUser(u.uid, {upsellPercentage: Number(e.target.value)})} />%
+                                                                </label>
                                                             </div> 
-                                                        : '-'}
+                                                        : <span className="text-gray-400 font-medium">- לא רלוונטי -</span>}
                                                     </td>
-                                                    <td className="py-3">
-                                                        <div className="flex flex-col items-start gap-2">
-                                                            <Button onClick={() => resetPassword(u.email)} variant="outline" className="text-xs px-2 py-1 w-full justify-start">📧 איפוס סיסמה</Button>
+                                                    <td className="p-4">
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <Button onClick={() => resetPassword(u.email)} variant="secondary" className="text-xs px-3 py-1.5 border border-gray-200">📧 איפוס סיסמה</Button>
                                                             
                                                             {u.role === 'freelancer' && (
                                                                 u.hasSignedAgreement ? (
-                                                                    <Button onClick={() => setViewingSignature(u)} variant="outline" className="text-xs px-2 py-1 w-full justify-start border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                                                                    <Button onClick={() => setViewingSignature(u)} variant="outline" className="text-xs px-3 py-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                                                                         📄 צפה בהסכם
                                                                     </Button>
                                                                 ) : (
-                                                                    <span className="text-xs text-red-500 font-bold px-2 block w-full text-center bg-red-50 py-1 rounded">טרם חתם</span>
+                                                                    <span className="text-xs text-red-500 font-bold px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl flex items-center">טרם חתם</span>
                                                                 )
                                                             )}
-                                                            {/* NEW: Admin Delete Button for Users */}
                                                             {u.uid !== 'admin_master' && (
-                                                                <Button onClick={() => deleteUser(u.uid)} variant="danger" className="text-xs px-2 py-1 w-full">
-                                                                    🗑️ מחק משתמש
+                                                                <Button onClick={() => deleteUser(u.uid)} variant="danger" className="text-xs px-3 py-1.5 border border-red-200">
+                                                                    🗑️ מחק
                                                                 </Button>
                                                             )}
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
+                                            {usersList.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-gray-500">טוען משתמשים...</td></tr>}
                                         </tbody>
                                     </table>
                                 </div>
@@ -669,17 +699,17 @@
                     )}
 
                     {activeTab === 'settings' && (
-                        <div className="space-y-6 fade-in">
+                        <div className="space-y-6 fade-in max-w-4xl mx-auto">
                             <Card className="p-6">
                                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><span>📢</span> לוח מודעות חברה (לכל הפרילנסרים)</h3>
                                 <div className="flex gap-4">
-                                    <input type="text" placeholder="הזמנה לאירוע חברה, מבצעים, או עדכונים שוטפים..." className="flex-1 p-3 border rounded-xl" value={newAnnouncement} onChange={e=>setNewAnnouncement(e.target.value)} />
+                                    <input type="text" placeholder="הזמנה לאירוע חברה, מבצעים, או עדכונים שוטפים..." className="flex-1 p-3 border rounded-xl outline-none focus:border-brand-500" value={newAnnouncement} onChange={e=>setNewAnnouncement(e.target.value)} />
                                     <Button onClick={addAnnouncement}>פרסם לצוות</Button>
                                 </div>
                                 {systemSettings.announcements && systemSettings.announcements.length > 0 && (
                                     <div className="mt-4 space-y-2">
                                         {systemSettings.announcements.map(a => (
-                                            <div key={a.id} className="text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100"><span className="font-bold">{a.date}</span> - {a.text}</div>
+                                            <div key={a.id} className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100"><span className="font-bold text-brand-600 ml-2">{a.date} |</span> {a.text}</div>
                                         ))}
                                     </div>
                                 )}
@@ -688,7 +718,7 @@
                                 <h3 className="font-bold text-gray-900 mb-2">🤝 הסכם פרילנסר / עובד קבלן</h3>
                                 <p className="text-sm text-gray-500 mb-4">טקסט זה קופץ כחובה לכל פרילנסר חדש וכולל סודיות, מנוי AI, וציוד.</p>
                                 <textarea 
-                                    className="w-full p-4 border rounded-xl h-64 text-sm font-medium bg-gray-50"
+                                    className="w-full p-4 border border-gray-200 rounded-xl h-64 text-sm font-medium bg-gray-50 outline-none focus:border-brand-500 custom-scrollbar"
                                     value={systemSettings.freelancerAgreementText}
                                     onChange={(e) => setSystemSettings({...systemSettings, freelancerAgreementText: e.target.value})}
                                 />
@@ -697,7 +727,7 @@
                                 <h3 className="font-bold text-gray-900 mb-2">🤝 הסכם לקוח (שירותי אינטרנט)</h3>
                                 <p className="text-sm text-gray-500 mb-4">הסכם הפיתוח עליו חותם הלקוח לפני היציאה לדרך.</p>
                                 <textarea 
-                                    className="w-full p-4 border rounded-xl h-64 text-sm font-medium bg-gray-50"
+                                    className="w-full p-4 border border-gray-200 rounded-xl h-64 text-sm font-medium bg-gray-50 outline-none focus:border-brand-500 custom-scrollbar"
                                     value={systemSettings.clientAgreementText}
                                     onChange={(e) => setSystemSettings({...systemSettings, clientAgreementText: e.target.value})}
                                 />
@@ -913,7 +943,7 @@
                                         </div>
 
                                         <div className="flex gap-3">
-                                            <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? "outline" : "primary"} className="flex-1 text-lg">
+                                            <Button onClick={() => toggleTimer(project)} variant={project.isTimerRunning ? "outline" : "primary"} className="flex-1 text-lg border-2">
                                                 {project.isTimerRunning ? '⏸️ השהה פיתוח' : '▶️ התחל / המשך עבודה'}
                                             </Button>
                                             <Button onClick={() => setBlockerInput({show: true, project, reason: ''})} variant="danger" title="דווח על תקלה / חסר חומר" className="px-4">🚨</Button>
@@ -923,10 +953,10 @@
                                     <div className="bg-gray-900 text-white p-5 border-t border-gray-800">
                                         <div className="text-sm font-bold text-brand-400 mb-3 flex items-center justify-between"><span>צ'ק-ליסט חובה לפני הגשה:</span><span className="text-xs text-gray-400 font-normal">סמן הכל כדי להגיש</span></div>
                                         <div className="grid grid-cols-2 gap-3 mb-4">
-                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.mobile} onChange={e=>setQaState({...qaState, mobile: e.target.checked})} /> מותאם 100% למובייל</label>
-                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.form} onChange={e=>setQaState({...qaState, form: e.target.checked})} /> טפסים נשלחים תקין</label>
-                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.a11y} onChange={e=>setQaState({...qaState, a11y: e.target.checked})} /> הוספת תוסף נגישות</label>
-                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.speed} onChange={e=>setQaState({...qaState, speed: e.target.checked})} /> אופטימיזציה לתמונות</label>
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.mobile} onChange={e=>setQaState({...qaState, mobile: e.target.checked})} /> מותאם למובייל</label>
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.form} onChange={e=>setQaState({...qaState, form: e.target.checked})} /> טפסים תקינים</label>
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.a11y} onChange={e=>setQaState({...qaState, a11y: e.target.checked})} /> תוסף נגישות</label>
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded text-brand-500" checked={qaState.speed} onChange={e=>setQaState({...qaState, speed: e.target.checked})} /> אופטימיזציה</label>
                                         </div>
                                         <Button 
                                             onClick={() => {
@@ -952,7 +982,7 @@
                             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                                 <h3 className="text-xl font-bold text-red-600 mb-2">דיווח על חסימה/עיכוב</h3>
                                 <p className="text-sm text-gray-600 mb-4">הטיימר ייעצר מיד והפרויקט יעבור לטיפול מנהל.</p>
-                                <textarea className="w-full p-3 border rounded-xl mb-4" rows="3" placeholder="מה תוקע אותך? (למשל: חסר לוגו, אין גישה לשרת...)" value={blockerInput.reason} onChange={e=>setBlockerInput({...blockerInput, reason: e.target.value})}></textarea>
+                                <textarea className="w-full p-3 border rounded-xl mb-4 outline-none focus:border-red-400" rows="3" placeholder="מה תוקע אותך? (למשל: חסר לוגו, אין גישה לשרת...)" value={blockerInput.reason} onChange={e=>setBlockerInput({...blockerInput, reason: e.target.value})}></textarea>
                                 <div className="flex gap-2">
                                     <Button onClick={submitIssueReport} variant="danger" className="flex-1">עצור טיימר ודווח</Button>
                                     <Button onClick={()=>setBlockerInput({show: false, project: null, reason: ''})} variant="secondary">ביטול</Button>
@@ -1047,9 +1077,9 @@
                                 }); 
                                 showAlert("האפיון והחוזה נשלחו בהצלחה לצוות הפיתוח בענן!"); 
                             }} className="space-y-5">
-                                <div><label className="block text-sm font-bold text-gray-700 mb-1">שם העסק / המותג</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.businessName} onChange={e=>setBriefData({...briefData, businessName: e.target.value})} /></div>
-                                <div><label className="block text-sm font-bold text-gray-700 mb-1">מי קהל היעד שלך?</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.audience} onChange={e=>setBriefData({...briefData, audience: e.target.value})} /></div>
-                                <div><label className="block text-sm font-bold text-gray-700 mb-1">מה הפעולה המרכזית שתרצה שגולש יעשה?</label><input type="text" required placeholder="למשל: השארת פרטים, רכישה..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={briefData.callToAction} onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} /></div>
+                                <div><label className="block text-sm font-bold text-gray-700 mb-1">שם העסק / המותג</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-brand-500" value={briefData.businessName} onChange={e=>setBriefData({...briefData, businessName: e.target.value})} /></div>
+                                <div><label className="block text-sm font-bold text-gray-700 mb-1">מי קהל היעד שלך?</label><input type="text" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-brand-500" value={briefData.audience} onChange={e=>setBriefData({...briefData, audience: e.target.value})} /></div>
+                                <div><label className="block text-sm font-bold text-gray-700 mb-1">מה הפעולה המרכזית שתרצה שגולש יעשה?</label><input type="text" required placeholder="למשל: השארת פרטים, רכישה..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-brand-500" value={briefData.callToAction} onChange={e=>setBriefData({...briefData, callToAction: e.target.value})} /></div>
                                 
                                 <div className="mt-6 pt-6 border-t border-gray-200">
                                     <h4 className="font-bold text-gray-900 mb-3 text-sm">אישור הסכם פיתוח ושירותים</h4>
@@ -1085,20 +1115,20 @@
             if (!currentUser) return <LoginScreen />;
 
             return (
-                <div className="flex h-screen bg-gray-50 overflow-hidden">
-                    <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex border-l border-slate-800 z-20">
+                <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col hidden lg:flex border-l border-slate-800 z-20">
                         <div className="p-6 border-b border-slate-800">
                             <h1 className="text-2xl font-black tracking-tight">ORIZIS<span className="text-brand-500">WEB</span></h1>
                             <div className="text-xs text-slate-400 mt-1 font-medium tracking-widest uppercase">Agency ERP</div>
                         </div>
                         <nav className="flex-1 p-4 space-y-2">
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 bg-brand-600/10 text-brand-400 rounded-xl font-bold transition-colors"><span className="text-xl">📊</span> דשבורד ראשי</a>
+                            <div className="flex items-center gap-3 px-4 py-3 bg-brand-600/10 text-brand-400 rounded-xl font-bold"><span className="text-xl">📊</span> דשבורד ראשי</div>
                         </nav>
                         <div className="p-4 border-t border-slate-800 bg-slate-950/50">
                             <div className="flex items-center gap-3 mb-4 px-2">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center font-black text-lg shadow-lg">{currentUser.name.charAt(0)}</div>
                                 <div>
-                                    <div className="text-sm font-bold text-white">{currentUser.name}</div>
+                                    <div className="text-sm font-bold text-white truncate max-w-[140px]">{currentUser.name}</div>
                                     <div className="text-xs text-slate-400 font-medium">{currentUser.role === 'manager' ? '(מנהל ראשי)' : currentUser.role === 'freelancer' ? 'צוות פיתוח' : 'לקוח VIP'}</div>
                                 </div>
                             </div>
@@ -1106,22 +1136,30 @@
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50/50">
                         <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 lg:p-6 flex justify-between items-center z-10 sticky top-0">
-                            <div>
-                                <h1 className="text-2xl font-black text-gray-900">
-                                    {currentUser.role === 'manager' ? 'ניהול סוכנות (Admin)' : currentUser.role === 'freelancer' ? 'סביבת עבודה' : 'פורטל לקוח'}
-                                </h1>
-                                <p className="text-sm text-gray-500 font-medium mt-1">
-                                    {new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                </p>
+                            <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
+                                <div>
+                                    <h1 className="text-2xl font-black text-gray-900">
+                                        {currentUser.role === 'manager' ? 'ניהול סוכנות (Admin)' : currentUser.role === 'freelancer' ? 'סביבת עבודה' : 'פורטל לקוח'}
+                                    </h1>
+                                    <p className="text-sm text-gray-500 font-medium mt-1">
+                                        {new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </p>
+                                </div>
+                                {/* Mobile Logout Button */}
+                                <div className="lg:hidden">
+                                    <Button onClick={logout} variant="secondary" className="text-xs py-1.5 px-3">התנתק</Button>
+                                </div>
                             </div>
                         </header>
                         
-                        <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar relative">
-                            {currentUser.role === 'manager' && <AdminDashboard />}
-                            {currentUser.role === 'freelancer' && <FreelancerDashboard />}
-                            {currentUser.role === 'client' && <ClientPortal />}
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+                            <div className="max-w-7xl mx-auto w-full">
+                                {currentUser.role === 'manager' && <AdminDashboard />}
+                                {currentUser.role === 'freelancer' && <FreelancerDashboard />}
+                                {currentUser.role === 'client' && <ClientPortal />}
+                            </div>
                         </div>
                     </main>
                 </div>
