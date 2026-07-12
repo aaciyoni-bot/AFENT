@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -333,7 +334,7 @@
         };
 
         const AdminDashboard = () => {
-            const { projects, usersList, updateProject, deleteProject, addUser, updateUser, deleteUser, systemSettings, updateSettings, showAlert, showConfirm, addProjectAndClient } = useContext(AppContext);
+            const { projects, usersList, updateProject, deleteProject, addUser, updateUser, deleteUser, systemSettings, updateSettings, showAlert, showConfirm, addProjectAndClient, setImpersonatedUser } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects'); 
             
             // New Client / Project State
@@ -348,6 +349,7 @@
             
             const [viewProject, setViewProject] = useState(null);
             const [viewUser, setViewUser] = useState(null);
+            const [editUser, setEditUser] = useState(null);
 
             const freelancers = usersList.filter(u => u.role === 'freelancer');
             
@@ -544,6 +546,7 @@
                                                     <td className="p-4 text-center">
                                                         <div className="flex flex-col gap-2">
                                                             <Button onClick={() => setImpersonatedUser(u)} variant="primary" className="text-xs py-1.5 w-full justify-center bg-indigo-600 hover:bg-indigo-700 shadow-md">🚪 כנס למסך המשתמש</Button>
+                                                            <Button onClick={() => setEditUser(u)} variant="secondary" className="text-xs py-1.5 w-full justify-center bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">✏️ ערוך פרטים וסיסמה</Button>
                                                             <Button onClick={() => setViewUser(u)} variant="secondary" className="text-xs py-1.5 w-full justify-center">📄 צפה בפרופיל וחתימה</Button>
                                                             {u.uid !== 'master_admin' && (
                                                                 <Button onClick={() => showConfirm('למחוק משתמש זה? לא תהיה לו יותר גישה למערכת.', () => deleteUser(u.uid))} variant="outline" className="text-xs py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 w-full justify-center">🗑️ מחק משתמש</Button>
@@ -644,20 +647,49 @@
                                     <div className="bg-slate-50 p-4 rounded-xl"><span className="text-xs text-slate-500 block">הרשאה</span><span className="font-black text-brand-700">{viewUser.role}</span></div>
                                 </div>
                                 {viewUser.role === 'freelancer' && viewUser.signature && (
-                                    <div>
-                                        <h4 className="font-black text-slate-800 mb-2">חתימת פרילנסר על חוזה סודיות ותנאים</h4>
-                                        <img src={viewUser.signature} alt="Freelancer Signature" className="border border-slate-200 rounded-xl bg-white h-32 object-contain" />
-                                    </div>
-                                )}
+                                <div>
+                                    <h4 className="font-black text-slate-800 mb-2">חתימת פרילנסר על חוזה סודיות ותנאים</h4>
+                                    <img src={viewUser.signature} alt="Freelancer Signature" className="border border-slate-200 rounded-xl bg-white h-32 object-contain" />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DetailsModal>
+
+                <DetailsModal isOpen={!!editUser} onClose={() => setEditUser(null)} title={`עריכת משתמש: ${editUser?.name}`}>
+                    {editUser && (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold mb-2 text-slate-600">שם מלא</label>
+                                <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500" value={editUser.name} onChange={e=>setEditUser({...editUser, name: e.target.value})} />
                             </div>
-                        )}
-                    </DetailsModal>
+                            <div>
+                                <label className="block text-xs font-bold mb-2 text-slate-600">אימייל להתחברות</label>
+                                <input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 text-left" dir="ltr" value={editUser.email} onChange={e=>setEditUser({...editUser, email: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold mb-2 text-slate-600">סיסמה</label>
+                                <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 text-left" dir="ltr" value={editUser.password} onChange={e=>setEditUser({...editUser, password: e.target.value})} />
+                            </div>
+                            <div className="pt-4 mt-2 border-t border-slate-100">
+                                <Button onClick={() => { 
+                                    updateUser(editUser.uid, {name: editUser.name, email: editUser.email, password: editUser.password}); 
+                                    if (editUser.role === 'client' && editUser.projectId) {
+                                        updateProject(editUser.projectId, { customerName: editUser.name });
+                                    }
+                                    showAlert("פרטי המשתמש והסיסמה עודכנו בהצלחה!"); 
+                                    setEditUser(null); 
+                                }} className="w-full py-4 text-lg">💾 שמור שינויים</Button>
+                            </div>
+                        </div>
+                    )}
+                </DetailsModal>
 
-                </div>
-            );
-        };
+            </div>
+        );
+    };
 
-        const FreelancerDashboard = () => {
+    const FreelancerDashboard = () => {
             const { currentUser, projects, updateProject, updateUser, systemSettings, showAlert, showConfirm } = useContext(AppContext);
             const myProjects = projects.filter(p => p.freelancerId === currentUser.uid && p.status !== 'completed');
             
