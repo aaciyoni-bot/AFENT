@@ -151,23 +151,33 @@
                     }
                 });
 
+                // רשימת המוצרים והשדרוגים החדשה - אסטרטגיית Productized Services
                 const defaultUpsells = [
+                    // שדרוגי בסיס וחינמיים
+                    { id: 'domain', title: 'חיבור דומיין אישי (כתובת פרטית)', price: 0, icon: '🌐' },
+                    { id: 'images', title: '5 תמונות אווירה ממאגר פרימיום', price: 0, icon: '📸' },
+                    { id: 'logo', title: 'עיצוב לוגו בסיסי בטכנולוגיית AI', price: 0, icon: '🎨' },
                     { id: 'whatsapp', title: 'כפתור וואטסאפ צף מותאם לנייד', price: 100, icon: '💬' },
                     { id: 'gmb', title: 'הטמעת מפת גוגל (Google Maps)', price: 100, icon: '🗺️' },
-                    { id: 'accessibility', title: 'תוסף נגישות תקני לאתר (חובה)', price: 150, icon: '♿' },
-                    { id: 'analytics', title: 'חיבור גוגל אנליטיקס (סטטיסטיקות)', price: 150, icon: '📊' },
-                    { id: 'domain', title: 'חיבור דומיין אישי (כתובת פרטית)', price: 150, icon: '🌐' },
-                    { id: 'pixel', title: 'חיבור פיקסל (פייסבוק/אינסטגרם)', price: 150, icon: '🎯' },
-                    { id: 'terms', title: 'עמוד תקנון ותנאי שימוש (תבנית)', price: 150, icon: '⚖️' },
-                    { id: 'images', title: '5 תמונות אווירה ממאגר פרימיום', price: 100, icon: '📸' },
-                    { id: 'logo', title: 'עיצוב לוגו בסיסי בטכנולוגיית AI', price: 200, icon: '🎨' },
-                    { id: 'express', title: 'מסירת אקספרס (קדימות בלו"ז)', price: 200, icon: '⚡' }
+                    { id: 'accessibility', title: 'תוסף נגישות תקני לאתר (חובה)', price: 100, icon: '♿' },
+                    { id: 'analytics', title: 'חיבור גוגל אנליטיקס (סטטיסטיקות)', price: 100, icon: '📊' },
+                    { id: 'pixel', title: 'חיבור פיקסל (פייסבוק/אינסטגרם)', price: 100, icon: '🎯' },
+                    { id: 'terms', title: 'עמוד תקנון ותנאי שימוש (תבנית)', price: 100, icon: '⚖️' },
+                    { id: 'express', title: 'אקספרס: אתר מוכן ב-24 שעות', price: 500, icon: '⚡', desc: '*בכפוף לקבלת כל החומרים. שבת לא נספרת במניין השעות.' },
+                    
+                    // מוצרי מדף פרימיום (High-Ticket)
+                    { id: 'scratch_card', title: 'משחק כרטיס גירוד ללקוחות', price: 1000, icon: '🎟️', isPremium: true, desc: 'פיצ\'ר אינטראקטיבי מגדיל מכירות. הלקוח מגרד וזוכה בהטבה (למשל קפה במתנה).' },
+                    { id: 'spin_wheel', title: 'פופ-אפ גלגל המזל', price: 800, icon: '🎡', isPremium: true, desc: 'לאיסוף לידים אגרסיבי: הגולש מסובב את הגלגל ומשאיר פרטים כדי לזכות בהנחה.' },
+                    { id: 'booking', title: 'מערכת זימון תורים מתקדמת', price: 1200, icon: '📅', isPremium: true, desc: 'יומן וירטואלי מלא המאפשר ללקוחות שלך לקבוע פגישות ותורים באופן עצמאי.' },
+                    { id: 'crm', title: 'מיני CRM - מערכת ניהול לידים', price: 1500, icon: '👥', isPremium: true, desc: 'ניהול פניות, לקוחות ומעקב אחרי מכירות, מוטמע ישירות באזור ניהול פנימי באתר.' },
+                    { id: 'ecommerce', title: 'מודול חנות וירטואלית (עד 50 מוצרים)', price: 3000, icon: '🛒', isPremium: true, desc: 'הפיכת האתר לחנות E-commerce מלאה כולל עגלת קניות וחיבור לסליקה.' }
                 ];
 
                 const unsubscribeSettings = db.collection('settings').doc('general').onSnapshot(doc => {
                     if (doc.exists) {
                         const data = doc.data();
-                        if (!data.upsells || data.upsells.length < 10) {
+                        // בודק אם יש פחות מ-15 מוצרים כדי לעדכן את המסד לגרסה החדשה
+                        if (!data.upsells || data.upsells.length < 15) {
                             db.collection('settings').doc('general').update({ upsells: defaultUpsells });
                         } else {
                             setSystemSettings(data);
@@ -494,22 +504,44 @@
                             </Card>
 
                             <div>
-                                <h3 className="text-2xl font-black text-gray-900 mb-6">חנות השדרוגים לאתר (Upsells)</h3>
+                                <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">🛒 חנות השדרוגים לאתר</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     {systemSettings.upsells.map((upsell, idx) => {
                                         const isBought = (project.addons || []).find(a => a.id === upsell.id);
+                                        const isPremium = upsell.isPremium;
+                                        const priceText = upsell.price === 0 ? 'חינם לגמרי' : `₪${upsell.price}`;
+                                        
                                         return (
-                                            <Card key={idx} noPadding className={`p-6 transition-all border-2 ${isBought ? 'bg-gray-50 border-emerald-200 opacity-80' : 'bg-white border-transparent hover:border-brand-300 shadow-sm'}`}>
-                                                <div className="flex justify-between items-start mb-6 gap-2">
+                                            <Card key={idx} noPadding className={`p-6 transition-all border-2 relative overflow-hidden ${isBought ? 'bg-gray-50 border-emerald-200 opacity-80' : (isPremium ? 'bg-gradient-to-br from-white to-amber-50 border-amber-300 shadow-md hover:shadow-xl' : 'bg-white border-transparent hover:border-brand-300 shadow-sm')}`}>
+                                                
+                                                {isPremium && !isBought && (
+                                                    <div className="absolute top-3 left-3 bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md tracking-wider uppercase border border-amber-200">מוצר פרימיום</div>
+                                                )}
+
+                                                <div className="flex justify-between items-start mb-2 gap-2">
                                                     <div className="text-lg font-black text-gray-900 leading-tight">
                                                         <span className="ml-2 text-2xl">{upsell.icon}</span>
                                                         {upsell.title}
                                                     </div>
-                                                    <Badge color="blue" className="text-base font-sans shrink-0">₪{upsell.price}</Badge>
+                                                    {!isPremium && <Badge color={upsell.price === 0 ? 'green' : 'blue'} className="text-base font-sans shrink-0">{priceText}</Badge>}
                                                 </div>
-                                                <Button onClick={() => purchaseUpsell(upsell)} disabled={isBought} variant={isBought ? 'secondary' : 'primary'} className="w-full py-3">
-                                                    {isBought ? '✓ השדרוג הוסף בהצלחה' : '+ הוסף לאתר שלי'}
-                                                </Button>
+                                                
+                                                {isPremium && (
+                                                    <div className="mb-4">
+                                                        <div className="text-2xl font-black font-sans text-amber-600 mb-1">{priceText}</div>
+                                                        <p className="text-sm text-gray-600 font-medium leading-relaxed">{upsell.desc}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {!isPremium && upsell.desc && (
+                                                    <p className="text-xs text-gray-500 mb-4">{upsell.desc}</p>
+                                                )}
+                                                
+                                                <div className={!isPremium && !upsell.desc ? 'mt-6' : 'mt-4'}>
+                                                    <Button onClick={() => purchaseUpsell(upsell)} disabled={isBought} variant={isBought ? 'secondary' : (upsell.price === 0 ? 'success' : 'primary')} className={`w-full py-3 ${isPremium && !isBought ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 text-white' : ''}`}>
+                                                        {isBought ? '✓ הוסף בהצלחה' : (upsell.price === 0 ? '+ הוסף לאתר בחינם' : '+ הוסף להזמנה')}
+                                                    </Button>
+                                                </div>
                                             </Card>
                                         )
                                     })}
