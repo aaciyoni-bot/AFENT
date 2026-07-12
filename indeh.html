@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency OS - מערכת ניהול חיה</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans selection:bg-blue-200">
+    
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, createContext, useContext } = React;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
+            authDomain: "afent-8d50d.firebaseapp.com",
+            projectId: "afent-8d50d",
+            storageBucket: "afent-8d50d.firebasestorage.app",
+            messagingSenderId: "458196058965",
+            appId: "1:458196058965:web:bd4466b89c554b806b25dc",
+            measurementId: "G-X41B2CNGNN"
+        };
+
+        // אתחול Firebase רק אם הוא טרם אותחל
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Badge = ({ children, color = 'gray' }) => {
+            const colors = {
+                gray: 'bg-gray-100 text-gray-800',
+                blue: 'bg-blue-100 text-blue-800',
+                green: 'bg-green-100 text-green-800',
+                yellow: 'bg-yellow-100 text-yellow-800',
+                purple: 'bg-purple-100 text-purple-800',
+            };
+            return (
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${colors[color] || colors.gray}`}>
+                    {children}
+                </span>
+            );
+        };
+
+        const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, type = 'button' }) => {
+            const baseStyle = "px-4 py-2.5 text-sm font-semibold rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center";
+            const variants = {
+                primary: "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md focus:ring-blue-500",
+                secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500",
+                success: "bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-md focus:ring-emerald-500",
+                danger: "bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500"
+            };
+            return (
+                <button type={type} onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
+                    {children}
+                </button>
+            );
+        };
+
+        const formatDuration = (totalSeconds) => {
+            if (!totalSeconds) return "00:00:00";
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = Math.floor(totalSeconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+
+        const initialProjects = [
+            { id: 'p1', customerName: 'משה כהן', status: 'paid_waiting_for_brief', paymentAmount: 1500, freelancerId: null, date: '2026-07-10', timeSpent: 0, isTimerRunning: false, timerStartedAt: null },
+            { id: 'p2', customerName: 'קפה שרה (תל אביב)', status: 'brief_submitted', paymentAmount: 1500, freelancerId: null, date: '2026-07-11', timeSpent: 0, isTimerRunning: false, timerStartedAt: null },
+            { id: 'p3', customerName: 'יוסי נדל"ן', status: 'in_progress', paymentAmount: 1500, freelancerId: 'freelancer_1', date: '2026-07-12', timeSpent: 3600, isTimerRunning: false, timerStartedAt: null }, 
+            { id: 'p4', customerName: 'סטארטאפ טק', status: 'qa_review', paymentAmount: 1500, freelancerId: 'freelancer_1', date: '2026-07-09', timeSpent: 11200, isTimerRunning: false, timerStartedAt: null }, 
+            { id: 'p5', customerName: 'חנות בגדים', status: 'completed', paymentAmount: 1500, freelancerId: 'freelancer_1', date: '2026-07-08', timeSpent: 12500, isTimerRunning: false, timerStartedAt: null }, 
+        ];
+
+        const mockUsers = {
+            manager: { uid: 'mgr_1', role: 'manager', name: 'מנהל ראשי (אופרציה)' },
+            freelancer: { uid: 'freelancer_1', role: 'freelancer', name: 'דן (פרילנסר)' },
+            client: { uid: 'client_1', role: 'client', name: 'שרה לוי', projectId: 'p2' }
+        };
+
+        const AppContext = createContext();
+
+        const AppProvider = ({ children }) => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [projects, setProjects] = useState([]);
+            const [isLoadingDb, setIsLoadingDb] = useState(true);
+            const [dbError, setDbError] = useState(null);
+
+            const login = (role) => setCurrentUser(mockUsers[role]);
+            const logout = () => setCurrentUser(null);
+
+            useEffect(() => {
+                // האזנה חיה למסד הנתונים
+                const unsubscribe = db.collection('projects').onSnapshot((snapshot) => {
+                    if (snapshot.empty) {
+                        // הזרקת נתונים ראשונית אם המסד ריק
+                        console.log("Database is empty. Seeding initial data...");
+                        initialProjects.forEach(async (p) => {
+                            try {
+                                await db.collection('projects').doc(p.id).set(p);
+                            } catch (e) {
+                                console.error("Error seeding data:", e);
+                                setDbError("שגיאת כתיבה למסד הנתונים. ודא שהגדרת Test Mode ב-Firestore.");
+                            }
+                        });
+                    } else {
+                        // שליפת הנתונים החיים
+                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setProjects(data);
+                        setIsLoadingDb(false);
+                        setDbError(null);
+                    }
+                }, (error) => {
+                    console.error("Firestore Error:", error);
+                    setIsLoadingDb(false);
+                    setDbError("אין גישה למסד הנתונים. אנא ודא שהפעלת את ה-Rules ב-Firebase.");
+                });
+
+                return () => unsubscribe();
+            }, []);
+
+            // עדכון הפרויקט בענן
+            const updateProject = async (projectId, updates) => {
+                try {
+                    await db.collection('projects').doc(projectId).update(updates);
+                } catch (error) {
+                    console.error("Error updating project:", error);
+                }
+            };
+
+            return (
+                <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, isLoadingDb, dbError }}>
+                    {children}
+                </AppContext.Provider>
+            );
+        };
+
+        const LoginScreen = () => {
+            const { login, dbError } = useContext(AppContext);
+
+            return (
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+                    <div className="absolute top-0 left-0 w-96 h-96 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+
+                    <Card className="w-full max-w-md text-center relative z-10 p-8">
+                        <div className="mb-8">
+                            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">Agency OS</h1>
+                            <p className="text-gray-500 font-medium">מערכת חיה מחוברת ל-Firebase</p>
+                        </div>
+                        
+                        {dbError && (
+                            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-100 text-right">
+                                ⚠️ {dbError}
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <Button onClick={() => login('manager')} className="w-full py-3.5 text-base" variant="primary">
+                                כניסת הנהלה (מרכז שליטה)
+                            </Button>
+                            <Button onClick={() => login('freelancer')} className="w-full py-3.5 text-base" variant="secondary">
+                                כניסת פרילנסר ביצוע
+                            </Button>
+                            <Button onClick={() => login('client')} className="w-full py-3.5 text-base" variant="secondary">
+                                אזור לקוח (Client Portal)
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        const ManagerDashboard = () => {
+            const { projects, updateProject } = useContext(AppContext);
+
+            const totalRevenue = projects.reduce((sum, p) => sum + p.paymentAmount, 0);
+            const totalFreelancerCost = projects.filter(p => ['completed', 'qa_review', 'in_progress'].includes(p.status)).length * 1000;
+            const grossProfit = totalRevenue - totalFreelancerCost;
+
+            const assignToFreelancer = (projectId) => {
+                updateProject(projectId, { freelancerId: 'freelancer_1', status: 'in_progress' });
+            };
+
+            const [now, setNow] = useState(Date.now());
+            useEffect(() => {
+                const interval = setInterval(() => setNow(Date.now()), 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const getLiveTime = (project) => {
+                let currentTotal = project.timeSpent || 0;
+                if (project.isTimerRunning && project.timerStartedAt) {
+                    currentTotal += Math.floor((now - project.timerStartedAt) / 1000);
+                }
+                return currentTotal;
+            };
+
+            return (
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
+                            <div className="flex items-center space-x-3 space-x-reverse mb-2">
+                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">💰</div>
+                                <h3 className="text-sm font-semibold text-gray-500">הכנסות (ברוטו)</h3>
+                            </div>
+                            <p className="text-4xl font-bold text-gray-900 mr-13">₪{totalRevenue.toLocaleString()}</p>
+                        </Card>
+                        <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
+                            <div className="flex items-center space-x-3 space-x-reverse mb-2">
+                                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600">💸</div>
+                                <h3 className="text-sm font-semibold text-gray-500">עלויות פרילנסרים</h3>
+                            </div>
+                            <p className="text-4xl font-bold text-red-600 mr-13">₪{totalFreelancerCost.toLocaleString()}</p>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-none shadow-md text-white">
+                            <div className="flex items-center space-x-3 space-x-reverse mb-2">
+                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">📈</div>
+                                <h3 className="text-sm font-semibold text-emerald-50">רווח גולמי</h3>
+                            </div>
+                            <p className="text-4xl font-bold mr-13">₪{grossProfit.toLocaleString()}</p>
+                        </Card>
+                    </div>
+
+                    <Card className="overflow-hidden p-0">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+                            <h2 className="text-xl font-bold text-gray-900">ניהול פרויקטים</h2>
+                            <Badge color="blue">{projects.length} פרויקטים</Badge>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-right text-sm text-gray-600">
+                                <thead className="bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-4">שם לקוח / פרויקט</th>
+                                        <th className="px-6 py-4">סטטוס פרויקט</th>
+                                        <th className="px-6 py-4">תקציב</th>
+                                        <th className="px-6 py-4">זמן עבודה בפועל</th>
+                                        <th className="px-6 py-4">משויך ל...</th>
+                                        <th className="px-6 py-4">פעולה</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 bg-white">
+                                    {projects.map(project => (
+                                        <tr key={project.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-gray-900">{project.customerName}</td>
+                                            <td className="px-6 py-4">
+                                                {project.status === 'paid_waiting_for_brief' && <Badge color="gray">ממתין לבריף</Badge>}
+                                                {project.status === 'brief_submitted' && <Badge color="blue">מוכן לביצוע</Badge>}
+                                                {project.status === 'in_progress' && <Badge color="purple">בבנייה עכשיו</Badge>}
+                                                {project.status === 'qa_review' && <Badge color="yellow">ממתין ל-QA</Badge>}
+                                                {project.status === 'completed' && <Badge color="green">אושר</Badge>}
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-gray-700">₪{project.paymentAmount}</td>
+                                            <td className="px-6 py-4">
+                                                <div className={`font-mono font-medium ${project.isTimerRunning ? 'text-emerald-600 flex items-center' : 'text-gray-500'}`}>
+                                                    {project.isTimerRunning && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-2"></span>}
+                                                    {formatDuration(getLiveTime(project))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500 font-medium">{project.freelancerId || '--'}</td>
+                                            <td className="px-6 py-4">
+                                                {project.status === 'brief_submitted' && (
+                                                    <Button onClick={() => assignToFreelancer(project.id)} variant="primary" className="py-1.5 px-4 text-xs shadow-sm">
+                                                        העבר לביצוע
+                                                    </Button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        const FreelancerDashboard = () => {
+            const { currentUser, projects, updateProject } = useContext(AppContext);
+            
+            const [now, setNow] = useState(Date.now());
+            useEffect(() => {
+                const interval = setInterval(() => setNow(Date.now()), 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const myProjects = projects.filter(p => p.freelancerId === currentUser.uid);
+            const activeProjects = myProjects.filter(p => p.status === 'in_progress');
+            const completedProjects = myProjects.filter(p => ['qa_review', 'completed'].includes(p.status));
+            
+            const totalEarned = completedProjects.length * 1000;
+            const totalSecondsSpent = completedProjects.reduce((acc, p) => acc + (p.timeSpent || 0), 0);
+            const avgTimeSpent = completedProjects.length > 0 ? Math.floor(totalSecondsSpent / completedProjects.length) : 0;
+
+            const toggleTimer = (project) => {
+                if (project.isTimerRunning) {
+                    const elapsed = Math.floor((Date.now() - project.timerStartedAt) / 1000);
+                    updateProject(project.id, {
+                        isTimerRunning: false,
+                        timeSpent: (project.timeSpent || 0) + elapsed,
+                        timerStartedAt: null
+                    });
+                } else {
+                    updateProject(project.id, {
+                        isTimerRunning: true,
+                        timerStartedAt: Date.now()
+                    });
+                }
+            };
+
+            const submitForQA = (project) => {
+                let additionalTime = 0;
+                if (project.isTimerRunning) {
+                    additionalTime = Math.floor((Date.now() - project.timerStartedAt) / 1000);
+                }
+                updateProject(project.id, {
+                    status: 'qa_review',
+                    isTimerRunning: false,
+                    timeSpent: (project.timeSpent || 0) + additionalTime,
+                    timerStartedAt: null
+                });
+            };
+
+            const getDisplayTime = (project) => {
+                let currentTotal = project.timeSpent || 0;
+                if (project.isTimerRunning && project.timerStartedAt) {
+                    currentTotal += Math.floor((now - project.timerStartedAt) / 1000);
+                }
+                return currentTotal;
+            };
+
+            return (
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-gray-900 border-none shadow-lg text-white">
+                            <h3 className="text-sm font-medium text-gray-400 mb-1">הכנסה חודשית נצברת</h3>
+                            <p className="text-4xl font-bold text-white">₪{totalEarned.toLocaleString()}</p>
+                        </Card>
+                        <Card>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">אתרים שהושלמו</h3>
+                            <p className="text-3xl font-bold text-gray-900">{completedProjects.length}</p>
+                        </Card>
+                        <Card>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">זמן ממוצע לאתר</h3>
+                            <p className="text-3xl font-bold text-gray-900 font-mono tracking-tight">{formatDuration(avgTimeSpent)}</p>
+                        </Card>
+                    </div>
+
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-gray-900">תור עבודה פעיל</h2>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {activeProjects.map(project => (
+                                <Card key={project.id} className={`border-t-4 transition-all duration-300 ${project.isTimerRunning ? 'border-t-emerald-500 shadow-md ring-1 ring-emerald-50' : 'border-t-blue-500'}`}>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-gray-900">{project.customerName}</h3>
+                                            <p className="text-sm font-medium text-gray-500 mt-1">חומרים מוכנים</p>
+                                        </div>
+                                        <div className={`px-4 py-2 rounded-lg text-center ${project.isTimerRunning ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-700'}`}>
+                                            <div className="text-2xl font-mono font-bold tracking-tight">
+                                                {formatDuration(getDisplayTime(project))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex space-x-3 space-x-reverse">
+                                        <Button 
+                                            onClick={() => toggleTimer(project)} 
+                                            variant={project.isTimerRunning ? 'secondary' : 'success'}
+                                            className={`flex-1 text-base py-3 shadow-sm`}
+                                        >
+                                            {project.isTimerRunning ? '⏸ השהה טיימר' : '▶️ התחל עבודה'}
+                                        </Button>
+                                        <Button 
+                                            onClick={() => submitForQA(project)} 
+                                            variant="primary"
+                                            className="flex-1 text-base py-3"
+                                        >
+                                            🚀 סיים ושלח
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                            {activeProjects.length === 0 && (
+                                <div className="col-span-2 p-10 text-center bg-white rounded-2xl border border-dashed border-gray-300">
+                                    <p className="text-gray-500">אין פרויקטים פעילים בתור שלך כרגע.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {completedProjects.length > 0 && (
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 mb-4">היסטוריית פרויקטים</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                <table className="w-full text-right text-sm text-gray-600">
+                                    <thead className="bg-gray-50 text-gray-500">
+                                        <tr>
+                                            <th className="px-6 py-4">לקוח</th>
+                                            <th className="px-6 py-4">זמן עבודה</th>
+                                            <th className="px-6 py-4">סטטוס</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {completedProjects.map(p => (
+                                            <tr key={p.id}>
+                                                <td className="px-6 py-4 font-bold">{p.customerName}</td>
+                                                <td className="px-6 py-4 font-mono">{formatDuration(p.timeSpent)}</td>
+                                                <td className="px-6 py-4">
+                                                    <Badge color={p.status === 'completed' ? 'green' : 'yellow'}>
+                                                        {p.status === 'completed' ? 'אושר' : 'בבדיקת QA'}
+                                                    </Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ClientPortal = () => {
+            const { currentUser, projects, updateProject } = useContext(AppContext);
+            const project = projects.find(p => p.id === currentUser.projectId);
+
+            if (!project) return <div>מחפש נתוני פרויקט...</div>;
+
+            const briefSubmitted = project.status !== 'paid_waiting_for_brief';
+
+            const handleSubmitBrief = (e) => {
+                e.preventDefault();
+                updateProject(project.id, { status: 'brief_submitted' });
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto space-y-8">
+                    <Card className="text-center py-10 bg-gradient-to-b from-white to-gray-50">
+                        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">ברוכים הבאים, {currentUser.name}</h2>
+                        <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">המסע לאתר החדש שלכם מתחיל כאן.</p>
+                        
+                        <div className="flex justify-center items-center space-x-4 space-x-reverse">
+                            <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md">✓</div>
+                                <span className="text-sm font-semibold mt-3 text-gray-800">אושר</span>
+                            </div>
+                            <div className="w-20 h-1 bg-emerald-500 mb-6"></div>
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-md transition-colors ${briefSubmitted ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white ring-4 ring-blue-100'}`}>2</div>
+                                <span className={`text-sm font-semibold mt-3 ${briefSubmitted ? 'text-gray-800' : 'text-blue-600'}`}>אפיון</span>
+                            </div>
+                            <div className={`w-20 h-1 mb-6 transition-colors ${briefSubmitted ? 'bg-emerald-500' : 'bg-gray-200'}`}></div>
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-sm transition-colors ${['in_progress', 'qa_review', 'completed'].includes(project.status) ? 'bg-blue-600 text-white' : 'bg-white border-2 border-gray-200 text-gray-400'}`}>3</div>
+                                <span className={`text-sm font-semibold mt-3 ${['in_progress', 'qa_review', 'completed'].includes(project.status) ? 'text-blue-600' : 'text-gray-400'}`}>בנייה</span>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {!briefSubmitted ? (
+                        <Card className="shadow-lg p-8">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-6">העלאת חומרים לאתר</h3>
+                            <form onSubmit={handleSubmitBrief} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">שם העסק</label>
+                                    <input type="text" className="w-full p-3.5 border border-gray-200 rounded-xl bg-gray-50" required defaultValue="קפה שרה" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">טקסט אודות</label>
+                                    <textarea className="w-full p-3.5 border border-gray-200 rounded-xl bg-gray-50" rows="5" required placeholder="ספרו על העסק..."></textarea>
+                                </div>
+                                <Button type="submit" className="w-full mt-8 py-4 text-lg" variant="success">
+                                    🚀 שליחת חומרים
+                                </Button>
+                            </form>
+                        </Card>
+                    ) : (
+                        <Card className="bg-blue-50/50 border-blue-100 text-center py-12">
+                            <h3 className="text-2xl font-bold text-blue-900 mb-3">החומרים התקבלו!</h3>
+                            <p className="text-blue-700">הצוות שלנו עובד על האתר. נעדכן כשיהיה מוכן.</p>
+                        </Card>
+                    )}
+                </div>
+            );
+        };
+
+        const DashboardLayout = () => {
+            const { currentUser, logout, isLoadingDb } = useContext(AppContext);
+
+            if (isLoadingDb) {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-500 font-medium">מתחבר לענן (Firebase)...</p>
+                    </div>
+                );
+            }
+
+            if (!currentUser) return <LoginScreen />;
+
+            return (
+                <div className="flex min-h-screen bg-gray-50 font-sans" dir="rtl">
+                    <aside className="w-72 bg-gray-900 text-gray-300 flex flex-col hidden md:flex shadow-2xl z-10 relative">
+                        <div className="p-8 border-b border-gray-800">
+                            <h1 className="text-3xl font-black text-white tracking-tight">AGENCY<span className="text-blue-500">OS</span></h1>
+                        </div>
+                        
+                        <div className="p-6 flex-1">
+                            <nav className="space-y-1.5">
+                                <a href="#" className="flex items-center px-4 py-3 bg-blue-600/10 text-blue-400 font-semibold rounded-xl">לוח בקרה</a>
+                            </nav>
+                        </div>
+
+                        <div className="p-6 border-t border-gray-800 bg-gray-900/50">
+                            <div className="flex items-center mb-6">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold ml-3">
+                                    {currentUser.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div className="text-sm text-white font-bold">{currentUser.name}</div>
+                                    <div className="text-xs text-gray-500">{currentUser.role}</div>
+                                </div>
+                            </div>
+                            <Button onClick={logout} variant="secondary" className="w-full bg-gray-800 text-gray-400 hover:text-white hover:bg-red-600">
+                                התנתק
+                            </Button>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
+                        <header className="mb-10">
+                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                                {currentUser.role === 'manager' ? 'ניהול אופרציה ולידים' : 
+                                 currentUser.role === 'freelancer' ? 'עמדת עבודה לצוות ביצוע' : 'פורטל לקוח'}
+                            </h1>
+                        </header>
+
+                        <div className="max-w-7xl mx-auto">
+                            {currentUser.role === 'manager' && <ManagerDashboard />}
+                            {currentUser.role === 'freelancer' && <FreelancerDashboard />}
+                            {currentUser.role === 'client' && <ClientPortal />}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <AppProvider>
+                    <DashboardLayout />
+                </AppProvider>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
