@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +10,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics-compat.js"></script>
@@ -31,6 +33,7 @@
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext, useRef } = React;
 
+        // Your exact Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
             authDomain: "afent-8d50d.firebaseapp.com",
@@ -48,6 +51,7 @@
         const analytics = firebase.analytics();
 
         const Card = ({ children, className = '' }) => <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${className}`}>{children}</div>;
+        
         const Badge = ({ children, color = 'gray' }) => {
             const colors = {
                 gray: 'bg-gray-100 text-gray-700', blue: 'bg-blue-50 text-blue-700 border-blue-200', 
@@ -56,6 +60,7 @@
             };
             return <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colors[color] || colors.gray}`}>{children}</span>;
         };
+
         const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, type = 'button', title }) => {
             const base = "px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
             const variants = {
@@ -161,7 +166,7 @@
         };
 
         const initialSettings = {
-            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ (להלן "החברה") לבין נותן השירותים הנרשם למערכת (להלן "הפרילנסר").\n\n1. מהות ההתקשרות והיעדר יחסי עובד מעביד\nמוסכם במפורש כי הפרילנסר פועל כקבלן עצמאי ומספק שירותים כנגד חשבונית מס/קבלה כדין. לא מתקיימים ולא יתקיימו יחסי עובד ומעביד בין הצדדים.\n\n2. הכשרה, אספקת לקוחות וציוד עבודה\n2.1. החברה תספק לפרילנסר הכשרה מקצועית ואספקת פרויקטים באופן שוטף.\n2.2. הפרילנסר יעבוד עם ציוד אישי (מחשב) על חשבונו הבלעדי. ישנה אפשרות לעבוד ממשרדי החברה ולקבל עמדת עבודה מסודרת בעלות מסובסדת ובתיאום מראש בלבד.\n\n3. תגמול ובונוס הבאת לקוחות\nהתגמול יעמוד על אחוזים מהפרויקט כפי שיוגדרו אישית במערכת (בדר"כ 60%). לקוחות שהפרילנסר מביא בעצמו (בונוס ייזום מחוץ למאגר) יזכו אותו ב-5% עמלה נוספים מאותו לקוח.\n\n4. כלים טכנולוגיים (מנוי AI)\nהפרילנסר מתחייב להחזיק ולתחזק על חשבונו הבלעדי מנוי פעיל בתשלום במערכת בינה מלאכותית (כגון ChatGPT Plus או דומה) כתנאי יסוד והכרחי לעבודה שוטפת מול החברה.\n\n5. סודיות, אי-תחרות ואי-הכפשה\nהפרילנסר מתחייב לשמור בסודיות מוחלטת כל מידע. חל איסור מוחלט על פנייה, שידול או עבודה ישירה מול לקוחות החברה למשך 24 חודשים מסיום ההתקשרות. כמו כן הפרילנסר מתחייב לא להכפיש את שמה של החברה.\n\n6. בעלות על לקוחות ואפיליאציה\nכל הלקוחות (כולל אלו שהביא בעצמו) וכל פרילנסרים אחרים שגייס תחתיו ברשת החברה (אפיליאטורים) - שייכים לחברה בלבד. בעת עזיבה מכל סיבה, רשת הסוכנים נשארת בבעלות מלאה של החברה.\n\n7. קנס מוסכם\nהפרה יסודית של סעיפי הסודיות או התחרות תזכה את החברה בפיצוי מוסכם מראש וללא צורך בהוכחת נזק בסך 50,000 ש"ח.`,
+            freelancerAgreementText: `הסכם התקשרות לאספקת שירותי פרילנס\n\nשנערך ונחתם בין אוריזיס טכנולוגיות בע"מ (להלן "החברה") לבין נותן השירותים הנרשם למערכת (להלן "הפרילנסר").\n\n1. מהות ההתקשרות והיעדר יחסי עובד מעביד\nמוסכם במפורש כי הפרילנסר פועל כקבלן עצמאי ומספק שירותים כנגד חשבונית מס/קבלה כדין. לא מתקיימים ולא יתקיימו יחסי עובד ומעביד בין הצדדים.\n\n2. הכשרה, אספקת לקוחות וציוד עבודה\n2.1. החברה תספק לפרילנסר הכשרה מקצועית ואספקת פרויקטים באופן שוטף.\n2.2. הפרילנסר מתחייב לעבוד עם ציוד אישי שלו (מחשב נייד/נייח) על חשבונו הבלעדי. עם זאת, ישנה אפשרות לעבוד מתוך משרדי החברה ולקבל עמדת עבודה מסודרת בעלות מסובסדת, וזאת בתיאום מראש בלבד.\n\n3. תגמול ובונוס הבאת לקוחות\n3.1. התגמול עבור פרויקט שיסופק על ידי החברה יעמוד על אחוזים מהפרויקט כפי שיוגדרו אישית במערכת (בדר"כ 60%).\n3.2. לקוחות שהפרילנסר מביא בעצמו אל מחוץ למאגר החברה (בונוס ייזום אישי), יזכו אותו ב-5% עמלה נוספים מעבר לעמלתו הרגילה עבור אותו לקוח.\n\n4. כלים טכנולוגיים (מנוי AI)\nהפרילנסר מתחייב להחזיק ולתחזק על חשבונו הבלעדי מנוי פעיל בתשלום למערכת בינה מלאכותית מתקדמת (כגון ChatGPT Plus או כל מערכת אחרת שתוגדר ע"י החברה), כתנאי יסוד והכרחי לביצוע עבודה שוטפת מול החברה.\n\n5. סודיות, אי-תחרות ואי-הכפשה\nהפרילנסר מתחייב לשמור בסודיות מוחלטת כל מידע. חל איסור מוחלט על פנייה, שידול או עבודה ישירה מול לקוחות החברה למשך 24 חודשים מסיום ההתקשרות. כמו כן מתחייב הפרילנסר שלא להכפיש את שמה של החברה.\n\n6. בעלות על לקוחות, קוד מקור ורשת שותפים (אפיליאציה)\nכל הלקוחות (לרבות לקוחות שהפרילנסר הביא בעצמו), קוד המקור, והתוצרים - שייכים לחברה בלבד. כמו כן, כל הפרילנסרים וסוכני-המשנה שגייס תחתיו ברשת החברה, שייכים לחברה. בעת עזיבה מכל סיבה שהיא, רשת הסוכנים נשארת בבעלות מלאה של החברה והפרילנסר מוותר על כל טענה בעניין זה.\n\n7. קנס מוסכם\nהפרה יסודית של סעיפי הסודיות או התחרות תזכה את החברה בפיצוי מוסכם מראש וללא צורך בהוכחת נזק בסך 50,000 ש"ח.`,
             clientAgreementText: `הסכם פיתוח, הקמה ושירותי אינטרנט\n\nהסכם זה מהווה חוזה התקשרות מחייב בין אוריזיס טכנולוגיות בע"מ לבין הלקוח המזמין.\nחתימה דיגיטלית בטופס (לרבות ציור חתימה וסימון התיבה) כמוה כהסכם מחייב לכל דבר ועניין.\n\n1. החברה תספק שירותי פיתוח ועיצוב בהתאם לאפיון שיוזן. כל דרישה החורגת מהאפיון המקורי תתומחר בנפרד.\n2. הלקוח מתחייב להעביר את כל החומרים (לוגו, טקסטים, תמונות) בזמן וכתנאי לתחילת העבודה.\n3. זכויות קניין רוחני (קוד מקור ועיצוב) עוברות ללקוח רק לאחר פירעון מלוא התשלום עבור הפרויקט.\n4. החברה מספקת 30 ימי אחריות על העבודה לאחר מסירתה הסופית. אחסון ותחזוקה שוטפת אינם כלולים וידרשו ריטיינר חודשי.\n5. ביטול עסקה: כיוון שמדובר בטובין המיוצרים במיוחד עבור צרכן (פיתוח מותאם אישית), ביטול העסקה יגרור חיוב יחסי בגין העבודה שבוצעה עד רגע הביטול כקבוע בחוק.`,
             announcements: []
         };
@@ -182,18 +187,25 @@
 
             useEffect(() => {
                 const unsubUsers = db.collection('users').onSnapshot(snap => {
-                    if (snap.empty) {
-                        const admin = { uid: 'admin_1', role: 'manager', name: 'מנהל מערכת', email: 'admin@orizis.com', password: '123' };
-                        db.collection('users').doc('admin_1').set(admin);
-                    } else {
-                        const users = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-                        setUsersList(users);
-                        if (currentUser) {
-                            const updatedMe = users.find(u => u.uid === currentUser.uid);
-                            if (updatedMe) {
-                                setCurrentUser(updatedMe);
-                                localStorage.setItem('orizis_user', JSON.stringify(updatedMe));
-                            }
+                    const users = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+                    setUsersList(users);
+                    
+                    // CRITICAL: Ensure your specific admin user always exists in Firestore
+                    if (!users.find(u => u.email === 'aaci.yoni@gmail.com')) {
+                        db.collection('users').doc('admin_yoni').set({ 
+                            uid: 'admin_yoni', 
+                            role: 'manager', 
+                            name: 'יוני (מנהל)', 
+                            email: 'aaci.yoni@gmail.com', 
+                            password: '123' 
+                        });
+                    }
+
+                    if (currentUser) {
+                        const updatedMe = users.find(u => u.uid === currentUser.uid);
+                        if (updatedMe) {
+                            setCurrentUser(updatedMe);
+                            localStorage.setItem('orizis_user', JSON.stringify(updatedMe));
                         }
                     }
                 });
@@ -213,12 +225,12 @@
             }, []);
 
             const login = (email, password) => {
-                const user = usersList.find(u => u.email === email && String(u.password) === String(password));
+                const user = usersList.find(u => String(u.email).toLowerCase() === String(email).toLowerCase() && String(u.password) === String(password));
                 if (user) { 
                     setCurrentUser(user); 
                     localStorage.setItem('orizis_user', JSON.stringify(user)); 
                 }
-                else showAlert('שם משתמש או סיסמה שגויים');
+                else showAlert('שם משתמש או סיסמה שגויים. בדוק את האותיות והמספרים.');
             };
             const logout = () => { 
                 setCurrentUser(null); 
@@ -243,7 +255,7 @@
                 db.collection('system').doc('settings').set(newSettings, { merge: true });
             };
 
-            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white font-bold">מתחבר למסד הנתונים בענן...</div>;
+            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white font-bold">מתחבר למסד הנתונים בענן (Firebase)...</div>;
 
             return (
                 <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, addProject, usersList, updateUser, addUser, systemSettings, setSystemSettings: saveSystemSettings, showAlert }}>
@@ -278,8 +290,8 @@
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); login(email, password); }} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">אימייל</label>
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="הזן אימייל" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">אימייל במערכת</label>
+                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">סיסמה</label>
@@ -300,14 +312,16 @@
             const [showArchive, setShowArchive] = useState(false);
             const [pendingFreelancerId, setPendingFreelancerId] = useState({}); 
             
+            // Signature Viewing States
             const [viewingSignature, setViewingSignature] = useState(null); 
             const [viewingClientSignature, setViewingClientSignature] = useState(null); 
 
+            // Project Creation
             const [showAddProjectModal, setShowAddProjectModal] = useState(false);
             const [newProjectData, setNewProjectData] = useState({ customerName: '', customerEmail: '', paymentAmount: '' });
 
+            // Financial calcs
             const revenue = projects.reduce((sum, p) => sum + p.paymentAmount + (p.addons || []).reduce((a,b)=>a+(b.price||0),0), 0);
-            
             let freelancerCosts = 0;
             projects.forEach(p => {
                 if(p.freelancerId) {
@@ -317,7 +331,7 @@
                         const baseCost = p.paymentAmount * (((fl.basePercentage || 60) + bonusPct) / 100);
                         const upsellCost = (p.addons || []).reduce((a,b)=>a+(b.price||0),0) * ((fl.upsellPercentage || 0) / 100);
                         freelancerCosts += (baseCost + upsellCost);
-                        if(fl.teamLeaderId) freelancerCosts += 150; // עמלת ראש צוות
+                        if(fl.teamLeaderId) freelancerCosts += 150; // עמלת ראש צוות אפיליאציה
                     }
                 }
             });
@@ -442,6 +456,7 @@
                                                             }} variant="success" className="text-xs py-1">אשר שיוך ללקוח</Button>
                                                         )}
 
+                                                        {/* Bonus Checkbox */}
                                                         {p.freelancerId && (
                                                             <label className="flex items-center gap-1 text-xs text-gray-600 mt-1 cursor-pointer hover:text-brand-600 transition-colors">
                                                                 <input type="checkbox" checked={p.isSelfSourced || false} onChange={(e) => updateProject(p.id, { isSelfSourced: e.target.checked })} className="rounded text-brand-600" />
@@ -533,7 +548,7 @@
                             </Card>
                             
                             <Card className="lg:col-span-2 overflow-hidden">
-                                <h3 className="font-bold text-gray-800 p-4 bg-gray-50 border-b">משתמשים קיימים</h3>
+                                <h3 className="font-bold text-gray-800 p-4 bg-gray-50 border-b">משתמשים קיימים במסד הנתונים (Firestore)</h3>
                                 <div className="p-4">
                                     <table className="w-full text-right text-sm">
                                         <thead className="text-gray-500 font-medium border-b"><tr><th className="pb-2">שם משתמש ומייל</th><th className="pb-2">הרשאה</th><th className="pb-2">תגמול (לפרילנסר)</th><th className="pb-2">פעולות ואבטחה</th></tr></thead>
@@ -815,7 +830,6 @@
                         </div>
                     )}
 
-                    {}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         {myProjects.map(project => {
                             let currentSpent = project.timeSpent || 0;
