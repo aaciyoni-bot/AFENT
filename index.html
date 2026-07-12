@@ -68,7 +68,7 @@
                 primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-md shadow-brand-500/30",
                 secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
                 success: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md shadow-emerald-500/30",
-                danger: "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200",
+                danger: "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-rose-700",
                 outline: "bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 shadow-sm"
             };
             return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
@@ -96,8 +96,8 @@
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
                 ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true);
             };
 
@@ -107,8 +107,8 @@
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
                 ctx.lineTo(x, y); ctx.stroke();
             };
 
@@ -182,7 +182,6 @@
                 const inputEmail = String(email).toLowerCase().trim();
                 const inputPassword = String(password).trim();
                 
-                // Master Key
                 if (inputEmail === 'aaci.yoni@gmail.com' && inputPassword === '123') {
                     const masterAdmin = { uid: 'admin_master', role: 'manager', name: 'יוני (מנהל ראשי)', email: 'aaci.yoni@gmail.com' };
                     setCurrentUser(masterAdmin); localStorage.setItem('orizis_user', JSON.stringify(masterAdmin)); return; 
@@ -190,25 +189,28 @@
 
                 const user = usersList.find(u => String(u.email).toLowerCase().trim() === inputEmail && String(u.password).trim() === inputPassword);
                 if (user) { setCurrentUser(user); localStorage.setItem('orizis_user', JSON.stringify(user)); } 
-                else { showAlert('שם משתמש או סיסמה שגויים.'); }
+                else { showAlert('שם משתמש או סיסמה שגויים. (ודא שהמשתמש הוקם בלשונית "צוות ולקוחות" במערכת)'); }
             };
 
             const logout = () => { setCurrentUser(null); localStorage.removeItem('orizis_user'); };
             const updateProject = (id, updates) => db.collection('projects').doc(id).update(updates);
             const updateUser = (uid, updates) => db.collection('users').doc(uid).update(updates);
+            
             const addProject = (project) => {
                 const id = `P-${Date.now().toString().slice(-4)}`;
                 db.collection('projects').doc(id).set({ id, status: 'paid_waiting_for_brief', isSelfSourced: false, ...project });
                 return id;
             };
+            
             const addUser = (user) => {
                 const uid = `user_${Date.now()}`;
                 db.collection('users').doc(uid).set({ uid, ...user });
             };
-            const deleteProject = (id) => { db.collection('projects').doc(id).delete(); showAlert("הפרויקט נמחק לצמיתות."); };
-            const deleteUser = (uid) => { db.collection('users').doc(uid).delete(); showAlert("המשתמש נמחק לצמיתות."); };
+            
+            const deleteProject = (id) => { db.collection('projects').doc(id).delete(); };
+            const deleteUser = (uid) => { db.collection('users').doc(uid).delete(); };
 
-            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">מתחבר למערכת...</div>;
+            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">מתחבר לענן...</div>;
 
             return (
                 <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, addProject, deleteProject, usersList, updateUser, addUser, deleteUser, systemSettings, showAlert }}>
@@ -238,11 +240,11 @@
                         <form onSubmit={(e) => { e.preventDefault(); login(email, password); }} className="space-y-6">
                             <div>
                                 <label className="block text-sm font-black text-slate-700 mb-2">אימייל</label>
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required />
+                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required dir="ltr" />
                             </div>
                             <div>
                                 <label className="block text-sm font-black text-slate-700 mb-2">סיסמה</label>
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required />
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required dir="ltr" />
                             </div>
                             <Button type="submit" className="w-full py-4 text-lg mt-4 shadow-xl font-black tracking-wide">התחבר למערכת</Button>
                         </form>
@@ -254,7 +256,7 @@
         const AdminDashboard = () => {
             const { projects, usersList, updateProject, deleteProject, addUser, updateUser, deleteUser, showAlert, addProject } = useContext(AppContext);
             const [activeTab, setActiveTab] = useState('projects');
-            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 10, teamLeaderId: '' });
+            const [newUser, setNewUser] = useState({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60 });
             const [pendingFreelancerId, setPendingFreelancerId] = useState({}); 
             const [showAddProjectModal, setShowAddProjectModal] = useState(false);
             const [newProjectData, setNewProjectData] = useState({ customerName: '', customerEmail: '', paymentAmount: '' });
@@ -265,8 +267,8 @@
             const handleAddUser = (e) => {
                 e.preventDefault();
                 addUser({ ...newUser, basePercentage: newUser.role === 'freelancer' ? Number(newUser.basePercentage || 60) : 0 });
-                setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60, upsellPercentage: 10, teamLeaderId: '' });
-                showAlert("משתמש נוצר בהצלחה ב-Firebase!");
+                setNewUser({ name: '', email: '', role: 'freelancer', password: '', basePercentage: 60 });
+                showAlert("המשתמש נוצר בהצלחה ונשמר בענן!");
             };
 
             const handleAddProject = (e) => {
@@ -274,7 +276,7 @@
                 const newProjectId = addProject({ customerName: newProjectData.customerName, customerEmail: newProjectData.customerEmail, paymentAmount: Number(newProjectData.paymentAmount), freelancerId: null, createdAt: Date.now(), addons: [], hasSignedAgreement: false });
                 addUser({ name: newProjectData.customerName, email: newProjectData.customerEmail, password: '123', role: 'client', projectId: newProjectId });
                 setShowAddProjectModal(false); setNewProjectData({ customerName: '', customerEmail: '', paymentAmount: '' });
-                showAlert("לקוח ופרויקט נוצרו! פרטי התחברות נשלחו (פיקטיבית).");
+                showAlert("לקוח ופרויקט נוצרו! פרטי התחברות ללקוח: אימייל שלו וסיסמה 123");
             };
 
             return (
@@ -289,7 +291,7 @@
                             <div className="text-3xl font-black text-slate-900">{activeProjects.length}</div>
                         </Card>
                         <Card className="p-6">
-                            <div className="text-slate-500 font-medium mb-1.5 text-sm">סוכנים ופרילנסרים</div>
+                            <div className="text-slate-500 font-medium mb-1.5 text-sm">סוכנים ופרילנסרים מחוברים</div>
                             <div className="text-3xl font-black text-brand-600">{usersList.filter(u=>u.role==='freelancer').length}</div>
                         </Card>
                     </div>
@@ -304,9 +306,9 @@
 
                     {activeTab === 'projects' && (
                         <Card className="overflow-hidden shadow-sm">
-                            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                <h3 className="font-black text-slate-800 text-xl">סטטוס פרויקטים</h3>
-                                <Button onClick={()=>setShowAddProjectModal(true)}>➕ הוסף פרויקט חדש</Button>
+                            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center flex-wrap gap-4">
+                                <h3 className="font-black text-slate-800 text-xl">ניהול פרויקטים ומשימות</h3>
+                                <Button onClick={()=>setShowAddProjectModal(!showAddProjectModal)}>{showAddProjectModal ? 'סגור טופס' : '➕ הוסף פרויקט חדש'}</Button>
                             </div>
                             
                             {showAddProjectModal && (
@@ -315,19 +317,19 @@
                                         <div><label className="block text-xs font-bold mb-1">שם לקוח / פרויקט</label><input type="text" required className="w-full p-2 border rounded-lg" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
                                         <div><label className="block text-xs font-bold mb-1">אימייל לקוח</label><input type="email" required className="w-full p-2 border rounded-lg" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
                                         <div><label className="block text-xs font-bold mb-1">סכום ששולם (₪)</label><input type="number" required className="w-full p-2 border rounded-lg" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
-                                        <div className="flex gap-2"><Button type="submit" className="flex-1">שמור</Button><Button variant="secondary" onClick={()=>setShowAddProjectModal(false)}>בטל</Button></div>
+                                        <div className="flex gap-2"><Button type="submit" className="flex-1">שמור ופתח פרויקט</Button></div>
                                     </form>
                                 </div>
                             )}
 
-                            <div className="w-full overflow-x-auto p-2 custom-scrollbar">
+                            <div className="w-full overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-right text-sm min-w-[1000px]">
                                     <thead className="bg-slate-50 text-slate-600 font-black border-b border-slate-200">
                                         <tr>
                                             <th className="p-4">לקוח</th>
                                             <th className="p-4">סטטוס</th>
                                             <th className="p-4">שווי</th>
-                                            <th className="p-4 w-[35%]">שיוך סוכן ובונוס</th>
+                                            <th className="p-4 w-[35%] bg-brand-50/50">שיוך פרילנסר למשימה (פתוח תמיד)</th>
                                             <th className="p-4 text-center">פעולות</th>
                                         </tr>
                                     </thead>
@@ -337,45 +339,43 @@
                                                 <td className="p-4 font-black text-slate-900">{p.customerName}<div className="text-xs text-slate-500 font-normal">{p.customerEmail}</div></td>
                                                 <td className="p-4">
                                                     {p.status === 'completed' ? <Badge color="green">הושלם ונמסר</Badge> :
-                                                     p.status === 'in_progress' ? <Badge color="purple">בעבודה</Badge> :
+                                                     p.status === 'in_progress' ? <Badge color="purple">בעבודה ע"י סוכן</Badge> :
                                                      p.status === 'qa_review' ? <Badge color="blue">ממתין לבדיקת מנהל (QA)</Badge> :
-                                                     p.status === 'brief_submitted' ? <Badge color="blue">מוכן לפיתוח</Badge> :
-                                                     p.status === 'paid_waiting_for_brief' ? <Badge color="yellow">לקוח חדש (טרם אופיין)</Badge> :
-                                                     <Badge color="gray">לא מוגדר</Badge>}
+                                                     p.status === 'brief_submitted' ? <Badge color="blue">אופיין ומוכן לפיתוח</Badge> :
+                                                     <Badge color="gray">לקוח חדש (טרם אופיין)</Badge>}
                                                 </td>
                                                 <td className="p-4 font-black text-slate-800">₪{p.paymentAmount || 0}</td>
-                                                <td className="p-4">
-                                                    <div className="bg-brand-50 p-3 rounded-xl border border-brand-100 flex flex-col gap-2 shadow-inner">
+                                                <td className="p-4 bg-brand-50/30">
+                                                    <div className="flex flex-col gap-2">
                                                         <select 
                                                             className="w-full p-2 text-sm border border-brand-200 rounded-lg outline-none font-bold cursor-pointer bg-white"
                                                             value={pendingFreelancerId[p.id] !== undefined ? pendingFreelancerId[p.id] : (p.freelancerId || '')}
                                                             onChange={(e) => setPendingFreelancerId({...pendingFreelancerId, [p.id]: e.target.value})}
                                                         >
-                                                            <option value="">-- בחר סוכן --</option>
-                                                            <option value="none">-- הסר שיוך --</option>
+                                                            <option value="">-- ללא שיוך --</option>
                                                             {usersList.filter(u => u.role === 'freelancer').map(u => <option key={u.uid} value={u.uid}>{u.name}</option>)}
                                                         </select>
                                                         {pendingFreelancerId[p.id] !== undefined && pendingFreelancerId[p.id] !== (p.freelancerId || '') && (
                                                             <Button onClick={() => {
-                                                                updateProject(p.id, { freelancerId: pendingFreelancerId[p.id] === 'none' ? null : pendingFreelancerId[p.id] });
+                                                                updateProject(p.id, { freelancerId: pendingFreelancerId[p.id] || null });
                                                                 const newPending = {...pendingFreelancerId}; delete newPending[p.id]; setPendingFreelancerId(newPending);
                                                                 showAlert("שיוך הסוכן עודכן בהצלחה.");
-                                                            }} variant="success" className="text-xs py-1.5 shadow-sm">שמור שיוך</Button>
+                                                            }} variant="success" className="text-xs py-1.5 shadow-sm">שמור שיוך חדש</Button>
                                                         )}
                                                         {p.freelancerId && (
                                                             <label className="flex items-center gap-2 text-xs font-bold text-emerald-700 mt-1 cursor-pointer">
                                                                 <input type="checkbox" checked={p.isSelfSourced || false} onChange={(e) => updateProject(p.id, { isSelfSourced: e.target.checked })} />
-                                                                הסוכן הביא את הלקוח (+5% בונוס)
+                                                                בונוס 5% (הלקוח הובא ע"י הסוכן)
                                                             </label>
                                                         )}
                                                     </div>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <Button onClick={() => { if(window.confirm('למחוק פרויקט זה לחלוטין ממסד הנתונים?')) deleteProject(p.id); }} variant="outline" className="text-xs px-3 py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 mx-auto">🗑️ מחק</Button>
+                                                    <Button onClick={() => { if(window.confirm('למחוק פרויקט זה לחלוטין מהענן?')) deleteProject(p.id); }} variant="outline" className="text-xs px-3 py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 mx-auto">🗑️ מחק</Button>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {projects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-500">אין פרויקטים להצגה</td></tr>}
+                                        {projects.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-500 font-medium">אין פרויקטים להצגה</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
@@ -384,35 +384,36 @@
 
                     {activeTab === 'users' && (
                         <div className="space-y-8">
-                            <Card className="p-8 shadow-sm border-t-4 border-brand-500">
-                                <h3 className="font-black text-slate-900 text-xl mb-6">יצירת משתמש / סוכן חדש</h3>
-                                <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">שם</label><input type="text" required className="w-full p-2.5 border rounded-lg" value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} /></div>
-                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">אימייל</label><input type="email" required className="w-full p-2.5 border rounded-lg" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} /></div>
-                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">סיסמה</label><input type="text" required className="w-full p-2.5 border rounded-lg" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} /></div>
-                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">הרשאה</label><select className="w-full p-2.5 border rounded-lg font-bold" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}><option value="freelancer">סוכן (פרילנסר)</option><option value="client">לקוח</option></select></div>
-                                    <div className="md:col-span-1"><Button type="submit" className="w-full py-2.5">צור משתמש</Button></div>
+                            <Card className="p-8 shadow-sm border-t-4 border-brand-500 bg-white">
+                                <h3 className="font-black text-slate-900 text-xl mb-6 text-center">הקמת סוכן / לקוח חדש במערכת</h3>
+                                <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end max-w-5xl mx-auto">
+                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">שם מלא</label><input type="text" required className="w-full p-2.5 border rounded-lg bg-slate-50" value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} /></div>
+                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">אימייל התחברות</label><input type="email" required className="w-full p-2.5 border rounded-lg bg-slate-50" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} dir="ltr" /></div>
+                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">סיסמה</label><input type="text" required className="w-full p-2.5 border rounded-lg bg-slate-50" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} dir="ltr" /></div>
+                                    <div className="md:col-span-1"><label className="block text-xs font-bold mb-1">תפקיד / הרשאה</label><select className="w-full p-2.5 border rounded-lg font-bold bg-slate-50" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}><option value="freelancer">סוכן (פרילנסר)</option><option value="client">לקוח</option></select></div>
+                                    <div className="md:col-span-1"><Button type="submit" className="w-full py-2.5">שמור משתמש לענן</Button></div>
                                 </form>
                             </Card>
                             
                             <Card className="overflow-hidden shadow-sm">
-                                <div className="p-6 bg-slate-50 border-b border-slate-100"><h3 className="font-black text-slate-800 text-xl">צוות ולקוחות קיימים</h3></div>
-                                <div className="w-full overflow-x-auto p-2 custom-scrollbar">
+                                <div className="p-6 bg-slate-50 border-b border-slate-100"><h3 className="font-black text-slate-800 text-xl">משתמשים קיימים במסד הנתונים</h3></div>
+                                <div className="w-full overflow-x-auto custom-scrollbar">
                                     <table className="w-full text-right text-sm min-w-[800px]">
-                                        <thead className="bg-slate-50 font-black border-b"><tr><th className="p-4">שם ומייל</th><th className="p-4">הרשאה</th><th className="p-4">עמלה אישית (%)</th><th className="p-4 text-center">פעולות</th></tr></thead>
-                                        <tbody className="divide-y">
+                                        <thead className="bg-slate-50 font-black border-b text-slate-600"><tr><th className="p-4">שם ומייל</th><th className="p-4">הרשאה</th><th className="p-4">עמלת סוכן (%)</th><th className="p-4 text-center">פעולות</th></tr></thead>
+                                        <tbody className="divide-y divide-slate-100">
                                             {usersList.map(u => (
                                                 <tr key={u.uid} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="p-4 font-black">{u.name}<div className="text-xs font-normal text-slate-500">{u.email}</div></td>
+                                                    <td className="p-4 font-black">{u.name}<div className="text-xs font-normal text-slate-500 mt-1">{u.email}</div></td>
                                                     <td className="p-4"><Badge color={u.role==='freelancer'?'blue': u.role==='client'?'yellow':'purple'}>{u.role}</Badge></td>
                                                     <td className="p-4">
-                                                        {u.role === 'freelancer' ? <input type="number" className="border border-slate-300 w-16 p-1.5 text-center rounded-lg font-bold" value={u.basePercentage||60} onChange={e=>updateUser(u.uid, {basePercentage: Number(e.target.value)})} /> : '-'}
+                                                        {u.role === 'freelancer' ? <div className="flex items-center gap-2"><input type="number" className="border border-slate-300 w-16 p-1.5 text-center rounded-lg font-bold bg-white" value={u.basePercentage||60} onChange={e=>updateUser(u.uid, {basePercentage: Number(e.target.value)})} /><span className="text-xs text-slate-500">%</span></div> : <span className="text-slate-400">-</span>}
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        {u.uid !== 'admin_master' && <Button onClick={() => { if(window.confirm('למחוק משתמש? פעולה זו אינה ניתנת לביטול.')) deleteUser(u.uid); }} variant="outline" className="text-xs px-3 py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 mx-auto">🗑️ מחק</Button>}
+                                                        {u.uid !== 'admin_master' && <Button onClick={() => { if(window.confirm('למחוק משתמש זה לחלוטין? הגישה שלו למערכת תיחסם.')) deleteUser(u.uid); }} variant="outline" className="text-xs px-3 py-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 mx-auto">🗑️ מחק</Button>}
                                                     </td>
                                                 </tr>
                                             ))}
+                                            {usersList.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-slate-500 font-medium">אין משתמשים במערכת</td></tr>}
                                         </tbody>
                                     </table>
                                 </div>
@@ -427,18 +428,17 @@
             const { currentUser, projects, updateProject, updateUser, systemSettings, showAlert } = useContext(AppContext);
             const myProjects = projects.filter(p => p.freelancerId === currentUser.uid);
             
-            // Onboarding Check
             if (!currentUser.hasSignedAgreement) {
                 return (
                     <div className="max-w-2xl mx-auto space-y-6 fade-in pb-10">
                         <Card className="p-8">
-                            <h2 className="text-2xl font-black mb-4">ברוך הבא לאוריזיס! 🚀</h2>
-                            <p className="text-slate-600 mb-6">לפני שמתחילים לעבוד ולקבל לקוחות, עליך לקרוא ולאשר את הסכם ההתקשרות.</p>
-                            <div className="bg-slate-50 p-4 rounded-xl text-sm whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-64 overflow-y-auto custom-scrollbar">
+                            <h2 className="text-2xl font-black mb-4 text-brand-900">ברוך הבא לצוות! 🚀</h2>
+                            <p className="text-slate-600 mb-6 font-medium">לפני שמתחילים לקבל משימות, עליך לקרוא ולאשר את הסכם ההתקשרות של הסוכנות.</p>
+                            <div className="bg-slate-50 p-5 rounded-xl text-sm whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-64 overflow-y-auto custom-scrollbar leading-relaxed">
                                 {systemSettings.freelancerAgreementText}
                             </div>
                             <div className="mb-6">
-                                <label className="block text-sm font-bold mb-2">אנא חתום כאן (באמצעות העכבר או האצבע):</label>
+                                <label className="block text-sm font-bold mb-3 text-slate-800">חתימה דיגיטלית (באמצעות העכבר או מגע):</label>
                                 <SignaturePad onSave={(sig) => {
                                     updateUser(currentUser.uid, { hasSignedAgreement: true, signature: sig, signedAt: Date.now() });
                                     showAlert("החוזה נחתם בהצלחה! סביבת העבודה שלך פתוחה.");
@@ -453,53 +453,67 @@
                 return myProjects.reduce((sum, p) => {
                     if (p.status !== 'completed') return sum;
                     let percentage = (currentUser.basePercentage || 60) / 100;
-                    if (p.isSelfSourced) percentage += 0.05; // 5% bonus
-                    return sum + (p.paymentAmount * percentage);
+                    if (p.isSelfSourced) percentage += 0.05; 
+                    return sum + ((Number(p.paymentAmount) || 0) * percentage);
                 }, 0);
             };
 
             return (
                 <div className="space-y-6 fade-in max-w-7xl mx-auto w-full pb-20">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card className="p-5 bg-brand-50 border-brand-100"><div className="text-sm font-bold text-brand-800">הכנסות אישיות (ברוטו)</div><div className="text-2xl font-black mt-1">₪{calcEarnings().toLocaleString()}</div></Card>
-                        <Card className="p-5 bg-indigo-50 border-indigo-100"><div className="text-sm font-bold text-indigo-800">הכנסות מראשות צוות (MLM)</div><div className="text-2xl font-black mt-1">₪0</div><div className="text-xs text-indigo-500 mt-1">יעודכן בסיום פרויקט של הסוכנים שלך</div></Card>
-                        <Card className="p-5"><div className="text-sm font-bold text-slate-500">פרויקטים בעבודה</div><div className="text-2xl font-black mt-1">{myProjects.filter(p=>p.status==='in_progress').length}</div></Card>
-                        <Card className="p-5"><div className="text-sm font-bold text-slate-500">פרויקטים שהושלמו</div><div className="text-2xl font-black mt-1 text-emerald-600">{myProjects.filter(p=>p.status==='completed').length}</div></Card>
+                        <Card className="p-5 bg-brand-50 border-brand-100"><div className="text-sm font-bold text-brand-800">הכנסות אישיות מאישור (ברוטו)</div><div className="text-2xl font-black mt-1">₪{calcEarnings().toLocaleString()}</div></Card>
+                        <Card className="p-5 bg-indigo-50 border-indigo-100"><div className="text-sm font-bold text-indigo-800">הכנסות ראש צוות (MLM)</div><div className="text-2xl font-black mt-1">₪0</div><div className="text-[10px] text-indigo-500 mt-1 font-bold">פעיל בהשלמת פרויקט סוכן-משנה</div></Card>
+                        <Card className="p-5"><div className="text-sm font-bold text-slate-500">משימות בעבודה כעת</div><div className="text-2xl font-black mt-1 text-slate-900">{myProjects.filter(p=>p.status==='in_progress').length}</div></Card>
+                        <Card className="p-5"><div className="text-sm font-bold text-slate-500">אתרים שהושלמו ואושרו</div><div className="text-2xl font-black mt-1 text-emerald-600">{myProjects.filter(p=>p.status==='completed').length}</div></Card>
                     </div>
 
-                    <h3 className="font-black text-xl mt-8 mb-4">השולחן שלך 💻</h3>
+                    <div className="flex justify-between items-center mt-8 mb-4">
+                        <h3 className="font-black text-xl text-slate-900">השולחן שלך 💻</h3>
+                        <div className="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-black tracking-widest font-mono shadow-inner flex items-center gap-2">
+                            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> 00:00:00
+                        </div>
+                    </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {myProjects.map(project => (
-                            <Card key={project.id} className="p-6 relative overflow-hidden">
-                                {project.isSelfSourced && <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">⭐ בונוס +5%</div>}
+                            <Card key={project.id} className="p-6 relative overflow-hidden border-t-4 border-t-brand-500">
+                                {project.isSelfSourced && <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm">⭐ בונוס +5%</div>}
                                 <div className="flex justify-between items-start mb-4 mt-2">
-                                    <div><h4 className="font-black text-lg">{project.customerName}</h4><span className="text-xs text-slate-400">ID: {project.id}</span></div>
+                                    <div><h4 className="font-black text-lg text-slate-900">{project.customerName}</h4><span className="text-xs text-slate-400 font-medium">ID: {project.id}</span></div>
                                     <Badge color={project.status==='in_progress'?'purple':project.status==='qa_review'?'blue':project.status==='completed'?'green':'yellow'}>{project.status}</Badge>
                                 </div>
                                 
                                 {project.status === 'in_progress' && (
                                     <div className="space-y-4">
                                         <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                            <h5 className="font-bold text-sm mb-2">אפיון הלקוח:</h5>
-                                            <p className="text-sm text-slate-600">{project.brief || 'אין מידע'}</p>
+                                            <h5 className="font-bold text-sm mb-2 text-slate-800">אפיון הלקוח לביצוע:</h5>
+                                            <p className="text-sm text-slate-600 leading-relaxed">{project.brief || 'טרם הוזן אפיון'}</p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" /> עיצוב רספונסיבי למובייל</label>
-                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" /> בדיקת טפסים ושליחת ליד</label>
-                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" /> מהירות טעינה מעל 85</label>
+                                        <div className="bg-white border border-slate-200 rounded-xl p-4">
+                                            <h5 className="font-bold text-xs mb-3 text-slate-500 uppercase tracking-wide">צ'ק ליסט הגשה (חובה)</h5>
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> עיצוב רספונסיבי למובייל נבדק</label>
+                                                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> טפסים ושליחת ליד נבדקו</label>
+                                                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> מהירות טעינה מעל 85 ב-Google</label>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2 pt-2">
-                                            <Button onClick={()=>updateProject(project.id, {status: 'qa_review'})} variant="success" className="flex-1">הגש למנהל (QA)</Button>
-                                            <Button onClick={()=>{if(window.confirm('לדווח על תקיעות/בעיה למנהל?')) showAlert('הודעה נשלחה למנהל.');}} variant="danger">🔴 נתקעתי</Button>
+                                            <Button onClick={()=>updateProject(project.id, {status: 'qa_review'})} variant="success" className="flex-1 text-sm py-3">הגש למנהל (QA)</Button>
+                                            <Button onClick={()=>{if(window.confirm('לדווח על תקיעות/בעיה למנהל?')) showAlert('הודעת חסימה נשלחה למנהל בהצלחה.');}} variant="danger" className="text-sm py-3">🔴 נתקעתי</Button>
                                         </div>
                                     </div>
                                 )}
-                                {project.status === 'brief_submitted' && (
-                                    <Button onClick={()=>updateProject(project.id, {status: 'in_progress'})} className="w-full">התחל לעבוד (הפעל טיימר)</Button>
+                                {(project.status === 'brief_submitted' || project.status === 'paid_waiting_for_brief') && (
+                                    <Button onClick={()=>updateProject(project.id, {status: 'in_progress'})} className="w-full py-3" disabled={project.status === 'paid_waiting_for_brief'}>
+                                        {project.status === 'paid_waiting_for_brief' ? 'ממתין לאפיון לקוח...' : 'התחל לעבוד (הפעל טיימר)'}
+                                    </Button>
+                                )}
+                                {project.status === 'qa_review' && (
+                                    <div className="bg-blue-50 text-blue-700 p-4 rounded-xl text-center font-bold text-sm border border-blue-100">ממתין לאישור מנהל ⏳</div>
                                 )}
                             </Card>
                         ))}
-                        {myProjects.length === 0 && <div className="col-span-2 text-center p-10 text-slate-500 font-bold bg-slate-50 rounded-2xl border border-slate-100">אין לך פרויקטים פתוחים כרגע.</div>}
+                        {myProjects.length === 0 && <div className="col-span-2 text-center p-12 text-slate-500 font-bold bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">אין לך פרויקטים פתוחים כרגע.</div>}
                     </div>
                 </div>
             );
@@ -508,25 +522,24 @@
         const ClientPortal = () => {
             const { currentUser, projects, updateProject, updateUser, systemSettings, showAlert } = useContext(AppContext);
             const project = projects.find(p => p.id === currentUser.projectId);
-            const [briefText, setBriefText] = useState('');
+            const [briefText, setBriefText] = useState(project?.brief || '');
 
-            if (!project) return <div className="text-center p-10 font-bold">פרויקט לא נמצא. אנא פנה לתמיכה.</div>;
+            if (!project) return <div className="text-center p-10 font-bold text-slate-600">פרויקט לא נמצא. אנא פנה לתמיכת הסוכנות.</div>;
 
-            // Onboarding Check for Client
             if (!currentUser.hasSignedAgreement) {
                 return (
                     <div className="max-w-2xl mx-auto space-y-6 fade-in pb-10">
                         <Card className="p-8">
-                            <h2 className="text-2xl font-black mb-4">הסכם יציאה לדרך 📝</h2>
-                            <p className="text-slate-600 mb-6">כדי שנוכל להתחיל לעבוד על הפרויקט שלך ({project.customerName}), אנא אשר את תנאי ההתקשרות.</p>
-                            <div className="bg-slate-50 p-4 rounded-xl text-sm whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-48 overflow-y-auto">
+                            <h2 className="text-2xl font-black mb-4 text-brand-900">הסכם יציאה לדרך 📝</h2>
+                            <p className="text-slate-600 mb-6 font-medium">כדי שנוכל להתחיל לעבוד על הפרויקט שלך ({project.customerName}), אנא קרא ואשר את תנאי ההתקשרות.</p>
+                            <div className="bg-slate-50 p-5 rounded-xl text-sm whitespace-pre-wrap font-medium border border-slate-200 mb-6 h-48 overflow-y-auto custom-scrollbar leading-relaxed">
                                 {systemSettings.clientAgreementText}
                             </div>
                             <div className="mb-6">
-                                <label className="block text-sm font-bold mb-2">חתימה דיגיטלית:</label>
+                                <label className="block text-sm font-bold mb-3 text-slate-800">חתימה דיגיטלית קבילה:</label>
                                 <SignaturePad onSave={(sig) => {
                                     updateUser(currentUser.uid, { hasSignedAgreement: true, signature: sig, signedAt: Date.now() });
-                                    showAlert("תודה רבה! ההסכם נחתם ונשמר במערכת.");
+                                    showAlert("תודה רבה! ההסכם נחתם, נשמר במערכת ואנחנו יוצאים לדרך.");
                                 }} />
                             </div>
                         </Card>
@@ -536,46 +549,64 @@
 
             return (
                 <div className="max-w-3xl mx-auto space-y-6 fade-in pb-20">
-                    <Card className="p-8 text-center bg-gradient-to-b from-white to-slate-50">
-                        <h2 className="text-2xl font-black mb-2">שלום {currentUser.name}!</h2>
-                        <div className="flex justify-center items-center space-x-4 space-x-reverse mb-4 mt-6">
-                            <div className="flex flex-col items-center"><div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md">✓</div><span className="text-xs mt-2 font-bold text-slate-700">תשלום</span></div>
-                            <div className="w-12 h-1 bg-emerald-500 rounded-full"></div>
-                            <div className="flex flex-col items-center"><div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md ${project.status !== 'paid_waiting_for_brief' ? 'bg-emerald-500 text-white' : 'bg-brand-600 text-white'}`}>{project.status !== 'paid_waiting_for_brief' ? '✓' : '2'}</div><span className="text-xs mt-2 font-bold text-slate-700">אפיון</span></div>
-                            <div className={`w-12 h-1 rounded-full ${project.status !== 'paid_waiting_for_brief' ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
-                            <div className="flex flex-col items-center"><div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md ${project.status === 'completed' ? 'bg-emerald-500 text-white' : project.status === 'in_progress' || project.status === 'qa_review' ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500'}`}>{project.status === 'completed' ? '✓' : '3'}</div><span className="text-xs mt-2 font-bold text-slate-700">פיתוח</span></div>
+                    <Card className="p-8 text-center bg-gradient-to-b from-white to-slate-50 shadow-sm border-0">
+                        <h2 className="text-3xl font-black mb-2 text-slate-900">שלום {currentUser.name}! 👋</h2>
+                        <p className="text-slate-500 font-medium mb-8">כאן תוכל לעקוב אחר התקדמות הפרויקט שלך.</p>
+                        
+                        <div className="flex justify-center items-center space-x-4 space-x-reverse relative">
+                            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 -translate-y-1/2 rounded-full"></div>
+                            
+                            <div className="flex flex-col items-center bg-transparent relative z-10 px-2">
+                                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow-lg shadow-emerald-500/30 text-xl">✓</div>
+                                <span className="text-xs mt-3 font-black text-slate-700">תשלום</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center bg-transparent relative z-10 px-2">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-lg text-xl transition-colors ${project.status !== 'paid_waiting_for_brief' ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-brand-600 text-white shadow-brand-500/30 ring-4 ring-brand-100'}`}>{project.status !== 'paid_waiting_for_brief' ? '✓' : '2'}</div>
+                                <span className="text-xs mt-3 font-black text-slate-700">אפיון</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center bg-transparent relative z-10 px-2">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-lg text-xl transition-colors ${project.status === 'completed' ? 'bg-emerald-500 text-white shadow-emerald-500/30' : project.status === 'in_progress' || project.status === 'qa_review' ? 'bg-brand-600 text-white shadow-brand-500/30 ring-4 ring-brand-100' : 'bg-slate-200 text-slate-500'}`}>{project.status === 'completed' ? '✓' : '3'}</div>
+                                <span className="text-xs mt-3 font-black text-slate-700">פיתוח</span>
+                            </div>
                         </div>
                     </Card>
 
                     {project.status === 'paid_waiting_for_brief' && (
-                        <Card className="p-8">
-                            <h3 className="font-black text-xl mb-4">שלב 2: שאלון אפיון</h3>
-                            <p className="text-slate-600 mb-6 text-sm">ספר לנו על העסק שלך כדי שהצוות שלנו יוכל להתחיל לאפיין ולעצב.</p>
-                            <textarea className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-4 min-h-[150px] font-medium" placeholder="מי קהל היעד? אילו צבעים אתה אוהב? מי המתחרים?" value={briefText} onChange={e=>setBriefText(e.target.value)}></textarea>
+                        <Card className="p-8 border-t-4 border-brand-500">
+                            <h3 className="font-black text-2xl mb-3 text-slate-900">שלב 2: שאלון אפיון</h3>
+                            <p className="text-slate-600 mb-6 font-medium">ספר לנו על העסק שלך כדי שהצוות שלנו יוכל להתחיל לאפיין ולעצב במדויק.</p>
+                            <textarea className="w-full p-5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none mb-6 min-h-[180px] font-medium leading-relaxed custom-scrollbar" placeholder="מי קהל היעד? אילו צבעים אתה אוהב? מי המתחרים שלך?" value={briefText} onChange={e=>setBriefText(e.target.value)}></textarea>
                             <Button onClick={() => {
-                                if(briefText.trim().length < 10) return showAlert("אנא פרט מעט יותר על העסק.");
+                                if(briefText.trim().length < 10) return showAlert("אנא פרט מעט יותר על העסק בטופס.");
                                 updateProject(project.id, { brief: briefText, status: 'brief_submitted' });
-                                showAlert("האפיון נשלח בהצלחה! הצוות שלנו עובר על החומרים.");
-                            }} className="w-full">שלח אפיון וצא לדרך</Button>
+                                showAlert("האפיון נשלח בהצלחה לצוות הפיתוח!");
+                            }} className="w-full py-4 text-base">שלח אפיון וצא לדרך</Button>
                         </Card>
                     )}
 
                     {(project.status === 'brief_submitted' || project.status === 'in_progress' || project.status === 'qa_review') && (
-                        <Card className="p-10 text-center bg-brand-50 border-brand-100">
-                            <div className="text-6xl mb-4 animate-bounce">🏗️</div>
-                            <h3 className="font-black text-2xl text-brand-900 mb-2">האתר שלך בשלבי בנייה!</h3>
-                            <p className="text-brand-700 font-medium">הצוות שלנו עובד כרגע על האתר. ניצור קשר כשהסקיצה תהיה מוכנה.</p>
+                        <Card className="p-12 text-center bg-brand-50 border-brand-100 shadow-inner">
+                            <div className="text-7xl mb-6 animate-bounce">🏗️</div>
+                            <h3 className="font-black text-3xl text-brand-900 mb-3 tracking-tight">האתר שלך בשלבי בנייה!</h3>
+                            <p className="text-brand-700 font-medium text-lg">הצוות שלנו קיבל את האפיון ועובד כרגע על האתר. ניצור קשר כשהסקיצה תהיה מוכנה להצגה.</p>
                         </Card>
                     )}
 
                     {project.status === 'completed' && (
-                        <Card className="p-8 border-t-4 border-emerald-500">
-                            <h3 className="font-black text-2xl mb-2 text-emerald-800">האתר שלך באוויר! 🎉</h3>
-                            <p className="text-slate-600 mb-8">מזל טוב! הפרויקט הושלם ונמסר.</p>
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center">
-                                <h4 className="font-black text-lg mb-2">שדרוגים ותחזוקה (MRR)</h4>
-                                <p className="text-sm text-slate-500 mb-4">מעוניין באחסון פרימיום ותחזוקה שוטפת ללא דאגות?</p>
-                                <Button variant="primary" className="mx-auto">שדרג לאחסון VIP (150₪ / חודש)</Button>
+                        <Card className="p-10 border-t-4 border-emerald-500 bg-white">
+                            <div className="text-center mb-8">
+                                <div className="text-6xl mb-4">🎉</div>
+                                <h3 className="font-black text-3xl text-emerald-800 mb-2">האתר שלך באוויר!</h3>
+                                <p className="text-slate-500 font-medium text-lg">מזל טוב! הפרויקט הושלם ונמסר בהצלחה.</p>
+                            </div>
+                            
+                            <div className="bg-slate-900 text-white p-8 rounded-3xl text-center shadow-2xl relative overflow-hidden">
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-30"></div>
+                                <h4 className="font-black text-2xl mb-3 relative z-10">תחזוקה ואחסון פרימיום</h4>
+                                <p className="text-slate-300 mb-6 font-medium relative z-10">מעוניין בראש שקט? תן לנו לדאוג לאחסון האתר, עדכוני אבטחה שוטפים, וגיבויים יומיים.</p>
+                                <Button variant="primary" className="mx-auto px-8 py-3.5 text-base relative z-10 bg-brand-500 hover:bg-brand-400">שדרג לאחסון VIP (150₪ / חודש)</Button>
                             </div>
                         </Card>
                     )}
@@ -589,17 +620,17 @@
 
             return (
                 <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" dir="rtl">
-                    <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                        <header className="bg-white border-b border-slate-200 p-5 flex justify-between items-center shadow-sm z-10">
-                            <div className="flex items-center gap-3">
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 p-5 flex justify-between items-center shadow-sm z-50 sticky top-0">
+                            <div className="flex items-center gap-4">
                                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">ORIZIS<span className="text-brand-600">WEB</span></h1>
                                 <Badge color={currentUser.role === 'manager' ? 'purple' : currentUser.role === 'freelancer' ? 'blue' : 'gray'}>
-                                    {currentUser.role === 'manager' ? 'מנהל ראשי' : currentUser.role === 'freelancer' ? 'סוכן / פרילנסר' : 'לקוח'}
+                                    {currentUser.role === 'manager' ? 'מנהל ראשי (Admin)' : currentUser.role === 'freelancer' ? 'סוכן / פרילנסר' : 'אזור לקוח'}
                                 </Badge>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-5">
                                 <span className="text-sm font-bold text-slate-600 hidden md:inline-block">שלום, {currentUser.name}</span>
-                                <Button onClick={logout} variant="secondary" className="text-xs px-4 py-2">התנתק</Button>
+                                <Button onClick={logout} variant="secondary" className="text-xs px-4 py-2 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors">יציאה מהמערכת</Button>
                             </div>
                         </header>
                         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
