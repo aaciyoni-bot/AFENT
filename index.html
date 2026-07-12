@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -150,17 +151,33 @@
                     }
                 });
 
+                const defaultUpsells = [
+                    { id: 'whatsapp', title: 'כפתור וואטסאפ צף מותאם לנייד', price: 100, icon: '💬' },
+                    { id: 'gmb', title: 'הטמעת מפת גוגל (Google Maps)', price: 100, icon: '🗺️' },
+                    { id: 'accessibility', title: 'תוסף נגישות תקני לאתר (חובה)', price: 150, icon: '♿' },
+                    { id: 'analytics', title: 'חיבור גוגל אנליטיקס (סטטיסטיקות)', price: 150, icon: '📊' },
+                    { id: 'domain', title: 'חיבור דומיין אישי (כתובת פרטית)', price: 150, icon: '🌐' },
+                    { id: 'pixel', title: 'חיבור פיקסל (פייסבוק/אינסטגרם)', price: 150, icon: '🎯' },
+                    { id: 'terms', title: 'עמוד תקנון ותנאי שימוש (תבנית)', price: 150, icon: '⚖️' },
+                    { id: 'images', title: '5 תמונות אווירה ממאגר פרימיום', price: 100, icon: '📸' },
+                    { id: 'logo', title: 'עיצוב לוגו בסיסי בטכנולוגיית AI', price: 200, icon: '🎨' },
+                    { id: 'express', title: 'מסירת אקספרס (קדימות בלו"ז)', price: 200, icon: '⚡' }
+                ];
+
                 const unsubscribeSettings = db.collection('settings').doc('general').onSnapshot(doc => {
-                    if (doc.exists) setSystemSettings(doc.data());
-                    else db.collection('settings').doc('general').set({
-                        upsells: [
-                            { id: 'branding', title: 'מיתוג בסיסי: לוגו וקאבר', price: 500 },
-                            { id: 'whatsapp', title: 'חיבור מהיר לוואטסאפ', price: 200 },
-                            { id: 'gmb', title: 'רישום בעסק בגוגל מפות', price: 300 },
-                            { id: 'express', title: 'מסירת אקספרס (עד 48 שעות)', price: 500 }
-                        ],
-                        expenses: { marketing: 0, office: 0, software: 0 }
-                    });
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (!data.upsells || data.upsells.length < 10) {
+                            db.collection('settings').doc('general').update({ upsells: defaultUpsells });
+                        } else {
+                            setSystemSettings(data);
+                        }
+                    } else {
+                        db.collection('settings').doc('general').set({
+                            upsells: defaultUpsells,
+                            expenses: { marketing: 0, office: 0, software: 0 }
+                        });
+                    }
                 });
 
                 const unsubscribeProjects = db.collection('projects').onSnapshot((snapshot) => {
@@ -483,9 +500,12 @@
                                         const isBought = (project.addons || []).find(a => a.id === upsell.id);
                                         return (
                                             <Card key={idx} noPadding className={`p-6 transition-all border-2 ${isBought ? 'bg-gray-50 border-emerald-200 opacity-80' : 'bg-white border-transparent hover:border-brand-300 shadow-sm'}`}>
-                                                <div className="flex justify-between items-start mb-6">
-                                                    <div className="text-lg font-black text-gray-900 leading-tight">{upsell.title}</div>
-                                                    <Badge color="blue" className="text-base font-sans">₪{upsell.price}</Badge>
+                                                <div className="flex justify-between items-start mb-6 gap-2">
+                                                    <div className="text-lg font-black text-gray-900 leading-tight">
+                                                        <span className="ml-2 text-2xl">{upsell.icon}</span>
+                                                        {upsell.title}
+                                                    </div>
+                                                    <Badge color="blue" className="text-base font-sans shrink-0">₪{upsell.price}</Badge>
                                                 </div>
                                                 <Button onClick={() => purchaseUpsell(upsell)} disabled={isBought} variant={isBought ? 'secondary' : 'primary'} className="w-full py-3">
                                                     {isBought ? '✓ השדרוג הוסף בהצלחה' : '+ הוסף לאתר שלי'}
