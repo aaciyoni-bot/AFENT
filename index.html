@@ -723,8 +723,16 @@
                                                     {p.isBlocked && <button onClick={() => updateProject(p.id, {isBlocked: false, blockReason: ''})} className="mt-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl font-bold text-xs shadow-sm block w-full text-center">🔓 שחרר חסימה לפרילנסר</button>}
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
-                                                    <select className="border rounded-lg p-2 text-xs bg-white w-full mb-2" onChange={(e) => { updateProject(p.id, {freelancerId: e.target.value}); alert('שויך!'); }} value={p.freelancerId || ""}>
-                                                        <option value="" disabled>שייך לפרילנסר...</option>
+                                                    <select className="border rounded-lg p-2 text-xs bg-white w-full mb-2" onChange={(e) => { 
+                                                        if (e.target.value === "none") {
+                                                            updateProject(p.id, {freelancerId: null}); 
+                                                            alert('השיוך הוסר בהצלחה!');
+                                                        } else {
+                                                            updateProject(p.id, {freelancerId: e.target.value}); 
+                                                            alert('שויך בהצלחה!');
+                                                        }
+                                                    }} value={p.freelancerId || "none"}>
+                                                        <option value="none">-- ללא שיוך / הסר --</option>
                                                         {freelancers.map(fl => <option key={fl.uid} value={fl.uid}>{fl.name}</option>)}
                                                     </select>
                                                     <button onClick={() => deleteProject(p.id)} className="text-red-500 hover:bg-red-50 text-xs font-bold px-3 py-1.5 rounded border border-red-200 w-full">🗑️ מחק לאיפוס דוח</button>
