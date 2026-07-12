@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -981,13 +982,11 @@
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
-                                                    {(p.briefInfo || p.clientOfficialDetails) ? (
-                                                        <button onClick={() => setViewBriefModal(p)} className="text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 shadow-sm">
-                                                            📋 צפה בתיק אפיון וחוזה
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-gray-400 text-xs font-bold border border-gray-200 bg-gray-50 px-3 py-1.5 rounded-lg inline-block">ממתין לקליטה ואפיון</span>
-                                                    )}
+                                                    <button onClick={() => setViewBriefModal(p)} className="text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 shadow-sm w-full justify-center">
+                                                        📋 פתח תיק לקוח ומעקב סטטוס
+                                                    </button>
+                                                    {p.status === 'onboarding' && <div className="text-[11px] text-gray-400 mt-2 text-center font-bold">הלקוח טרם חתם על חוזה</div>}
+                                                    {p.status === 'paid_waiting_for_brief' && <div className="text-[11px] text-amber-500 mt-2 text-center font-bold">חתם חוזה, ממתין לאפיון</div>}
                                                 </td>
                                                 <td className="px-6 py-6 align-top">
                                                     <div className={`font-sans font-bold text-sm px-3 py-1.5 rounded-lg inline-block border mb-3 ${p.isTimerRunning ? 'bg-brand-50 text-brand-700 border-brand-200 animate-pulse shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
@@ -1058,8 +1057,27 @@
                                 </div>
                                 <div className="p-6 md:p-8 overflow-y-auto space-y-8 bg-white flex-1">
                                     
+                                    {/* 4-Step Progress Indicator for Manager & Freelancer */}
+                                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-2 text-sm mb-6">
+                                        <div className={`font-bold flex items-center gap-2 ${viewBriefModal.status === 'onboarding' ? 'text-brand-600' : 'text-emerald-600'}`}>
+                                            <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs text-white shadow-sm ${viewBriefModal.status === 'onboarding' ? 'bg-brand-500' : 'bg-emerald-500'}`}>1</span> חתימת חוזה
+                                        </div>
+                                        <div className="hidden md:block h-px bg-gray-200 flex-1"></div>
+                                        <div className={`font-bold flex items-center gap-2 ${viewBriefModal.status === 'paid_waiting_for_brief' ? 'text-brand-600' : (viewBriefModal.status === 'onboarding' ? 'text-gray-400' : 'text-emerald-600')}`}>
+                                            <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs text-white shadow-sm ${viewBriefModal.status === 'paid_waiting_for_brief' ? 'bg-brand-500' : (viewBriefModal.status === 'onboarding' ? 'bg-gray-300' : 'bg-emerald-500')}`}>2</span> אפיון שיווקי
+                                        </div>
+                                        <div className="hidden md:block h-px bg-gray-200 flex-1"></div>
+                                        <div className={`font-bold flex items-center gap-2 ${['brief_submitted', 'in_progress'].includes(viewBriefModal.status) ? 'text-brand-600' : (['onboarding', 'paid_waiting_for_brief'].includes(viewBriefModal.status) ? 'text-gray-400' : 'text-emerald-600')}`}>
+                                            <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs text-white shadow-sm ${['brief_submitted', 'in_progress'].includes(viewBriefModal.status) ? 'bg-brand-500' : (['onboarding', 'paid_waiting_for_brief'].includes(viewBriefModal.status) ? 'bg-gray-300' : 'bg-emerald-500')}`}>3</span> פיתוח בפועל
+                                        </div>
+                                        <div className="hidden md:block h-px bg-gray-200 flex-1"></div>
+                                        <div className={`font-bold flex items-center gap-2 ${viewBriefModal.status === 'qa_review' ? 'text-brand-600' : viewBriefModal.status === 'completed' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                            <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs text-white shadow-sm ${viewBriefModal.status === 'qa_review' ? 'bg-brand-500' : viewBriefModal.status === 'completed' ? 'bg-emerald-500' : 'bg-gray-300'}`}>4</span> מסירה ואוויר
+                                        </div>
+                                    </div>
+
                                     {/* Legal Timestamp & Official Details */}
-                                    {viewBriefModal.clientOfficialDetails && (
+                                    {viewBriefModal.clientOfficialDetails ? (
                                         <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm">
                                             <div className="flex items-start gap-4 mb-4">
                                                 <div className="text-3xl mt-1">⚖️</div>
@@ -1074,10 +1092,16 @@
                                                 <div className="md:col-span-2"><span className="text-gray-500 font-bold">כתובת:</span> <span className="font-black text-gray-900">{viewBriefModal.clientOfficialDetails.address}</span></div>
                                             </div>
                                         </div>
+                                    ) : (
+                                        <div className="bg-gray-50 border border-gray-200 p-10 rounded-2xl text-center">
+                                            <div className="text-5xl mb-4 opacity-80">⏳</div>
+                                            <h4 className="font-black text-gray-800 text-xl">הלקוח עדיין לא חתם על החוזה</h4>
+                                            <p className="text-gray-500 font-medium mt-2">ברגע שהלקוח יתחבר למערכת בפעם הראשונה וימלא את פרטי החברה שלו, ההסכם המשפטי יוצג כאן.</p>
+                                        </div>
                                     )}
 
                                     {/* Brief Data */}
-                                    {viewBriefModal.briefInfo && (
+                                    {viewBriefModal.briefInfo ? (
                                         <>
                                             <div>
                                                 <h4 className="text-lg font-black text-gray-900 mb-4 border-b border-gray-100 pb-2">פרטי העסק ועיצוב:</h4>
@@ -1111,6 +1135,14 @@
                                                 </div>
                                             </div>
                                         </>
+                                    ) : (
+                                        viewBriefModal.status !== 'onboarding' && (
+                                            <div className="bg-amber-50 border border-amber-200 p-10 rounded-2xl text-center shadow-sm">
+                                                <div className="text-5xl mb-4 opacity-90">📝</div>
+                                                <h4 className="font-black text-amber-900 text-xl">ממתין לאפיון מהלקוח</h4>
+                                                <p className="text-amber-800 font-medium mt-2">הלקוח חתם על החוזה בהצלחה, אך טרם סיים לענות על שאלון האפיון השיווקי. ניתן ליצור עמו קשר לסיוע.</p>
+                                            </div>
+                                        )
                                     )}
 
                                     {viewBriefModal.addons && viewBriefModal.addons.length > 0 && (
