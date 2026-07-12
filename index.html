@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -9,11 +10,11 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- Firebase SDK (Compat v8 for single HTML file) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics-compat.js"></script>
     
-    <!-- הגופן שהוחלף לרוביק לתמיכה מושלמת ויוקרתית בעברית -->
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Rubik', sans-serif; background-color: #f8fafc; }
@@ -25,7 +26,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* עיצוב משופר לטבלאות */
         table { border-collapse: separate; border-spacing: 0; }
         th:first-child { border-top-right-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
         th:last-child { border-top-left-radius: 0.75rem; border-bottom-left-radius: 0.75rem; }
@@ -37,6 +37,7 @@
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext, useRef } = React;
 
+        // --- FIREBASE CONFIGURATION (YOUR PROJECT) ---
         const firebaseConfig = {
             apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
             authDomain: "afent-8d50d.firebaseapp.com",
@@ -65,7 +66,7 @@
                 green: 'bg-emerald-50 text-emerald-700 border-emerald-200', yellow: 'bg-amber-50 text-amber-700 border-amber-200',
                 purple: 'bg-indigo-50 text-indigo-700 border-indigo-200', red: 'bg-rose-50 text-rose-700 border-rose-200'
             };
-            return <span className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border tracking-wide ${colors[color] || colors.gray}`}>{children}</span>;
+            return <span className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border tracking-wide whitespace-nowrap ${colors[color] || colors.gray}`}>{children}</span>;
         };
 
         const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, type = 'button', title }) => {
@@ -90,51 +91,6 @@
                         <p className="text-slate-600 mb-8 font-medium leading-relaxed">{message}</p>
                         <Button onClick={onClose} className="w-full py-3.5 text-base">הבנתי, תודה</Button>
                     </div>
-                </div>
-            );
-        };
-
-        const SignaturePad = ({ onSave }) => {
-            const canvasRef = useRef(null);
-            const [isDrawing, setIsDrawing] = useState(false);
-
-            const startDrawing = (e) => {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-                ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true);
-            };
-
-            const draw = (e) => {
-                if (!isDrawing) return;
-                e.preventDefault();
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-                ctx.lineTo(x, y); ctx.stroke();
-            };
-
-            const stopDrawing = () => { if(isDrawing) { setIsDrawing(false); onSave(canvasRef.current.toDataURL()); } };
-            const clear = () => { const canvas = canvasRef.current; const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); onSave(null); };
-
-            useEffect(() => {
-                const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
-                ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-            }, []);
-
-            return (
-                <div className="border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-white hover:border-brand-400 transition-colors shadow-sm">
-                    <div className="bg-slate-50 p-3.5 text-xs font-bold text-slate-500 border-b border-slate-200 flex justify-between items-center">
-                        <span className="flex items-center gap-2 text-slate-700">✍️ צייר חתימה כאן (עכבר או אצבע)</span>
-                        <button type="button" onClick={clear} className="text-rose-500 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors">נקה חתימה</button>
-                    </div>
-                    <canvas ref={canvasRef} width={600} height={200} className="w-full touch-none cursor-crosshair bg-white"
-                        onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
-                        onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} />
                 </div>
             );
         };
@@ -195,7 +151,7 @@
 
                 const user = usersList.find(u => String(u.email).toLowerCase().trim() === inputEmail && String(u.password).trim() === inputPassword);
                 if (user) { setCurrentUser(user); localStorage.setItem('orizis_user', JSON.stringify(user)); } 
-                else { showAlert('שם משתמש או סיסמה שגויים. (אם אתה מנהל, השתמש במייל שלך ובסיסמה 123)'); }
+                else { showAlert('שם משתמש או סיסמה שגויים. בדוק את האותיות והמספרים.'); }
             };
 
             const logout = () => { setCurrentUser(null); localStorage.removeItem('orizis_user'); };
@@ -214,10 +170,10 @@
             };
 
             const deleteProject = (id) => { db.collection('projects').doc(id).delete(); showAlert("הפרויקט נמחק בהצלחה ממסד הנתונים."); };
-            const deleteUser = (uid) => { db.collection('users').doc(uid).delete(); showAlert("המשתמש נמחק בהצלחה."); };
+            const deleteUser = (uid) => { db.collection('users').doc(uid).delete(); showAlert("המשתמש נמחק בהצלחה ממסד הנתונים."); };
             const saveSystemSettings = (newSettings) => db.collection('system').doc('settings').set(newSettings, { merge: true });
 
-            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">טוען נתונים מהענן...</div>;
+            if (isLoading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-brand-400 font-bold text-xl">טוען נתונים מאובטחים...</div>;
 
             return (
                 <AppContext.Provider value={{ currentUser, login, logout, projects, updateProject, addProject, deleteProject, usersList, updateUser, addUser, deleteUser, systemSettings, setSystemSettings: saveSystemSettings, showAlert }}>
@@ -225,11 +181,6 @@
                     <AlertModal isOpen={alertState.isOpen} message={alertState.message} onClose={closeAlert} />
                 </AppContext.Provider>
             );
-        };
-
-        const formatDuration = (seconds, withSign = false) => {
-            const h = Math.floor(seconds / 3600); const m = Math.floor((seconds % 3600) / 60);
-            return `${withSign && seconds > 0 ? '+' : ''}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         };
 
         const LoginScreen = () => {
@@ -247,18 +198,18 @@
                     <Card className="w-full max-w-md p-10 glass-panel border-white/20 shadow-2xl relative z-10 fade-in rounded-3xl">
                         <div className="text-center mb-10">
                             <h1 className="text-4xl font-black text-slate-900 tracking-tight">ORIZIS<span className="text-brand-600">WEB</span></h1>
-                            <p className="text-slate-500 text-sm mt-2 font-bold tracking-widest uppercase">Agency ERP</p>
+                            <p className="text-slate-500 text-sm mt-2 font-bold tracking-widest uppercase">Agency Operating System</p>
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); login(email, password); }} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-black text-slate-700 mb-2">אימייל התחברות</label>
+                                <label className="block text-sm font-black text-slate-700 mb-2">אימייל</label>
                                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-black text-slate-700 mb-2">סיסמה</label>
                                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all font-medium text-slate-800" required />
                             </div>
-                            <Button type="submit" className="w-full py-4 text-lg mt-4 shadow-xl font-black tracking-wide">היכנס למערכת</Button>
+                            <Button type="submit" className="w-full py-4 text-lg mt-4 shadow-xl font-black tracking-wide">התחבר למערכת</Button>
                         </form>
                     </Card>
                 </div>
@@ -296,7 +247,7 @@
                 e.preventDefault();
                 addUser({ ...newUser, basePercentage: newUser.role === 'freelancer' ? Number(newUser.basePercentage || 60) : 0, upsellPercentage: newUser.role === 'freelancer' ? Number(newUser.upsellPercentage || 0) : 0 });
                 setNewUser({ name: '', email: '', role: 'client', password: '', basePercentage: 60, upsellPercentage: 10, teamLeaderId: '' });
-                showAlert("המשתמש נוצר בהצלחה!");
+                showAlert("המשתמש נוצר בהצלחה ונוסף למסד הנתונים!");
             };
 
             const handleAddProject = (e) => {
@@ -304,7 +255,7 @@
                 const newProjectId = addProject({ customerName: newProjectData.customerName, customerEmail: newProjectData.customerEmail, paymentAmount: Number(newProjectData.paymentAmount), freelancerId: null, createdAt: Date.now(), addons: [], hasSignedAgreement: false });
                 addUser({ name: newProjectData.customerName, email: newProjectData.customerEmail, password: '123', role: 'client', projectId: newProjectId });
                 setShowAddProjectModal(false); setNewProjectData({ customerName: '', customerEmail: '', paymentAmount: '' });
-                showAlert("הלקוח נוצר בהצלחה! נשלחו אליו פרטי התחברות.");
+                showAlert("הלקוח נוצר בהצלחה ונשמר במסד הנתונים!");
             };
 
             const addAnnouncement = () => {
@@ -316,10 +267,10 @@
             const filteredProjects = projects.filter(p => showArchive ? p.status === 'completed' : p.status !== 'completed');
 
             return (
-                <div className="space-y-8 fade-in max-w-7xl mx-auto w-full">
+                <div className="space-y-8 fade-in max-w-7xl mx-auto w-full pb-20">
                     {/* Top Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card className="p-6 bg-gradient-to-br from-brand-600 to-brand-800 text-white border-none shadow-xl shadow-brand-500/20">
+                        <Card className="p-6 bg-gradient-to-br from-brand-500 to-brand-700 text-white border-none shadow-xl shadow-brand-500/20">
                             <div className="text-brand-100 font-medium mb-1.5 text-sm">הכנסות כוללות</div>
                             <div className="text-3xl font-black">₪{revenue.toLocaleString()}</div>
                         </Card>
@@ -337,11 +288,11 @@
                         </Card>
                     </div>
 
-                    {/* Navigation Tabs */}
-                    <div className="flex overflow-x-auto border-b border-slate-200 custom-scrollbar mb-6 bg-white rounded-t-2xl px-2 pt-2">
+                    {/* Navigation Tabs - Centered */}
+                    <div className="flex justify-center overflow-x-auto border-b border-slate-200 custom-scrollbar mb-6 bg-white rounded-t-2xl px-2 pt-2 shadow-sm">
                         {['projects', 'users', 'settings'].map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)} className={`px-8 py-4 font-black text-sm whitespace-nowrap transition-all border-b-4 rounded-t-xl ${activeTab === tab ? 'text-brand-600 border-brand-600 bg-brand-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}>
-                                {tab === 'projects' ? '🚀 ניהול פרויקטים' : tab === 'users' ? '👥 צוות ולקוחות' : '⚙️ הגדרות וחוזים'}
+                                {tab === 'projects' ? '🚀 ניהול פרויקטים' : tab === 'users' ? '👥 צוות ולקוחות' : '⚙️ הגדרות, חוזים וחנות'}
                             </button>
                         ))}
                     </div>
@@ -366,19 +317,19 @@
                                 <table className="w-full text-right text-sm min-w-[1100px]">
                                     <thead className="bg-slate-50 text-slate-600 font-black border-b border-slate-200">
                                         <tr>
-                                            <th className="p-4 w-1/5">פרטי הלקוח</th>
-                                            <th className="p-4 w-1/6">סטטוס פרויקט</th>
-                                            <th className="p-4 w-[120px]">שווי (₪)</th>
-                                            <th className="p-4 w-1/3">שיוך לסוכן ובונוסים</th>
-                                            <th className="p-4">פעולות ומסמכים</th>
+                                            <th className="p-4 w-[20%]">לקוח</th>
+                                            <th className="p-4 w-[15%]">סטטוס</th>
+                                            <th className="p-4 w-[10%]">שווי (₪)</th>
+                                            <th className="p-4 w-[35%]">פרילנסר משויך ובונוס</th>
+                                            <th className="p-4 w-[20%]">פעולות ואישורים</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {filteredProjects.map(p => (
                                             <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="p-4 align-top">
-                                                    <div className="font-black text-slate-900 text-lg mb-1">{p.customerName}</div>
-                                                    <div className="text-xs font-bold text-slate-400 bg-slate-100 inline-block px-2 py-0.5 rounded-md">{p.id}</div>
+                                                    <div className="font-black text-slate-900 text-base mb-1">{p.customerName || 'ללא שם'}</div>
+                                                    <div className="text-[11px] font-bold text-slate-400 bg-slate-100 inline-block px-2 py-0.5 rounded-md">{p.id}</div>
                                                 </td>
                                                 <td className="p-4 align-top">
                                                     {p.isBlocked ? <Badge color="red">🚨 נחסם ע"י סוכן!</Badge> :
@@ -390,20 +341,15 @@
                                                      <Badge color="gray">לקוח טרם אופיין</Badge>} 
                                                 </td>
                                                 <td className="p-4 align-top font-black text-slate-800 text-base">
-                                                    ₪{(Number(p.paymentAmount) || 0) + (p.addons || []).reduce((a,b)=>a+(b.price||0),0)}
+                                                    {p.paymentAmount ? `₪${((Number(p.paymentAmount) || 0) + (p.addons || []).reduce((a,b)=>a+(b.price||0),0)).toLocaleString()}` : '-'}
                                                 </td>
                                                 <td className="p-4 align-top">
-                                                    {/* HIGHLIGHTED ASSIGNMENT UI */}
-                                                    <div className="bg-brand-50 p-3.5 rounded-xl border border-brand-200 shadow-sm flex flex-col gap-3">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-xs font-black text-brand-800 uppercase tracking-wide">👤 שיוך סוכן ללקוח:</span>
-                                                            {p.freelancerId && <span className="text-[10px] font-bold bg-white text-brand-600 px-2 py-1 rounded border border-brand-100 shadow-sm">משויך</span>}
-                                                        </div>
+                                                    {/* HIGHLIGHTED ASSIGNMENT UI - NO DISABLED LOCK */}
+                                                    <div className="bg-brand-50/50 p-4 rounded-2xl border border-brand-100 shadow-sm flex flex-col gap-3 transition-colors hover:border-brand-300">
                                                         <select 
                                                             className="w-full p-2.5 text-sm border border-brand-200 rounded-lg bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 font-bold text-slate-800 shadow-sm transition-all cursor-pointer"
                                                             value={pendingFreelancerId[p.id] !== undefined ? pendingFreelancerId[p.id] : (p.freelancerId || '')}
                                                             onChange={(e) => setPendingFreelancerId({...pendingFreelancerId, [p.id]: e.target.value})}
-                                                            disabled={p.status === 'completed' || p.status === 'paid_waiting_for_brief'}
                                                         >
                                                             <option value="" disabled>-- בחר סוכן מהרשימה --</option>
                                                             <option value="none" className="text-rose-500 font-bold">-- ללא שיוך / הסר סוכן נוכחי --</option>
@@ -413,111 +359,114 @@
                                                         {pendingFreelancerId[p.id] !== undefined && pendingFreelancerId[p.id] !== (p.freelancerId || '') && (
                                                             <Button onClick={() => {
                                                                 const finalId = pendingFreelancerId[p.id] === 'none' ? null : pendingFreelancerId[p.id];
-                                                                updateProject(p.id, { freelancerId: finalId, status: finalId === null ? 'brief_submitted' : 'in_progress', timeSpent: 0 });
+                                                                let newStatus = p.status;
+                                                                if (finalId !== null && p.status === 'brief_submitted') newStatus = 'in_progress';
+                                                                if (finalId === null && p.status === 'in_progress') newStatus = 'brief_submitted';
+                                                                updateProject(p.id, { freelancerId: finalId, status: newStatus });
                                                                 const newPending = {...pendingFreelancerId}; delete newPending[p.id]; setPendingFreelancerId(newPending);
                                                                 showAlert("✅ שיוך הסוכן עודכן בהצלחה!");
-                                                            }} variant="success" className="text-xs py-2 w-full shadow-md">שמור שיוך חדש</Button>
+                                                            }} variant="success" className="text-xs py-2 w-full shadow-md font-black">שמור שיוך סוכן חדש</Button>
                                                         )}
 
                                                         {p.freelancerId && (
-                                                            <label className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors">
+                                                            <label className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors shadow-sm">
                                                                 <input type="checkbox" checked={p.isSelfSourced || false} onChange={(e) => updateProject(p.id, { isSelfSourced: e.target.checked })} className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" />
-                                                                הלקוח הובא ע"י הסוכן (+5% עמלה)
+                                                                הובא ע"י הסוכן (+5% עמלה נוספת)
                                                             </label>
                                                         )}
                                                     </div>
                                                 </td>
                                                 <td className="p-4 align-top">
-                                                    <div className="flex flex-col gap-2 min-w-[140px]">
+                                                    <div className="flex flex-col gap-2 min-w-[150px]">
                                                         {p.isBlocked && <Button onClick={() => updateProject(p.id, { isBlocked: false, blockReason: '' })} variant="success" className="w-full text-xs py-2">שחרר חסימה</Button>}
                                                         
                                                         {p.status === 'qa_review' && (
-                                                            <div className="flex flex-col gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200 shadow-sm">
-                                                                <span className="text-[10px] font-black text-center text-amber-800 uppercase tracking-wide">פעולת מנהל:</span>
-                                                                <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs w-full py-1.5">✅ אישור סופי</Button>
-                                                                <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר."); }} variant="danger" className="text-xs w-full py-1.5">❌ החזר לתיקונים</Button>
+                                                            <div className="flex flex-col gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200 shadow-sm mb-2">
+                                                                <span className="text-[10px] font-black text-center text-amber-800 uppercase tracking-wide">פעולת מנהל נדרשת:</span>
+                                                                <Button onClick={() => { updateProject(p.id, { status: 'completed' }); showAlert("הפרויקט אושר בהצלחה והועבר לארכיון!"); }} variant="success" className="text-xs w-full py-2">✅ אישור וסיום פרויקט</Button>
+                                                                <Button onClick={() => { updateProject(p.id, { status: 'in_progress' }); showAlert("הפרויקט הוחזר לפרילנסר."); }} variant="danger" className="text-xs w-full py-2">❌ החזר לתיקונים</Button>
                                                             </div>
                                                         )}
                                                         
                                                         {p.clientSignatureData && (
-                                                            <Button onClick={() => setViewingClientSignature(p)} variant="outline" className="text-xs px-2 py-2 w-full border-brand-200 text-brand-700 hover:bg-brand-50">
-                                                                📄 הסכם לקוח חתום
+                                                            <Button onClick={() => setViewingClientSignature(p)} variant="outline" className="text-xs px-2 py-2 w-full border-brand-200 text-brand-700 hover:bg-brand-50 bg-white">
+                                                                📄 צפה בהסכם לקוח
                                                             </Button>
                                                         )}
                                                         
-                                                        <Button onClick={() => { if(window.confirm('למחוק פרויקט זה לחלוטין ממסד הנתונים?')) deleteProject(p.id); }} variant="danger" className="text-xs px-2 py-2 w-full border-rose-200 bg-white text-rose-600 hover:bg-rose-50">
+                                                        {/* DELETE BUTTON FOR ADMIN */}
+                                                        <Button onClick={() => { if(window.confirm('למחוק פרויקט זה לחלוטין ממסד הנתונים? פעולה זו אינה הפיכה!')) deleteProject(p.id); }} variant="outline" className="text-xs px-2 py-2 w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 bg-white">
                                                             🗑️ מחק פרויקט
                                                         </Button>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-12 text-center text-slate-500 font-bold text-lg bg-slate-50/50">אין פרויקטים להצגה במסנן הנוכחי.</td></tr>}
+                                        {filteredProjects.length === 0 && <tr><td colSpan="5" className="p-16 text-center text-slate-500 font-bold text-lg bg-slate-50/50">אין פרויקטים להצגה במסנן הנוכחי.</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
                         </Card>
                     )}
 
-                    {/* Users Tab with Centered Stacked Layout */}
+                    {/* Users Tab - Redesigned to be centered and clean */}
                     {activeTab === 'users' && (
                         <div className="space-y-10">
-                            <Card className="p-8 shadow-lg border-t-4 border-t-brand-500 max-w-4xl mx-auto w-full">
+                            {/* Create User Form - Centered */}
+                            <Card className="p-8 shadow-lg border-t-4 border-t-brand-500">
                                 <div className="text-center mb-8">
-                                    <h3 className="font-black text-slate-900 text-3xl">יצירת משתמש / סוכן חדש</h3>
-                                    <p className="text-slate-500 font-medium mt-2 text-sm">מלא את הפרטים כדי להוסיף חבר צוות או לקוח למערכת.</p>
+                                    <h3 className="font-black text-slate-900 text-2xl">יצירת משתמש חדש במערכת</h3>
+                                    <p className="text-slate-500 font-medium mt-1 text-sm">הוסף פרילנסרים, ראשי צוותים או לקוחות למסד הנתונים</p>
                                 </div>
                                 
-                                <form onSubmit={handleAddUser} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <form onSubmit={handleAddUser} className="space-y-6 max-w-4xl mx-auto">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div>
-                                            <label className="block text-sm font-black text-slate-700 mb-2">שם מלא</label>
-                                            <input type="text" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all font-medium" required value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} />
+                                            <label className="block text-xs font-black text-slate-700 mb-1.5">שם מלא</label>
+                                            <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none font-medium text-sm" required value={newUser.name} onChange={e=>setNewUser({...newUser, name: e.target.value})} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-black text-slate-700 mb-2">אימייל התחברות</label>
-                                            <input type="email" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all font-medium" required value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} />
+                                            <label className="block text-xs font-black text-slate-700 mb-1.5">אימייל התחברות</label>
+                                            <input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none font-medium text-sm" required value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-black text-slate-700 mb-2">סיסמה התחלתית</label>
-                                            <input type="text" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all font-medium" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
+                                            <label className="block text-xs font-black text-slate-700 mb-1.5">סיסמה התחלתית (למשל 123)</label>
+                                            <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none font-medium text-sm" required value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-black text-slate-700 mb-2">הרשאה / תפקיד במערכת</label>
-                                            <select className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all cursor-pointer" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}>
+                                            <label className="block text-xs font-black text-slate-700 mb-1.5">הרשאה / תפקיד</label>
+                                            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:border-brand-500 outline-none cursor-pointer text-sm" value={newUser.role} onChange={e=>setNewUser({...newUser, role: e.target.value})}>
                                                 <option value="client">לקוח (צופה בלבד)</option>
-                                                <option value="freelancer">פרילנסר / סוכן (צוות)</option>
-                                                <option value="manager">מנהל מערכת ראשי</option>
+                                                <option value="freelancer">פרילנסר / סוכן</option>
+                                                <option value="manager">מנהל מערכת</option>
                                             </select>
                                         </div>
                                     </div>
                                     
                                     {newUser.role === 'freelancer' && (
-                                        <div className="p-6 bg-brand-50 border border-brand-200 rounded-2xl mt-6 shadow-sm">
-                                            <div className="text-sm font-black text-brand-800 border-b border-brand-200/50 pb-3 mb-5 flex items-center gap-2">
-                                                <span>💰</span> הגדרות תגמול ואפיליאציה:
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="p-5 bg-brand-50 border border-brand-200 rounded-2xl shadow-sm">
+                                            <div className="text-xs font-black text-brand-800 mb-3 flex items-center gap-2"><span>💰</span> הגדרות עמלה לפרילנסר:</div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
-                                                    <label className="text-xs font-bold text-brand-900 mb-2 block">אחוז תגמול מפרויקט (%):</label>
-                                                    <input type="number" className="w-full p-3 border border-brand-200 rounded-xl text-sm font-bold bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 shadow-sm" value={newUser.basePercentage} onChange={e=>setNewUser({...newUser, basePercentage: e.target.value})} />
+                                                    <label className="text-[11px] font-bold text-brand-900 mb-1 block">עמלת פרויקט (%):</label>
+                                                    <input type="number" className="w-full p-2.5 border border-brand-200 rounded-lg text-sm font-bold bg-white outline-none focus:border-brand-500 shadow-sm" value={newUser.basePercentage} onChange={e=>setNewUser({...newUser, basePercentage: e.target.value})} />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-bold text-brand-900 mb-2 block">עמלת אפסייל (%):</label>
-                                                    <input type="number" className="w-full p-3 border border-brand-200 rounded-xl text-sm font-bold bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 shadow-sm" value={newUser.upsellPercentage} onChange={e=>setNewUser({...newUser, upsellPercentage: e.target.value})} />
+                                                    <label className="text-[11px] font-bold text-brand-900 mb-1 block">עמלת אפסייל (%):</label>
+                                                    <input type="number" className="w-full p-2.5 border border-brand-200 rounded-lg text-sm font-bold bg-white outline-none focus:border-brand-500 shadow-sm" value={newUser.upsellPercentage} onChange={e=>setNewUser({...newUser, upsellPercentage: e.target.value})} />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-bold text-brand-900 mb-2 block">שיוך לראש צוות (אופציונלי):</label>
-                                                    <select className="w-full p-3 border border-brand-200 rounded-xl text-sm font-bold bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 shadow-sm cursor-pointer" value={newUser.teamLeaderId} onChange={e=>setNewUser({...newUser, teamLeaderId: e.target.value})}>
-                                                        <option value="">-- ללא מנהל ישיר --</option>
+                                                    <label className="text-[11px] font-bold text-brand-900 mb-1 block">ראש צוות מנהל (150₪ עמלה):</label>
+                                                    <select className="w-full p-2.5 border border-brand-200 rounded-lg text-sm font-bold bg-white outline-none focus:border-brand-500 shadow-sm cursor-pointer" value={newUser.teamLeaderId} onChange={e=>setNewUser({...newUser, teamLeaderId: e.target.value})}>
+                                                        <option value="">-- ללא מנהל --</option>
                                                         {usersList.filter(u => u.role === 'freelancer').map(tl => <option key={tl.uid} value={tl.uid}>{tl.name}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
-                                    <div className="flex justify-center pt-8 border-t border-slate-100">
-                                        <Button type="submit" className="w-full md:w-2/3 py-4 text-lg shadow-xl shadow-brand-500/30">✨ הוסף משתמש למערכת</Button>
+                                    <div className="flex justify-center pt-4">
+                                        <Button type="submit" className="px-10 py-3.5 text-base shadow-xl">➕ צור משתמש</Button>
                                     </div>
                                 </form>
                             </Card>
@@ -525,62 +474,62 @@
                             {/* Full Width Users Table */}
                             <Card className="overflow-hidden shadow-sm">
                                 <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                    <h3 className="font-black text-slate-800 text-xl">משתמשים במערכת ({usersList.length})</h3>
+                                    <h3 className="font-black text-slate-800 text-xl">משתמשים קיימים במסד הנתונים (Firebase)</h3>
                                 </div>
                                 <div className="w-full overflow-x-auto custom-scrollbar p-2">
                                     <table className="w-full text-right text-sm min-w-[900px]">
                                         <thead className="bg-slate-50/50 text-slate-500 font-black border-b border-slate-100">
                                             <tr>
-                                                <th className="p-4 w-1/4">שם משתמש ומייל</th>
-                                                <th className="p-4 w-1/6">הרשאה</th>
-                                                <th className="p-4 w-1/4">תגמול פרילנסר (%)</th>
-                                                <th className="p-4 w-1/3">פעולות ואבטחה</th>
+                                                <th className="p-4 w-[25%]">שם משתמש ומייל</th>
+                                                <th className="p-4 w-[15%]">הרשאה</th>
+                                                <th className="p-4 w-[30%]">תגמול (לפרילנסר)</th>
+                                                <th className="p-4 w-[30%]">פעולות ואבטחה</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {usersList.map(u => (
                                                 <tr key={u.uid} className="hover:bg-slate-50/50 transition-colors">
                                                     <td className="p-4 align-top">
-                                                        <div className="font-black text-slate-900 text-base mb-1">{u.name}</div>
-                                                        <div className="text-xs text-slate-500 font-medium">{u.email}</div>
-                                                        {u.teamLeaderId && <div className="text-[11px] text-brand-700 font-bold mt-2 bg-brand-50 inline-block px-2.5 py-1 rounded-lg border border-brand-100">👤 תחת מנהל: {usersList.find(l=>l.uid===u.teamLeaderId)?.name}</div>}
+                                                        <div className="font-black text-slate-900 text-base mb-0.5">{u.name}</div>
+                                                        <div className="text-xs text-slate-400 font-medium">{u.email}</div>
+                                                        {u.teamLeaderId && <div className="text-[10px] text-brand-700 font-bold mt-2 bg-brand-50 inline-block px-2 py-1 rounded-lg border border-brand-100">👤 מנוהל ע"י: {usersList.find(l=>l.uid===u.teamLeaderId)?.name}</div>}
                                                     </td>
                                                     <td className="p-4 align-top">
                                                         <Badge color={u.role==='manager'?'purple':u.role==='freelancer'?'blue':'gray'}>{u.role}</Badge>
                                                     </td>
                                                     <td className="p-4 text-sm font-medium align-top">
                                                         {u.role === 'freelancer' ? 
-                                                            <div className="flex flex-col gap-3">
-                                                                <label className="flex items-center gap-3">
-                                                                    <span className="w-16 text-xs font-bold text-slate-500">פרויקט:</span>
+                                                            <div className="flex flex-col gap-2">
+                                                                <label className="flex items-center gap-2">
+                                                                    <span className="w-14 text-[11px] font-bold text-slate-500">פרויקט:</span>
                                                                     <div className="relative">
-                                                                        <input type="number" className="border border-slate-200 w-24 p-2 pl-6 rounded-lg text-center bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 font-bold shadow-sm" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, {basePercentage: Number(e.target.value)})} />
-                                                                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">%</span>
+                                                                        <input type="number" className="border border-slate-200 w-20 p-1.5 pl-6 rounded-lg text-center bg-white outline-none focus:border-brand-500 font-bold shadow-sm text-sm" value={u.basePercentage || 60} onChange={(e) => updateUser(u.uid, {basePercentage: Number(e.target.value)})} />
+                                                                        <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-bold">%</span>
                                                                     </div>
                                                                 </label>
-                                                                <label className="flex items-center gap-3">
-                                                                    <span className="w-16 text-xs font-bold text-slate-500">אפסייל:</span>
+                                                                <label className="flex items-center gap-2">
+                                                                    <span className="w-14 text-[11px] font-bold text-slate-500">אפסייל:</span>
                                                                     <div className="relative">
-                                                                        <input type="number" className="border border-slate-200 w-24 p-2 pl-6 rounded-lg text-center bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 font-bold shadow-sm" value={u.upsellPercentage || 0} onChange={(e) => updateUser(u.uid, {upsellPercentage: Number(e.target.value)})} />
-                                                                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">%</span>
+                                                                        <input type="number" className="border border-slate-200 w-20 p-1.5 pl-6 rounded-lg text-center bg-white outline-none focus:border-brand-500 font-bold shadow-sm text-sm" value={u.upsellPercentage || 0} onChange={(e) => updateUser(u.uid, {upsellPercentage: Number(e.target.value)})} />
+                                                                        <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-bold">%</span>
                                                                     </div>
                                                                 </label>
                                                             </div> 
-                                                        : <span className="text-slate-400 font-bold text-xs bg-slate-100 px-3 py-1.5 rounded-lg">- לא רלוונטי -</span>}
+                                                        : <span className="text-slate-400 font-bold text-xs">-</span>}
                                                     </td>
                                                     <td className="p-4 align-top">
                                                         <div className="flex flex-wrap gap-2">
                                                             {u.role === 'freelancer' && (
                                                                 u.hasSignedAgreement ? (
                                                                     <Button onClick={() => setViewingSignature(u)} variant="outline" className="text-xs px-3 py-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-white">
-                                                                        📄 צפה בהסכם חתום
+                                                                        📄 הסכם חתום
                                                                     </Button>
                                                                 ) : (
                                                                     <span className="text-[11px] text-rose-600 font-bold px-3 py-2 bg-rose-50 border border-rose-100 rounded-xl flex items-center shadow-sm">טרם חתם חוזה</span>
                                                                 )
                                                             )}
-                                                            {u.uid !== 'admin_master' && (
-                                                                <Button onClick={() => { if(window.confirm('למחוק משתמש זה לחלוטין ממסד הנתונים?')) deleteUser(u.uid); }} variant="danger" className="text-xs px-3 py-2 border-rose-200 bg-white hover:bg-rose-50 shadow-sm">
+                                                            {u.uid !== 'admin_master' && u.email !== 'aaci.yoni@gmail.com' && (
+                                                                <Button onClick={() => { if(window.confirm('למחוק משתמש זה לחלוטין ממסד הנתונים?')) deleteUser(u.uid); }} variant="outline" className="text-xs px-3 py-2 border-rose-200 text-rose-600 hover:bg-rose-50 bg-white shadow-sm">
                                                                     🗑️ מחק
                                                                 </Button>
                                                             )}
@@ -601,9 +550,9 @@
                             <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl">
                                 <h3 className="text-2xl font-black text-slate-900 mb-6">הקמת לקוח חדש</h3>
                                 <form onSubmit={handleAddProject} className="space-y-5">
-                                    <div><label className="block text-sm font-black text-slate-700 mb-2">שם הלקוח / עסק</label><input type="text" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
-                                    <div><label className="block text-sm font-black text-slate-700 mb-2">אימייל הלקוח</label><input type="email" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
-                                    <div><label className="block text-sm font-black text-slate-700 mb-2">סכום ששולם (₪)</label><input type="number" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-black text-slate-700 mb-2">שם הלקוח / עסק</label><input type="text" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 transition-all font-medium" value={newProjectData.customerName} onChange={e=>setNewProjectData({...newProjectData, customerName: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-black text-slate-700 mb-2">אימייל הלקוח</label><input type="email" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 transition-all font-medium" value={newProjectData.customerEmail} onChange={e=>setNewProjectData({...newProjectData, customerEmail: e.target.value})} /></div>
+                                    <div><label className="block text-sm font-black text-slate-700 mb-2">סכום ששולם (₪)</label><input type="number" required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 transition-all font-medium" value={newProjectData.paymentAmount} onChange={e=>setNewProjectData({...newProjectData, paymentAmount: e.target.value})} /></div>
                                     <div className="flex gap-3 pt-6 border-t border-slate-100">
                                         <Button type="submit" variant="primary" className="flex-1 py-3.5 text-base">צור לקוח ושלח אפיון</Button>
                                         <Button onClick={()=>setShowAddProjectModal(false)} variant="secondary" className="py-3.5 px-6 text-base">ביטול</Button>
@@ -634,9 +583,6 @@
                                             <img src={viewingSignature ? viewingSignature.signatureData : viewingClientSignature.clientSignatureData} alt="חתימה" className="max-h-32 mx-auto mix-blend-multiply drop-shadow-md" />
                                         ) : <div className="text-rose-500 font-bold bg-rose-50 p-3 rounded-lg border border-rose-100 inline-block">לא נמצאה תמונת חתימה</div>}
                                     </div>
-                                </div>
-                                <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end">
-                                    <Button onClick={() => { setViewingSignature(null); setViewingClientSignature(null); }} className="px-8 py-3 shadow-sm">סגור מסמך משפטי</Button>
                                 </div>
                             </div>
                         </div>
@@ -677,7 +623,7 @@
             if (!currentUser) return <LoginScreen />;
 
             return (
-                <div className="flex h-screen bg-slate-50 overflow-hidden text-right" dir="rtl">
+                <div className="flex h-screen bg-slate-50 overflow-hidden text-right font-sans" dir="rtl">
                     {/* Sidebar */}
                     <aside className="w-72 bg-slate-900 text-white flex flex-col hidden lg:flex shadow-2xl z-20">
                         <div className="p-8 border-b border-slate-800 bg-slate-900">
@@ -702,7 +648,7 @@
                     {/* Main Content */}
                     <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative">
                         <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 p-5 lg:px-10 lg:py-6 flex justify-between items-center z-10 shadow-sm sticky top-0">
-                            <div className="w-full flex justify-between items-center">
+                            <div className="w-full flex justify-between items-center max-w-7xl mx-auto">
                                 <div>
                                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">{currentUser.role === 'manager' ? 'ניהול סוכנות (Admin)' : currentUser.role === 'freelancer' ? 'סביבת עבודה ופיתוח' : 'פורטל לקוחות'}</h1>
                                     <p className="text-sm text-slate-500 font-bold mt-2 flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50"></span>{new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
