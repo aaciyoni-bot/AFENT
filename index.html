@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -49,7 +50,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Component } = React;
 
-        const GEMINI_API_KEY = "AIzaSyDao5ps1MQpHpacEij2qEHLsZc3pYbZtms";
+        const GEMINI_API_KEY = "AQ.Ab8RN6J3OBmgnn57CiwuKy1N7T15QU5u38iXttz01FL81DrRJg";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
@@ -651,6 +652,33 @@
             );
         };
 
+        const ProjectTimer = ({ project, updateProject, isReadOnly }) => {
+            const [elapsed, setElapsed] = useState(0); 
+            
+            useEffect(() => {
+                if(project.status !== 'in_progress') return;
+                const interval = setInterval(() => setElapsed(e => e + 1), 1000);
+                return () => clearInterval(interval);
+            }, [project.status]);
+
+            const formatTime = (totalSeconds) => {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            return (
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-xl border border-purple-100 shadow-sm gap-4">
+                    <div className="text-center md:text-right">
+                        <div className="text-xs font-bold text-slate-500 uppercase mb-1">זמן פיתוח פעיל משוער</div>
+                        <div className="text-3xl font-black text-purple-600 font-mono">{formatTime(elapsed)}</div>
+                    </div>
+                    {!isReadOnly && <Button onClick={() => updateProject(project.id, {status: 'stuck'})} variant="danger" className="w-full md:w-auto shadow-rose-500/30 text-sm">⏸️ עצור טיימר (יש לי חסימה)</Button>}
+                </div>
+            );
+        };
+
         const FreelancerDashboard = ({ user, users, projects, settings, updateUser, updateProject, createProjectAndClient, showAlert, impersonateUser, isReadOnly }) => {
             
             if (!user?.hasSignedAgreement) {
@@ -663,8 +691,8 @@
                                 {settings.freelancerAgreement}
                             </div>
                             <h3 className="font-bold text-slate-800 mb-3 text-lg">חתימתך מאשרת את התנאים:</h3>
-                            <SignatureCanvas disabled={isReadOnly} onSave={(sig) => { 
-                                updateUser(user.id, {hasSignedAgreement: true, signature: sig}); 
+                            <SignatureCanvas disabled={isReadOnly} onSave={async (sig) => { 
+                                await updateUser(user.id, {hasSignedAgreement: true, signature: sig}); 
                             }} />
                         </Card>
                     </div>
@@ -681,7 +709,6 @@
 
             return (
                 <div className="space-y-8 fade-in">
-                    {/* סטטיסטיקות פרילנסר - רווח ויעדים */}
                     <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isReadOnly ? 'opacity-70 pointer-events-none' : ''}`}>
                         <Card className="bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-xl border-none">
                             <h3 className="text-slate-300 font-bold mb-1">הרווח שלי החודש (מודל 60%)</h3>
@@ -785,14 +812,7 @@
 
                                     {p.status === 'in_progress' && (
                                         <div className="bg-purple-50 p-6 rounded-2xl border border-purple-200 mt-4">
-                                            <div className="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-xl border border-purple-100 shadow-sm gap-4">
-                                                <div className="text-center md:text-right">
-                                                    <div className="text-xs font-bold text-slate-500 uppercase mb-1">זמן פיתוח שנותר (הערכה)</div>
-                                                    <div className="text-3xl font-black text-purple-600 font-mono">14:00:00</div>
-                                                </div>
-                                                <Button onClick={() => updateProject(p.id, {status: 'stuck'})} variant="danger" className="w-full md:w-auto shadow-rose-500/30 text-sm">⏸️ עצור טיימר (יש לי חסימה)</Button>
-                                            </div>
-
+                                            <ProjectTimer project={p} updateProject={updateProject} isReadOnly={isReadOnly} />
                                             <h4 className="font-black text-purple-900 mb-4 text-lg">✅ רשימת חובה (QA) לפני הגשה</h4>
                                             <Button onClick={()=>updateProject(p.id, {status: 'qa_review'})} className="w-full bg-purple-600 hover:bg-purple-700 py-3 mt-4">סיימתי! שלח לבדיקת מנהל</Button>
                                         </div>
@@ -827,7 +847,6 @@
             const [isTyping, setIsTyping] = useState(false);
             const chatEndRef = useRef(null);
             
-            // Manual Brief State
             const [manualBriefData, setManualBriefData] = useState({ company: '', audience: '', goal: '', colors: '' });
             const [features, setFeatures] = useState({ accessibility: false, whatsapp: false, english: false });
 
@@ -862,7 +881,6 @@
                 const sysPrompt = `אתה יונתן, מנהל פרויקטים סופר-מקצועי בחברת ORIZISWEB. מטרתך לאסוף מידע מלקוח לאפיון אתר. שאל שאלות קצרות. אסור לך לתת מחירים בשום אופן. כשיש לך מספיק מידע של קהל יעד ומטרת האתר, כתוב רק את המילה המדויקת בסוף: [סיכום_אפיון].`;
 
                 try {
-                    // Prepare structured history for Gemini to avoid consecutive identical roles
                     let apiHistory = [];
                     newMessages.forEach((msg) => {
                         const apiRole = msg.role === 'user' ? 'user' : 'model';
@@ -873,7 +891,7 @@
                         }
                     });
 
-                    // Google strict rules: First message MUST be user, no system messages inline.
+                    // Fix for Gemini API rules: first message must be user
                     if (apiHistory.length > 0 && apiHistory[0].role === 'model') {
                         apiHistory.shift(); 
                     }
@@ -881,14 +899,16 @@
                         apiHistory.push({ role: 'user', parts: [{ text: 'שלום' }]});
                     }
 
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             systemInstruction: { parts: [{ text: sysPrompt }] },
                             contents: apiHistory
                         })
                     });
-                    
+                        
                     if(!response.ok) {
                         console.error("Gemini API Error details:", await response.text());
                         throw new Error("Gemini API Request Failed");
@@ -908,7 +928,7 @@
                     }
                 } catch (err) {
                     console.error("Chat error:", err);
-                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: 'מצטער, הייתה שגיאה בתקשורת (ייתכן ומפתח ה-API שגוי). אנא נסה לשלוח שוב.' }] });
+                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: 'מצטער, הייתה שגיאה בתקשורת. המערכת מזהה שמפתח ה-API שהוזן הוא כנראה מסוג AQ והדפדפן חוסם אותו. אנא פנה למנהל.' }] });
                 } finally { setIsTyping(false); }
             };
 
@@ -916,13 +936,8 @@
                 if(!manualBriefData.company || !manualBriefData.goal) {
                     alert("אנא מלא לפחות שם עסק ומטרה."); return;
                 }
-                const featuresText = `
-תוספים שנבחרו:
-- נגישות: ${features.accessibility ? 'כן' : 'לא'}
-- וואטסאפ: ${features.whatsapp ? 'כן' : 'לא'}
-- שפות: ${features.english ? 'כן' : 'לא'}
-                `;
-                const fullBrief = `שם: ${manualBriefData.company}\nקהל יעד: ${manualBriefData.audience}\nמטרה: ${manualBriefData.goal}\nעיצוב: ${manualBriefData.colors}\n${featuresText}`;
+                const featuresText = `תוספים שנבחרו:\n- נגישות: ${features.accessibility ? 'כן' : 'לא'}\n- וואטסאפ: ${features.whatsapp ? 'כן' : 'לא'}\n- שפות: ${features.english ? 'כן' : 'לא'}`;
+                const fullBrief = `שם: ${manualBriefData.company}\nקהל יעד: ${manualBriefData.audience}\nמטרה: ${manualBriefData.goal}\nעיצוב: ${manualBriefData.colors}\n\n${featuresText}`;
                 
                 updateProject(project.id, { brief: fullBrief, status: 'waiting_for_quote' });
             };
@@ -1030,7 +1045,7 @@
                         <Card className="text-center py-24 bg-gradient-to-b from-amber-50 to-white border border-amber-100 shadow-2xl rounded-3xl mt-10">
                             <div className="text-8xl mb-8 animate-pulse-slow">⏳</div>
                             <h2 className="text-4xl font-black text-amber-900 mb-4 tracking-tight">האפיון בבדיקת הצוות שלנו</h2>
-                            <p className="text-amber-800 font-medium text-lg max-w-lg mx-auto">אנו בונים לך כעת הצעת מחיר מדויקת ומיד כשתהיה מוכנה המסך כאן יתעדכן.</p>
+                            <p className="text-amber-800 font-medium text-lg max-w-lg mx-auto">יונתן העביר את הסיכום למנהל הפרויקט האנושי. אנו בונים לך כעת הצעת מחיר מדויקת ומיד כשתהיה מוכנה המסך כאן יתעדכן.</p>
                         </Card>
                     )}
 
