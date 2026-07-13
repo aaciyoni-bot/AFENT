@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -49,7 +50,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Component } = React;
 
-        const GEMINI_API_KEY = ""; // Intentionally empty to let the environment inject its key
+        // המפתח החדש שלך
+        const GEMINI_API_KEY = "AQ.Ab8RN6Ib6AmYal3QUQ7MsVC9vH26gfT29Kf-ro_r1kGzt09Ciw"; 
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOIAfm8XfFegf9RaA0HyHpUuVTWDTXXuE",
@@ -215,6 +217,7 @@
                 return () => { unsubUsers(); unsubProjects(); unsubStore(); unsubSettings(); };
             }, []);
 
+            // Active user syncing
             const activeUser = currentUser ? (users.find(u => u.id === currentUser.id) || currentUser) : null;
 
             const showAlert = (message, title = "הודעה", type = "info", onConfirmAction = null) => {
@@ -286,7 +289,7 @@
                     id: 'proj_' + Date.now(), 
                     clientId, 
                     freelancerId: assignedFreelancerId, 
-                    status: 'waiting_for_brief', // This now directs to the Manual Form
+                    status: 'waiting_for_brief', // מתחיל מהטופס הידני
                     paymentAmount: 0, 
                     brief: '', 
                     createdAt: Date.now(),
@@ -891,6 +894,7 @@
                         }
                     });
 
+                    // Google API validation: The first message MUST be from 'user'.
                     if (apiHistory.length > 0 && apiHistory[0].role === 'model') {
                         apiHistory.shift(); 
                     }
@@ -898,7 +902,8 @@
                         apiHistory.push({ role: 'user', parts: [{ text: 'שלום' }]});
                     }
 
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+                    // USING THE STABLE MODEL HERE
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                     
                     const response = await fetch(apiUrl, {
                         method: 'POST', 
@@ -910,7 +915,9 @@
                     });
                         
                     if(!response.ok) {
-                        throw new Error("מצטער, הייתה שגיאה בתקשורת. המערכת מזהה שמפתח ה-API כנראה מסוג AQ שהדפדפן חוסם אותו. אנא פנה למנהל.");
+                        // Extracting the EXACT error from Google's server to display it
+                        const errData = await response.json();
+                        throw new Error("שגיאה מגוגל: " + (errData.error?.message || "שגיאת תקשורת עם השרת"));
                     }
 
                     const data = await response.json();
@@ -1092,7 +1099,7 @@
                                 <h2 className="text-4xl font-black mb-3 text-slate-900 tracking-tight">
                                     {project.status === 'completed' ? 'האתר שלך באוויר!' : 
                                      project.status === 'qa_review' ? 'האתר בבדיקות איכות אחרונות!' :
-                                     'תודה רבה!האתר שלך בפיתוח ברגעים אלו!'}
+                                     'האתר שלך בפיתוח ברגעים אלו!'}
                                 </h2>
                                 <p className="font-medium text-slate-600 text-lg max-w-lg mx-auto">הצוות עובד על הפרויקט בהתאם ללוחות הזמנים.</p>
                             </Card>
