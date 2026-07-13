@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -286,7 +287,7 @@
                     id: 'proj_' + Date.now(), 
                     clientId, 
                     freelancerId: assignedFreelancerId, 
-                    status: 'waiting_for_brief', 
+                    status: 'waiting_for_brief', // This now directs to the Manual Form
                     paymentAmount: 0, 
                     brief: '', 
                     createdAt: Date.now(),
@@ -426,8 +427,9 @@
 
             const getStatusHealth = (status) => {
                 const map = {
-                    'waiting_for_brief': { color: 'text-brand-500', icon: '🤖', text: 'ממתין ללקוח (AI)' },
-                    'manual_brief': { color: 'text-amber-500', icon: '📝', text: 'ממתין ללקוח (טופס ידני)' },
+                    'waiting_for_brief': { color: 'text-brand-500', icon: '📝', text: 'ממתין ללקוח (טופס אפיון)' },
+                    'ai_brief': { color: 'text-purple-500', icon: '🤖', text: 'ממתין ללקוח (צ\'אט AI)' },
+                    'manual_brief': { color: 'text-amber-500', icon: '📝', text: 'ממתין ללקוח (טופס ישן)' },
                     'contact_requested': { color: 'text-rose-500', icon: '📞', text: 'לקוח מבקש שיחה!' },
                     'waiting_for_quote': { color: 'text-amber-500', icon: '🟡', text: 'ממתין לתמחור' },
                     'waiting_for_payment': { color: 'text-amber-500', icon: '🟡', text: 'ממתין לתשלום' },
@@ -784,17 +786,17 @@
                                         </div>
                                     )}
 
-                                    {p.status === 'waiting_for_brief' && (
+                                    {(p.status === 'waiting_for_brief' || p.status === 'manual_brief') && (
                                         <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center">
-                                            <div className="text-4xl mb-3">🤖</div>
-                                            <h4 className="font-black text-blue-900 mb-2 text-lg">ממתין שהלקוח יסיים את הצ'אט עם ה-AI</h4>
+                                            <div className="text-4xl mb-3">📝</div>
+                                            <h4 className="font-black text-blue-900 mb-2 text-lg">הלקוח ממלא כעת אפיון בטופס ידני</h4>
                                         </div>
                                     )}
 
-                                    {p.status === 'manual_brief' && (
-                                        <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 text-center">
-                                            <div className="text-4xl mb-3">📝</div>
-                                            <h4 className="font-black text-amber-900 mb-2 text-lg">הלקוח ממלא כעת אפיון בטופס ידני</h4>
+                                    {p.status === 'ai_brief' && (
+                                        <div className="bg-purple-50 p-6 rounded-2xl border border-purple-200 text-center">
+                                            <div className="text-4xl mb-3">🤖</div>
+                                            <h4 className="font-black text-purple-900 mb-2 text-lg">ממתין שהלקוח יסיים את הצ'אט עם ה-AI</h4>
                                         </div>
                                     )}
 
@@ -854,7 +856,7 @@
 
             if (!project) return <div className="text-center p-12 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-200 max-w-lg mx-auto mt-10">המערכת מכינה את סביבת העבודה המותאמת שלך... אנא המתן.</div>;
 
-            const knownStatuses = ['waiting_for_brief', 'manual_brief', 'contact_requested', 'waiting_for_quote', 'waiting_for_payment', 'in_progress', 'qa_review', 'completed', 'stuck'];
+            const knownStatuses = ['waiting_for_brief', 'manual_brief', 'ai_brief', 'contact_requested', 'waiting_for_quote', 'waiting_for_payment', 'in_progress', 'qa_review', 'completed', 'stuck'];
 
             if (!knownStatuses.includes(project.status)) {
                 return (
@@ -909,11 +911,7 @@
                     });
                         
                     if(!response.ok) {
-                        if (response.status === 401 || response.status === 403) {
-                            throw new Error("מצטער, הייתה שגיאה בתקשורת. המערכת מזהה שמפתח ה-API שהוזן הוא כנראה מסוג AQ והדפדפן חוסם אותו. אנא פנה למנהל.");
-                        } else {
-                            throw new Error(`שגיאת שרת: ${response.status}`);
-                        }
+                        throw new Error("מצטער, הייתה שגיאה בתקשורת. המערכת מזהה שמפתח ה-API כנראה מסוג AQ שהדפדפן חוסם אותו. אנא פנה למנהל.");
                     }
 
                     const data = await response.json();
@@ -930,7 +928,7 @@
                     }
                 } catch (err) {
                     console.error("Chat error:", err);
-                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: err.message || 'מצטער, הייתה שגיאה בתקשורת. אנא נסה שוב.' }] });
+                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: err.message || 'שגיאת התחברות ל-AI.' }] });
                 } finally { setIsTyping(false); }
             };
 
@@ -947,17 +945,76 @@
             return (
                 <div className={`max-w-4xl mx-auto space-y-8 fade-in pb-20 ${isReadOnly ? 'opacity-80 pointer-events-none' : ''}`}>
                     
-                    {project.status === 'waiting_for_brief' && (
-                        <Card className="shadow-2xl border-t-4 border-t-brand-500 p-0 overflow-hidden flex flex-col h-[650px] max-h-[85vh] rounded-3xl mt-10">
-                            <div className="bg-gradient-to-r from-brand-50 to-white p-5 border-b border-brand-100 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-2xl shadow-lg">🤖</div>
+                    {(project.status === 'waiting_for_brief' || project.status === 'manual_brief') && (
+                        <div className="fade-in mt-10">
+                            {/* AI Assistance Banner at the top of the manual form */}
+                            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between mb-8">
+                                <div className="flex items-center gap-4 mb-4 md:mb-0">
+                                    <div className="text-4xl bg-white/20 p-3 rounded-2xl backdrop-blur-sm">🤖</div>
                                     <div>
-                                        <h3 className="font-black text-slate-800 text-xl">יונתן - אוריזיס</h3>
-                                        <p className="text-sm text-brand-600 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> מנהל פרויקטים חכם (AI)</p>
+                                        <h3 className="font-black text-2xl mb-1 tracking-tight">מתקשה לנסח את האפיון?</h3>
+                                        <p className="text-purple-100 font-medium">תן ליונתן, עוזר ה-AI שלנו, לשאול אותך הכל בצ'אט קצר וזורם.</p>
                                     </div>
                                 </div>
-                                <Button onClick={() => updateProject(project.id, {status: 'manual_brief'})} variant="secondary" className="!text-xs border border-slate-300 bg-white hover:bg-slate-50 shadow-sm text-slate-700 rounded-full px-4" title="מילוי שאלון ידני במקום צ'אט">📝 דלג לאפיון בטופס</Button>
+                                <Button onClick={() => updateProject(project.id, {status: 'ai_brief'})} className="bg-white text-purple-700 hover:bg-slate-50 w-full md:w-auto shadow-lg shadow-purple-900/20 text-lg px-6 py-3">פתח צ'אט עם יונתן</Button>
+                            </div>
+
+                            <Card className="shadow-2xl border-t-4 border-t-brand-500 p-8 md:p-12">
+                                <h2 className="text-3xl font-black text-slate-800 mb-2">אפיון אתר חדש 📝</h2>
+                                <p className="text-slate-500 font-medium mb-8">ענה על כמה שאלות קצרות, בחר תוספים, ואנחנו ניגש לעבודה.</p>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700 block mb-2">שם העסק / המותג</label>
+                                        <input type="text" value={manualBriefData.company} onChange={e=>setManualBriefData({...manualBriefData, company: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 focus:bg-white transition-all" placeholder="לדוגמה: משרד עו''ד כהן" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700 block mb-2">מי קהל היעד המרכזי?</label>
+                                        <input type="text" value={manualBriefData.audience} onChange={e=>setManualBriefData({...manualBriefData, audience: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 focus:bg-white transition-all" placeholder="לדוגמה: לקוחות פרטיים, עסקים קטנים" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700 block mb-2">מה המטרה העיקרית של האתר?</label>
+                                        <textarea value={manualBriefData.goal} onChange={e=>setManualBriefData({...manualBriefData, goal: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 focus:bg-white transition-all min-h-[100px]" placeholder="להביא לידים, למכור מוצרים, להציג עבודות..." />
+                                    </div>
+                                    
+                                    <div className="bg-brand-50 p-6 rounded-xl border border-brand-100">
+                                        <h4 className="font-black text-brand-900 mb-4">תוספים ופיצ'רים שיוטמעו בהסכם:</h4>
+                                        <div className="space-y-3">
+                                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
+                                                <input type="checkbox" checked={features.accessibility} onChange={e=>setFeatures({...features, accessibility: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
+                                                <span className="font-medium text-slate-700">תוסף נגישות לאתר (ללא עלות)</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
+                                                <input type="checkbox" checked={features.whatsapp} onChange={e=>setFeatures({...features, whatsapp: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
+                                                <span className="font-medium text-slate-700">כפתור חיוג / וואטסאפ מרחף</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
+                                                <input type="checkbox" checked={features.english} onChange={e=>setFeatures({...features, english: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
+                                                <span className="font-medium text-slate-700">תמיכה באתר דו-לשוני (עברית/אנגלית)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100">
+                                        <Button onClick={submitManualBrief} className="flex-1 py-4 text-lg">סיימתי, שלח לתמחור</Button>
+                                        <Button onClick={() => updateProject(project.id, {status: 'contact_requested'})} variant="secondary" className="sm:w-auto py-4">עזבו, אני מעדיף שנדבר בטלפון 📞</Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+
+                    {project.status === 'ai_brief' && (
+                        <Card className="shadow-2xl border-t-4 border-t-purple-500 p-0 overflow-hidden flex flex-col h-[650px] max-h-[85vh] rounded-3xl mt-10 fade-in">
+                            <div className="bg-gradient-to-r from-purple-50 to-white p-5 border-b border-purple-100 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-2xl shadow-lg">🤖</div>
+                                    <div>
+                                        <h3 className="font-black text-slate-800 text-xl">יונתן - אוריזיס</h3>
+                                        <p className="text-sm text-purple-600 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> מנהל פרויקטים חכם (AI)</p>
+                                    </div>
+                                </div>
+                                <Button onClick={() => updateProject(project.id, {status: 'waiting_for_brief'})} variant="secondary" className="!text-xs border border-slate-300 bg-white hover:bg-slate-50 shadow-sm text-slate-700 rounded-full px-4" title="חזור לטופס אפיון רגיל">📝 חזור לטופס רגיל</Button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50">
                                 {messages.length === 0 && (
@@ -969,7 +1026,7 @@
                                 )}
                                 {messages.map((m, i) => (
                                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} fade-in`}>
-                                        <div className={`max-w-[90%] md:max-w-[75%] p-5 rounded-2xl text-[15px] font-medium shadow-sm ${m.role === 'user' ? 'bg-brand-500 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 whitespace-pre-wrap leading-relaxed rounded-bl-none'}`}>{m.text}</div>
+                                        <div className={`max-w-[90%] md:max-w-[75%] p-5 rounded-2xl text-[15px] font-medium shadow-sm ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 whitespace-pre-wrap leading-relaxed rounded-bl-none'}`}>{m.text}</div>
                                     </div>
                                 ))}
                                 {isTyping && (
@@ -984,53 +1041,8 @@
                                 <div ref={chatEndRef} />
                             </div>
                             <div className="p-4 bg-white border-t border-slate-200 flex gap-3">
-                                <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSendChat()} placeholder="הקלד תשובה ליונתן..." className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-brand-500 transition-colors" />
-                                <Button onClick={handleSendChat} className="px-8 shadow-md text-lg">שלח</Button>
-                            </div>
-                        </Card>
-                    )}
-
-                    {project.status === 'manual_brief' && (
-                        <Card className="shadow-2xl border-t-4 border-t-brand-500 max-w-2xl mx-auto mt-10 p-8 md:p-12">
-                            <h2 className="text-3xl font-black text-slate-800 mb-2">אפיון אתר מהיר 📝</h2>
-                            <p className="text-slate-500 font-medium mb-8">ענה על כמה שאלות קצרות, בחר תוספים, ואנחנו ניגש לעבודה.</p>
-                            
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="text-sm font-bold text-slate-700 block mb-2">שם העסק / המותג</label>
-                                    <input type="text" value={manualBriefData.company} onChange={e=>setManualBriefData({...manualBriefData, company: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500" placeholder="לדוגמה: משרד עו''ד כהן" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-slate-700 block mb-2">מי קהל היעד המרכזי?</label>
-                                    <input type="text" value={manualBriefData.audience} onChange={e=>setManualBriefData({...manualBriefData, audience: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500" placeholder="לדוגמה: לקוחות פרטיים, עסקים קטנים" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-slate-700 block mb-2">מה המטרה העיקרית של האתר?</label>
-                                    <textarea value={manualBriefData.goal} onChange={e=>setManualBriefData({...manualBriefData, goal: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 min-h-[100px]" placeholder="להביא לידים, למכור מוצרים, להציג עבודות..." />
-                                </div>
-                                
-                                <div className="bg-brand-50 p-6 rounded-xl border border-brand-100">
-                                    <h4 className="font-black text-brand-900 mb-4">תוספים ופיצ'רים שיוטמעו בהסכם:</h4>
-                                    <div className="space-y-3">
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
-                                            <input type="checkbox" checked={features.accessibility} onChange={e=>setFeatures({...features, accessibility: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
-                                            <span className="font-medium text-slate-700">תוסף נגישות לאתר (ללא עלות)</span>
-                                        </label>
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
-                                            <input type="checkbox" checked={features.whatsapp} onChange={e=>setFeatures({...features, whatsapp: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
-                                            <span className="font-medium text-slate-700">כפתור חיוג / וואטסאפ מרחף</span>
-                                        </label>
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition">
-                                            <input type="checkbox" checked={features.english} onChange={e=>setFeatures({...features, english: e.target.checked})} className="w-5 h-5 accent-brand-600 rounded" />
-                                            <span className="font-medium text-slate-700">תמיכה באתר דו-לשוני (עברית/אנגלית)</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                    <Button onClick={submitManualBrief} className="flex-1 py-4 text-lg">סיימתי, שלח לתמחור</Button>
-                                    <Button onClick={() => updateProject(project.id, {status: 'contact_requested'})} variant="secondary" className="sm:w-auto py-4">עזבו, אני מעדיף שנדבר בטלפון 📞</Button>
-                                </div>
+                                <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSendChat()} placeholder="הקלד תשובה ליונתן..." className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-purple-500 transition-colors" />
+                                <Button onClick={handleSendChat} className="px-8 shadow-md text-lg bg-purple-600 hover:bg-purple-700 shadow-purple-500/30">שלח</Button>
                             </div>
                         </Card>
                     )}
@@ -1047,7 +1059,7 @@
                         <Card className="text-center py-24 bg-gradient-to-b from-amber-50 to-white border border-amber-100 shadow-2xl rounded-3xl mt-10">
                             <div className="text-8xl mb-8 animate-pulse-slow">⏳</div>
                             <h2 className="text-4xl font-black text-amber-900 mb-4 tracking-tight">האפיון בבדיקת הצוות שלנו</h2>
-                            <p className="text-amber-800 font-medium text-lg max-w-lg mx-auto">יונתן העביר את הסיכום למנהל הפרויקט האנושי. אנו בונים לך כעת הצעת מחיר מדויקת ומיד כשתהיה מוכנה המסך כאן יתעדכן.</p>
+                            <p className="text-amber-800 font-medium text-lg max-w-lg mx-auto">מנהל הפרויקט בונה עבורך כעת הצעת מחיר מדויקת בהתאם לאפיון. ברגע שהיא תהיה מוכנה המסך כאן יתעדכן אוטומטית.</p>
                         </Card>
                     )}
 
