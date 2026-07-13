@@ -42,6 +42,9 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .progress-step-active { @apply border-brand-500 bg-brand-50 text-brand-600; }
+        .progress-step-completed { @apply border-emerald-500 bg-emerald-500 text-white; }
+        .progress-step-pending { @apply border-slate-200 bg-white text-slate-400; }
     </style>
 </head>
 <body>
@@ -217,7 +220,6 @@
                 return () => { unsubUsers(); unsubProjects(); unsubStore(); unsubSettings(); };
             }, []);
 
-            // Active user syncing
             const activeUser = currentUser ? (users.find(u => u.id === currentUser.id) || currentUser) : null;
 
             const showAlert = (message, title = "הודעה", type = "info", onConfirmAction = null) => {
@@ -289,12 +291,13 @@
                     id: 'proj_' + Date.now(), 
                     clientId, 
                     freelancerId: assignedFreelancerId, 
-                    status: 'waiting_for_brief', // מתחיל מהטופס הידני
+                    status: 'manual_brief', // מתחיל כברירת מחדל בטופס ידני כמו שביקשת
                     paymentAmount: 0, 
                     brief: '', 
                     createdAt: Date.now(),
                     timerStart: null,
-                    chatHistory: []
+                    chatHistory: [],
+                    clientMessages: [] // צ'אט לקוח מול מפתח
                 };
 
                 if(db) {
@@ -430,8 +433,8 @@
             const getStatusHealth = (status) => {
                 const map = {
                     'waiting_for_brief': { color: 'text-brand-500', icon: '📝', text: 'ממתין ללקוח (טופס אפיון)' },
+                    'manual_brief': { color: 'text-amber-500', icon: '📝', text: 'ממתין ללקוח (טופס ידני)' },
                     'ai_brief': { color: 'text-purple-500', icon: '🤖', text: 'ממתין ללקוח (צ\'אט AI)' },
-                    'manual_brief': { color: 'text-amber-500', icon: '📝', text: 'ממתין ללקוח (טופס ישן)' },
                     'contact_requested': { color: 'text-rose-500', icon: '📞', text: 'לקוח מבקש שיחה!' },
                     'waiting_for_quote': { color: 'text-amber-500', icon: '🟡', text: 'ממתין לתמחור' },
                     'waiting_for_payment': { color: 'text-amber-500', icon: '🟡', text: 'ממתין לתשלום' },
@@ -791,7 +794,7 @@
                                     {(p.status === 'waiting_for_brief' || p.status === 'manual_brief') && (
                                         <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center">
                                             <div className="text-4xl mb-3">📝</div>
-                                            <h4 className="font-black text-blue-900 mb-2 text-lg">הלקוח ממלא כעת אפיון בטופס ידני</h4>
+                                            <h4 className="font-black text-blue-900 mb-2 text-lg">הלקוח ממלא כעת אפיון באתר</h4>
                                         </div>
                                     )}
 
@@ -829,6 +832,21 @@
                                             <Button onClick={() => updateProject(p.id, {status: 'in_progress'})} variant="primary" className="mx-auto !py-3 px-8 text-lg shadow-brand-500/30">שחרר חסימה והמשך פיתוח (הפעל טיימר)</Button>
                                         </div>
                                     )}
+                                    
+                                    {/* Client Messages Section for Freelancer */}
+                                    {p.clientMessages && p.clientMessages.length > 0 && (
+                                        <div className="mt-6 bg-blue-50 border border-blue-200 p-4 rounded-xl">
+                                            <h4 className="font-black text-blue-900 mb-3 flex items-center gap-2">💬 הודעות מהלקוח</h4>
+                                            <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
+                                                {p.clientMessages.map((msg, idx) => (
+                                                    <div key={idx} className="bg-white p-3 rounded-lg shadow-sm border border-blue-100 text-sm">
+                                                        <div className="text-xs text-slate-400 mb-1">{new Date(msg.timestamp).toLocaleString('he-IL')}</div>
+                                                        <div className="font-medium text-slate-700">{msg.text}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {p.brief && (
                                         <div className="mt-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
@@ -844,14 +862,70 @@
             );
         };
 
+        const ClientCountdown = ({ targetDate }) => {
+            const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: false });
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = targetDate - now;
+
+                    if (distance < 0) {
+                        clearInterval(interval);
+                        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
+                        return;
+                    }
+
+                    setTimeLeft({
+                        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+                        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [targetDate]);
+
+            if (timeLeft.isExpired) {
+                return <div className="text-2xl font-black text-amber-500 bg-amber-50 py-4 px-6 rounded-xl border border-amber-200">מתעכב קלות - הפרויקט בשלבי סיום אחרונים!</div>;
+            }
+
+            return (
+                <div className="flex justify-center gap-4 text-center" dir="ltr">
+                    <div className="bg-slate-800 text-white p-4 rounded-2xl w-20 shadow-inner">
+                        <div className="text-3xl font-black">{timeLeft.days}</div>
+                        <div className="text-xs font-medium text-slate-400 mt-1 uppercase">Days</div>
+                    </div>
+                    <div className="text-3xl font-black text-slate-400 self-center">:</div>
+                    <div className="bg-slate-800 text-white p-4 rounded-2xl w-20 shadow-inner">
+                        <div className="text-3xl font-black">{timeLeft.hours.toString().padStart(2, '0')}</div>
+                        <div className="text-xs font-medium text-slate-400 mt-1 uppercase">Hours</div>
+                    </div>
+                    <div className="text-3xl font-black text-slate-400 self-center">:</div>
+                    <div className="bg-slate-800 text-white p-4 rounded-2xl w-20 shadow-inner">
+                        <div className="text-3xl font-black">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+                        <div className="text-xs font-medium text-slate-400 mt-1 uppercase">Mins</div>
+                    </div>
+                    <div className="text-3xl font-black text-slate-400 self-center hidden sm:block">:</div>
+                    <div className="bg-slate-800 text-white p-4 rounded-2xl w-20 shadow-inner hidden sm:block">
+                        <div className="text-3xl font-black">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+                        <div className="text-xs font-medium text-slate-400 mt-1 uppercase">Secs</div>
+                    </div>
+                </div>
+            );
+        };
+
         const ClientPortal = ({ user, projects, storeItems, settings, updateProject, isReadOnly }) => {
             const project = projects.find(p => p?.clientId === user?.id);
             const [chatInput, setChatInput] = useState('');
             const [isTyping, setIsTyping] = useState(false);
+            const [aiError, setAiError] = useState(null);
             const chatEndRef = useRef(null);
             
             const [manualBriefData, setManualBriefData] = useState({ company: '', audience: '', goal: '', colors: '' });
             const [features, setFeatures] = useState({ accessibility: false, whatsapp: false, english: false });
+            
+            const [clientDevMessage, setClientDevMessage] = useState('');
 
             const messages = project?.chatHistory || [];
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -876,12 +950,13 @@
             const handleSendChat = async () => {
                 if (isReadOnly || !chatInput.trim() || isTyping) return;
                 
+                setAiError(null);
                 const userMessage = { role: 'user', text: chatInput };
                 const newMessages = [...messages, userMessage];
                 updateProject(project.id, { chatHistory: newMessages });
                 setChatInput(''); setIsTyping(true);
 
-                const sysPrompt = `אתה יונתן, מנהל פרויקטים סופר-מקצועי בחברת ORIZISWEB. מטרתך לאסוף מידע מלקוח לאפיון אתר. שאל שאלות קצרות. אסור לך לתת מחירים בשום אופן. כשיש לך מספיק מידע של קהל יעד ומטרת האתר, כתוב רק את המילה המדויקת בסוף: [סיכום_אפיון].`;
+                const sysPrompt = `אתה יונתן, מנהל פרויקטים חכם בחברת ORIZISWEB. עליך לדבר בעברית בלבד. מטרתך לאסוף מידע מלקוח לאפיון אתר. שאל שאלות קצרות, אחת בכל פעם. כשיש לך מספיק מידע לגבי קהל היעד והמטרה, כתוב רק את המילה המדויקת [סיכום_אפיון] בסוף דבריך.`;
 
                 try {
                     let apiHistory = [];
@@ -894,7 +969,6 @@
                         }
                     });
 
-                    // Google API validation: The first message MUST be from 'user'.
                     if (apiHistory.length > 0 && apiHistory[0].role === 'model') {
                         apiHistory.shift(); 
                     }
@@ -902,7 +976,6 @@
                         apiHistory.push({ role: 'user', parts: [{ text: 'שלום' }]});
                     }
 
-                    // USING THE STABLE MODEL HERE
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                     
                     const response = await fetch(apiUrl, {
@@ -915,9 +988,8 @@
                     });
                         
                     if(!response.ok) {
-                        // Extracting the EXACT error from Google's server to display it
                         const errData = await response.json();
-                        throw new Error("שגיאה מגוגל: " + (errData.error?.message || "שגיאת תקשורת עם השרת"));
+                        throw new Error(errData.error?.message || "שגיאת שרת לא ידועה");
                     }
 
                     const data = await response.json();
@@ -933,8 +1005,8 @@
                         setTimeout(() => updateProject(project.id, { brief: briefTranscript, status: 'waiting_for_quote' }), 3000);
                     }
                 } catch (err) {
-                    console.error("Chat error:", err);
-                    updateProject(project.id, { chatHistory: [...newMessages, { role: 'model', text: err.message || 'שגיאת התחברות ל-AI.' }] });
+                    console.error("Chat error details:", err);
+                    setAiError("שגיאת Google AI: " + err.message);
                 } finally { setIsTyping(false); }
             };
 
@@ -947,22 +1019,69 @@
                 
                 updateProject(project.id, { brief: fullBrief, status: 'waiting_for_quote' });
             };
+            
+            const handleClientMessageToDev = () => {
+                if(!clientDevMessage.trim() || isReadOnly) return;
+                const newMsg = { text: clientDevMessage, timestamp: Date.now() };
+                const updatedMessages = [...(project.clientMessages || []), newMsg];
+                updateProject(project.id, { clientMessages: updatedMessages });
+                setClientDevMessage('');
+                alert("הודעתך הועברה לצוות הפיתוח!");
+            };
+
+            const renderProgressTracker = () => {
+                const isQa = project.status === 'qa_review';
+                const isCompleted = project.status === 'completed';
+                
+                return (
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 mt-6">
+                        <div className="flex items-center justify-between relative">
+                            {/* Connecting Lines */}
+                            <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 -z-10 -translate-y-1/2"></div>
+                            <div className="absolute top-1/2 right-0 h-1 bg-emerald-500 -z-10 -translate-y-1/2 transition-all duration-1000" style={{ width: isCompleted ? '100%' : isQa ? '66%' : '33%' }}></div>
+                            
+                            {/* Steps */}
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl mb-2 transition-colors duration-500 ${true ? 'progress-step-completed' : 'progress-step-pending'}`}>✓</div>
+                                <span className="text-xs font-bold text-slate-700">אפיון אושר</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl mb-2 transition-colors duration-500 ${isQa || isCompleted ? 'progress-step-completed' : 'progress-step-active shadow-[0_0_15px_rgba(14,165,233,0.3)]'}`}>{(isQa || isCompleted) ? '✓' : '⚙️'}</div>
+                                <span className={`text-xs font-bold ${isQa || isCompleted ? 'text-slate-700' : 'text-brand-600'}`}>פיתוח פעיל</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl mb-2 transition-colors duration-500 ${isCompleted ? 'progress-step-completed' : isQa ? 'progress-step-active shadow-[0_0_15px_rgba(14,165,233,0.3)]' : 'progress-step-pending'}`}>{isCompleted ? '✓' : '🔎'}</div>
+                                <span className={`text-xs font-bold ${isCompleted ? 'text-slate-700' : isQa ? 'text-brand-600' : 'text-slate-400'}`}>בקרת איכות</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl mb-2 transition-colors duration-500 ${isCompleted ? 'progress-step-completed shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'progress-step-pending'}`}>🚀</div>
+                                <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>השקה ומסירה</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             return (
                 <div className={`max-w-4xl mx-auto space-y-8 fade-in pb-20 ${isReadOnly ? 'opacity-80 pointer-events-none' : ''}`}>
                     
+                    {}
                     {(project.status === 'waiting_for_brief' || project.status === 'manual_brief') && (
                         <div className="fade-in mt-10">
-                            {/* AI Assistance Banner at the top of the manual form */}
-                            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between mb-8">
-                                <div className="flex items-center gap-4 mb-4 md:mb-0">
+                            {/* AI Assistance Banner */}
+                            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between mb-8 relative overflow-hidden">
+                                <div className="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+                                <div className="flex items-center gap-4 mb-4 md:mb-0 relative z-10">
                                     <div className="text-4xl bg-white/20 p-3 rounded-2xl backdrop-blur-sm">🤖</div>
                                     <div>
                                         <h3 className="font-black text-2xl mb-1 tracking-tight">מתקשה לנסח את האפיון?</h3>
-                                        <p className="text-purple-100 font-medium">תן ליונתן, עוזר ה-AI שלנו, לשאול אותך הכל בצ'אט קצר וזורם.</p>
+                                        <p className="text-purple-100 font-medium text-sm">תן ליונתן, מנהל הפרויקטים שלנו, לשאול אותך הכל בצ'אט פשוט וזורם.</p>
                                     </div>
                                 </div>
-                                <Button onClick={() => updateProject(project.id, {status: 'ai_brief'})} className="bg-white text-purple-700 hover:bg-slate-50 w-full md:w-auto shadow-lg shadow-purple-900/20 text-lg px-6 py-3">פתח צ'אט עם יונתן</Button>
+                                <Button onClick={() => updateProject(project.id, {status: 'ai_brief'})} className="bg-white text-purple-700 hover:bg-slate-50 w-full md:w-auto shadow-lg shadow-purple-900/20 text-lg px-6 py-3 relative z-10">פתח שיחה עם יונתן</Button>
                             </div>
 
                             <Card className="shadow-2xl border-t-4 border-t-brand-500 p-8 md:p-12">
@@ -1020,7 +1139,7 @@
                                         <p className="text-sm text-purple-600 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> מנהל פרויקטים חכם (AI)</p>
                                     </div>
                                 </div>
-                                <Button onClick={() => updateProject(project.id, {status: 'waiting_for_brief'})} variant="secondary" className="!text-xs border border-slate-300 bg-white hover:bg-slate-50 shadow-sm text-slate-700 rounded-full px-4" title="חזור לטופס אפיון רגיל">📝 חזור לטופס רגיל</Button>
+                                <Button onClick={() => updateProject(project.id, {status: 'manual_brief'})} variant="secondary" className="!text-xs border border-slate-300 bg-white hover:bg-slate-50 shadow-sm text-slate-700 rounded-full px-4" title="חזור לטופס אפיון רגיל">📝 חזור לטופס רגיל</Button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50">
                                 {messages.length === 0 && (
@@ -1041,6 +1160,13 @@
                                             <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></span>
                                             <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></span>
                                             <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                                        </div>
+                                    </div>
+                                )}
+                                {aiError && (
+                                    <div className="flex justify-start fade-in w-full">
+                                        <div className="w-full bg-rose-50 border border-rose-200 p-4 rounded-xl text-rose-800 text-sm font-bold shadow-sm" dir="ltr">
+                                            {aiError}
                                         </div>
                                     </div>
                                 )}
@@ -1087,43 +1213,84 @@
                                     {settings.clientAgreement}
                                 </div>
                                 <h5 className="font-bold text-slate-700 mb-3 text-sm">חתימתך מאשרת את התנאים ויציאה לפיתוח:</h5>
-                                <SignatureCanvas onSave={(sig) => updateProject(project.id, {status: 'in_progress', clientSignature: sig})} />
+                                {/* START COUNTDOWN & PROGRESS BAR UPON SIGNATURE */}
+                                <SignatureCanvas onSave={(sig) => {
+                                    const deliveryTargetDate = Date.now() + (96 * 60 * 60 * 1000); // 96 hours from now
+                                    updateProject(project.id, {status: 'in_progress', clientSignature: sig, deliveryTargetDate: deliveryTargetDate});
+                                }} />
                             </div>
                         </Card>
                     )}
 
+                    {}
                     {(['in_progress', 'qa_review', 'completed', 'stuck'].includes(project.status)) && (
-                        <div className="space-y-8 mt-10">
-                            <Card className={`text-center py-16 bg-gradient-to-b border shadow-2xl rounded-3xl ${project.status === 'completed' ? 'from-blue-50 border-blue-100' : 'from-emerald-50 border-emerald-100'}`}>
-                                <div className="text-7xl mb-6">{project.status === 'completed' ? '🎉' : project.status === 'qa_review' ? '🔎' : '🚀'}</div>
-                                <h2 className="text-4xl font-black mb-3 text-slate-900 tracking-tight">
-                                    {project.status === 'completed' ? 'האתר שלך באוויר!' : 
-                                     project.status === 'qa_review' ? 'האתר בבדיקות איכות אחרונות!' :
-                                     'האתר שלך בפיתוח ברגעים אלו!'}
-                                </h2>
-                                <p className="font-medium text-slate-600 text-lg max-w-lg mx-auto">הצוות עובד על הפרויקט בהתאם ללוחות הזמנים.</p>
-                            </Card>
+                        <div className="space-y-8 mt-10 fade-in">
+                            
+                            {renderProgressTracker()}
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-8">
+                                    <Card className={`text-center py-12 bg-gradient-to-b border shadow-xl rounded-3xl ${project.status === 'completed' ? 'from-blue-50 border-blue-100' : 'from-slate-50 border-slate-200'}`}>
+                                        <div className="text-7xl mb-6">{project.status === 'completed' ? '🎉' : project.status === 'qa_review' ? '🔎' : '🚀'}</div>
+                                        <h2 className="text-3xl font-black mb-3 text-slate-900 tracking-tight">
+                                            {project.status === 'completed' ? 'האתר שלך באוויר!' : 
+                                             project.status === 'qa_review' ? 'האתר בבדיקות איכות (QA) אחרונות!' :
+                                             'צוות הפיתוח עובד על האתר שלך כעת!'}
+                                        </h2>
+                                        
+                                        {/* Countdown display for active development */}
+                                        {(project.status === 'in_progress' || project.status === 'stuck') && project.deliveryTargetDate && (
+                                            <div className="mt-8 pt-8 border-t border-slate-200">
+                                                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">זמן משוער למסירה</h3>
+                                                <ClientCountdown targetDate={project.deliveryTargetDate} />
+                                            </div>
+                                        )}
+                                    </Card>
 
-                            <Card className="shadow-lg border-t-4 border-t-gold-500">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <span className="text-3xl">🛍️</span>
-                                    <h2 className="text-2xl font-black text-slate-800">חנות שדרוגים ותחזוקה</h2>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {storeItems.length === 0 ? <p className="text-slate-500 font-medium col-span-2 text-center p-8 bg-slate-50 rounded-xl">החנות תעודכן בקרוב.</p> : storeItems.map(item => (
-                                        <div key={item.id} className="border border-slate-200 p-6 rounded-2xl flex flex-col justify-between bg-white hover:shadow-xl hover:-translate-y-1 transition-all">
-                                            <div className="mb-6">
-                                                <h4 className="font-black text-slate-800 text-xl mb-2">{item.name}</h4>
-                                                {item.isMRR && <span className="text-xs bg-gold-100 text-gold-700 font-bold px-3 py-1 rounded-full border border-gold-200">מנוי חודשי</span>}
-                                            </div>
-                                            <div className="flex justify-between items-end border-t border-slate-100 pt-4">
-                                                <span className="text-3xl font-black text-brand-600">₪{item.price}</span>
-                                                <Button variant="primary" className="shadow-brand-500/30">בקש שדרוג</Button>
-                                            </div>
+                                    {/* Client to Developer Messaging UI */}
+                                    <Card className="border-t-4 border-t-blue-500 shadow-md">
+                                        <h3 className="font-black text-slate-800 text-lg mb-2">💬 תקשורת מול צוות הפיתוח</h3>
+                                        <p className="text-sm text-slate-500 mb-4 font-medium">יש לך הערה חשובה? שכחת לשלוח תמונה? כתוב לנו כאן והצוות יתעדכן בזמן אמת.</p>
+                                        <div className="flex gap-3">
+                                            <input type="text" value={clientDevMessage} onChange={e=>setClientDevMessage(e.target.value)} placeholder="כתוב הודעה לצוות..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500" />
+                                            <Button onClick={handleClientMessageToDev} variant="primary" className="shadow-blue-500/30">שלח למפתח</Button>
                                         </div>
-                                    ))}
+                                    </Card>
                                 </div>
-                            </Card>
+                                
+                                <div className="space-y-6">
+                                    {/* Upsell Card: Express Delivery */}
+                                    {(project.status === 'in_progress' || project.status === 'stuck') && (
+                                        <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white border-none shadow-xl relative overflow-hidden">
+                                            <div className="absolute -right-4 -top-4 text-6xl opacity-20 transform rotate-12">⚡</div>
+                                            <h3 className="font-black text-xl mb-2 relative z-10">חייב את האתר מחר?</h3>
+                                            <p className="text-amber-50 text-sm mb-4 font-medium relative z-10">שדרג למסירת אקספרס (עד 24 שעות) והקפץ את הפרויקט שלך לראש התור.</p>
+                                            <Button variant="secondary" onClick={() => alert("בקשת שדרוג נשלחה למנהל")} className="w-full text-amber-600 bg-white hover:bg-amber-50 relative z-10">בקש הצעת אקספרס</Button>
+                                        </Card>
+                                    )}
+
+                                    <Card className="shadow-lg border-t-4 border-t-gold-500 h-fit">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <span className="text-2xl">🛍️</span>
+                                            <h2 className="text-lg font-black text-slate-800">חנות שדרוגים</h2>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {storeItems.length === 0 ? <p className="text-slate-500 font-medium text-sm text-center p-4 bg-slate-50 rounded-xl">החנות תעודכן בקרוב.</p> : storeItems.map(item => (
+                                                <div key={item.id} className="border border-slate-200 p-4 rounded-xl flex flex-col bg-slate-50 hover:bg-white hover:shadow-md transition-all cursor-pointer">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h4 className="font-bold text-slate-800 text-sm">{item.name}</h4>
+                                                        {item.isMRR && <span className="text-[10px] bg-gold-100 text-gold-700 font-bold px-2 py-0.5 rounded-full border border-gold-200">מנוי</span>}
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-2">
+                                                        <span className="font-black text-brand-600">₪{item.price}</span>
+                                                        <span className="text-xs font-bold text-brand-500 hover:text-brand-700">הוסף +</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
